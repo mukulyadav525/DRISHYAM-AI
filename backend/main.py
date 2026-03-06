@@ -33,6 +33,7 @@ app = FastAPI(
 # Add Security Middleware
 @app.middleware("http")
 async def add_security_logging(request, call_next):
+    print(f"[DEBUG] Incoming: {request.method} {request.url}")
     return await security_logging_middleware(request, call_next)
 
 # Include Routers
