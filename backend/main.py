@@ -2,6 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from core.config import settings
 import os
+import contextlib
+import logging
 from dotenv import load_dotenv
 
 from api.detection import router as detection_router
@@ -15,42 +17,58 @@ from api.forensic import router as forensic_router
 from api.profiling import router as profiling_router
 from core.security import security_logging_middleware
 
-# Auto-create tables for all database types (safe — CREATE IF NOT EXISTS)
-from core.database import engine, SessionLocal
-from models.database import Base, User, UserRole
-try:
-    Base.metadata.create_all(bind=engine)
-    print("[INFO] Database tables verified/created.")
-except Exception as e:
-    print(f"[WARN] Could not auto-create tables: {e}")
+# Setup Logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("sentinel.main")
 
-# Seed default admin user if none exists
-try:
-    db = SessionLocal()
-    admin = db.query(User).filter(User.username == "admin").first()
-    if not admin:
-        from core.auth import get_password_hash
-        admin = User(
-            username="admin",
-            hashed_password=get_password_hash("password123"),
-            full_name="System Administrator",
-            role=UserRole.ADMIN.value,
-            is_active=True,
-        )
-        db.add(admin)
-        db.commit()
-        print("[INFO] Default admin user created (admin / password123)")
-    else:
-        print("[INFO] Admin user already exists.")
-    db.close()
-except Exception as e:
-    print(f"[WARN] Could not seed admin user: {e}")
+@contextlib.asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Database Setup
+    from core.database import engine, SessionLocal
+    from models.database import Base, User, UserRole
+    
+    logger.info("[STARTUP] Initializing database...")
+    try:
+        # Create tables
+        Base.metadata.create_all(bind=engine)
+        logger.info("[STARTUP] Database tables verified/created.")
+        
+        # Seed Admin
+        db = SessionLocal()
+        try:
+            admin = db.query(User).filter(User.username == "admin").first()
+            if not admin:
+                from core.auth import get_password_hash
+                admin = User(
+                    username="admin",
+                    hashed_password=get_password_hash("password123"),
+                    full_name="System Administrator",
+                    role=UserRole.ADMIN.value,
+                    is_active=True,
+                )
+                db.add(admin)
+                db.commit()
+                logger.info("[STARTUP] Default admin user created (admin / password123)")
+            else:
+                logger.info("[STARTUP] Admin user already exists.")
+        finally:
+            db.close()
+            
+    except Exception as e:
+        logger.error(f"[STARTUP] Database initialization failed: {e}")
+        # We don't raise here to allow the app to stay up for health checks
+        # even if the DB is temporarily down.
 
-# Modified app initialization to use settings
+    yield
+    # Shutdown logic if needed
+    logger.info("[SHUTDOWN] Cleaning up...")
+
+# Initialize FastAPI with lifespan
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    version="0.1.0", # Kept the version from original
-    openapi_url=f"{settings.API_V1_STR}/openapi.json" # Added openapi_url
+    version="0.1.0",
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    lifespan=lifespan
 )
 
 # Configure CORS for Dashboard access
@@ -69,7 +87,6 @@ app.add_middleware(
 # Add Security Middleware
 @app.middleware("http")
 async def add_security_logging(request, call_next):
-    print(f"[DEBUG] Incoming: {request.method} {request.url}")
     return await security_logging_middleware(request, call_next)
 
 # Include Routers
