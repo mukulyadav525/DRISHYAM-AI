@@ -19,9 +19,9 @@ import {
     Loader2
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
+import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api/v1";
 
 export default function BharatPage() {
     const { performAction } = useActions();

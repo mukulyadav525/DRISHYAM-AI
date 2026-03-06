@@ -21,6 +21,7 @@ import {
     Loader2
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
+import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 
 interface Cluster {
@@ -31,7 +32,6 @@ interface Cluster {
     calls: number;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api/v1";
 
 export default function ProfilingPage() {
     const { performAction } = useActions();

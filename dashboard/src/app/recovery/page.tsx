@@ -18,6 +18,7 @@ import {
   Loader2
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
+import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 
 export default function RecoveryPage() {
