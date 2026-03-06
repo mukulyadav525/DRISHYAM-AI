@@ -84,10 +84,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add Security Middleware
+# Add Global Request Logging
 @app.middleware("http")
-async def add_security_logging(request, call_next):
-    return await security_logging_middleware(request, call_next)
+async def simple_request_log(request, call_next):
+    logger.info(f"[NODE] Incoming Request: {request.method} {request.url.path}")
+    response = await call_next(request)
+    logger.info(f"[NODE] Outgoing Response: {response.status_code}")
+    return response
 
 # Include Routers
 app.include_router(auth_router, prefix="/api/v1/auth", tags=["auth"])
@@ -102,10 +105,12 @@ app.include_router(profiling_router, prefix="/api/v1/profiling", tags=["profilin
 
 @app.get("/")
 async def root():
+    logger.info("[HIT] Root endpoint")
     return {"message": "Sentinel 1930 (BASIG) API is running. For My India."}
 
 @app.get("/health")
 async def health_check():
+    logger.info("[HIT] Health endpoint")
     return {
         "status": "healthy",
         "mode": "PRODUCTION",
