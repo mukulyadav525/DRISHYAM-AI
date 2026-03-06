@@ -87,27 +87,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         formData.append("username", username);
         formData.append("password", password);
 
-        const res = await fetch(`${API_BASE}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            body: formData.toString(),
-        });
+        try {
+            const res = await fetch(`${API_BASE}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formData.toString(),
+            });
 
-        if (!res.ok) {
-            const err = await res.json();
-            throw new Error(err.detail || "Login failed");
+            const contentType = res.headers.get("content-type");
+            const isJson = contentType && contentType.includes("application/json");
+
+            if (!res.ok) {
+                if (isJson) {
+                    const err = await res.json();
+                    throw new Error(err.detail || "Login failed");
+                } else {
+                    const text = await res.text();
+                    console.error("Non-JSON error response:", text);
+                    throw new Error(`Server error (${res.status}): ${res.statusText}`);
+                }
+            }
+
+            if (!isJson) {
+                throw new Error("Invalid server response: Expected JSON");
+            }
+
+            const data = await res.json();
+            const authUser: AuthUser = {
+                username: data.username,
+                role: data.role,
+                full_name: data.full_name,
+                token: data.access_token,
+            };
+
+            setUser(authUser);
+            localStorage.setItem("sentinel_auth", JSON.stringify(authUser));
+        } catch (error: any) {
+            console.error("Login request failed:", error);
+            throw error;
         }
-
-        const data = await res.json();
-        const authUser: AuthUser = {
-            username: data.username,
-            role: data.role,
-            full_name: data.full_name,
-            token: data.access_token,
-        };
-
-        setUser(authUser);
-        localStorage.setItem("sentinel_auth", JSON.stringify(authUser));
     }, []);
 
     const logout = useCallback(() => {
