@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
 
-const API_BASE = "http://localhost:8000/api/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000/api/v1";
 
 interface UPIDashboard {
     vpa_checks_24h: string;
