@@ -13,8 +13,9 @@ class SarvamHoneypot:
         self.api_key = settings.SARVAM_API_KEY
         self.client = httpx.AsyncClient(timeout=30.0)
         if not self.api_key:
-            raise RuntimeError("SARVAM_API_KEY is required. Set it in backend/.env")
-        logger.info("AI ENGINE: Sarvam-M Multilingual Engine initialized.")
+            logger.warning("SARVAM_API_KEY is missing. Voice AI features will be disabled.")
+        else:
+            logger.info("AI ENGINE: Sarvam-M Multilingual Engine initialized.")
 
     async def close(self):
         """Close the persistent HTTP client."""

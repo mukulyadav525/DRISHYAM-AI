@@ -53,12 +53,12 @@ settings = Settings()
 
 # Validation before client initialization
 if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
-    print(f"CRITICAL ERROR: Supabase credentials missing!")
+    print(f"[WARN] Supabase credentials missing! Authentication features will be disabled.")
     print(f"SUPABASE_URL: {'[SET]' if settings.SUPABASE_URL else '[MISSING]'}")
     print(f"SUPABASE_ANON_KEY: {'[SET]' if settings.SUPABASE_ANON_KEY else '[MISSING]'}")
 
-# Initialize Supabase client
+# Initialize Supabase client safely
 supabase: Client = create_client(
-    settings.SUPABASE_URL if settings.SUPABASE_URL else "https://placeholder.supabase.co", 
-    settings.SUPABASE_ANON_KEY if settings.SUPABASE_ANON_KEY else "placeholder"
+    settings.SUPABASE_URL if settings.SUPABASE_URL else "https://placeholder-supa.supabase.co", 
+    settings.SUPABASE_ANON_KEY if settings.SUPABASE_ANON_KEY else "placeholder-key-for-boot"
 )
