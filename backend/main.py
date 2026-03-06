@@ -15,16 +15,36 @@ from api.forensic import router as forensic_router
 from api.profiling import router as profiling_router
 from core.security import security_logging_middleware
 
-# Auto-create tables (safe — skips if already exists in Supabase)
-from core.database import engine
-from models.database import Base
+# Auto-create tables for all database types (safe — CREATE IF NOT EXISTS)
+from core.database import engine, SessionLocal
+from models.database import Base, User, UserRole
 try:
-    if "sqlite" in str(engine.url):
-        Base.metadata.create_all(bind=engine)
-    else:
-        print("[INFO] Skipping auto-create tables for remote database.")
+    Base.metadata.create_all(bind=engine)
+    print("[INFO] Database tables verified/created.")
 except Exception as e:
-    print(f"[WARN] Could not auto-create tables: {e}. Tables must exist in Supabase.")
+    print(f"[WARN] Could not auto-create tables: {e}")
+
+# Seed default admin user if none exists
+try:
+    db = SessionLocal()
+    admin = db.query(User).filter(User.username == "admin").first()
+    if not admin:
+        from core.auth import get_password_hash
+        admin = User(
+            username="admin",
+            hashed_password=get_password_hash("password123"),
+            full_name="System Administrator",
+            role=UserRole.ADMIN.value,
+            is_active=True,
+        )
+        db.add(admin)
+        db.commit()
+        print("[INFO] Default admin user created (admin / password123)")
+    else:
+        print("[INFO] Admin user already exists.")
+    db.close()
+except Exception as e:
+    print(f"[WARN] Could not seed admin user: {e}")
 
 # Modified app initialization to use settings
 app = FastAPI(
