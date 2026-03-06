@@ -17,7 +17,7 @@ import {
     Volume2,
     Loader2
 } from "lucide-react";
-
+import { API_BASE } from "@/config/api";
 
 interface Persona {
     id: string;
