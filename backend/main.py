@@ -33,6 +33,15 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json" # Added openapi_url
 )
 
+# Configure CORS for Dashboard access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"], # In production, replace with your Vercel URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Add Security Middleware
 @app.middleware("http")
 async def add_security_logging(request, call_next):
@@ -49,15 +58,6 @@ app.include_router(system_router, prefix="/api/v1/system", tags=["system"])
 app.include_router(actions_router, prefix="/api/v1/actions", tags=["actions"])
 app.include_router(forensic_router, prefix="/api/v1/forensic", tags=["forensic"])
 app.include_router(profiling_router, prefix="/api/v1/profiling", tags=["profiling"])
-
-# Configure CORS for Dashboard access
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"], # In production, replace with your Vercel URL
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 @app.get("/")
 async def root():
