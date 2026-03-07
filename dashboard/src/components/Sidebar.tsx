@@ -51,7 +51,6 @@ export default function Sidebar() {
         { name: t("command_center"), icon: Landmark, href: "/command" },
         { name: t("agency_portal"), icon: Building2, href: "/agency" },
         { name: t("launch_control"), icon: Rocket, href: "/launch" },
-        { name: t("call_shield"), icon: Smartphone, href: "/shield" },
         { name: t("bharat_layer"), icon: Smartphone, href: "/bharat" },
         { name: t("recovery"), icon: RotateCcw, href: "/recovery" },
     ];

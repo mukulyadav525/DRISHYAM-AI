@@ -42,7 +42,17 @@ class Settings(BaseSettings):
     NEO4J_PASSWORD: str = Field("password", env="NEO4J_PASSWORD")
 
     # Security Restraints
-    CORS_ORIGINS: list[str] = ["https://sentinel-1930-77sx.vercel.app", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = Field(["*"], env="CORS_ORIGINS")
+
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str]:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, (list, str)):
+            return v
+        raise ValueError(v)
+
     RATE_LIMIT_PER_MINUTE: int = 100
 
     class Config:

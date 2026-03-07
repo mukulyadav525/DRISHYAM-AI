@@ -136,6 +136,19 @@ def get_agency_stats(db: Session = Depends(get_db)):
     total_actions = db.query(SystemAction).count()
     resolved_cases = db.query(SystemAction).filter(SystemAction.status == "success").count()
 
+    # Fetch recent honeypot sessions for "Live Simulation Feed"
+    live_sims = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(5).all()
+    simulations = []
+    for sim in live_sims:
+        simulations.append({
+            "id": sim.session_id[:8].upper(),
+            "caller": sim.caller_num,
+            "status": sim.status,
+            "persona": sim.persona,
+            "time": sim.created_at.isoformat(),
+            "messages_count": db.query(HoneypotMessage).filter(HoneypotMessage.session_id == sim.id).count()
+        })
+
     return {
         "police": {
             "cases": police_cases,
@@ -151,11 +164,12 @@ def get_agency_stats(db: Session = Depends(get_db)):
             "blocked_imei_count": robocall_actions,
             "threat_description": "Mass Robocall Pattern Detected in NCR Region" if has_active_threat else "No active mass-robocall events detected."
         },
+        "simulations": simulations,
         "triage": {
             "cases_resolved": resolved_cases,
             "total_cases": total_actions,
             "avg_response_time": "4.2 min",
-            "threat_level": "HIGH" if len(police_cases) > 3 else "MODERATE",
+            "threat_level": "HIGH" if len(police_cases) > 3 or len(simulations) > 0 else "MODERATE",
             "active_agents": random.randint(12, 28)
         }
     }

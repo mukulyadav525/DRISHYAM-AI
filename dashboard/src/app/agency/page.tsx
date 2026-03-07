@@ -21,7 +21,8 @@ import {
     Loader2,
     Activity,
     Users,
-    Zap
+    Zap,
+    Smartphone
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
@@ -43,16 +44,26 @@ interface BankMule {
     action: string;
 }
 
+interface SimulationSession {
+    id: string;
+    caller: string;
+    status: string;
+    persona: string;
+    time: string;
+    messages_count: number;
+}
+
 interface AgencyData {
     police: { cases: PoliceCase[]; urgent_count: number };
     bank: { mule_accounts: BankMule[]; frozen_count: number; total_flagged: number };
     telecom: { has_active_threat: boolean; blocked_imei_count: number; threat_description: string };
+    simulations: SimulationSession[];
     triage: { cases_resolved: number; total_cases: number; avg_response_time: string; threat_level: string; active_agents: number };
 }
 
 export default function AgencyPage() {
     const { performAction, downloadSimulatedFile } = useActions();
-    const [activeRole, setActiveRole] = useState<'POLICE' | 'BANK' | 'TELECOM'>('POLICE');
+    const [activeRole, setActiveRole] = useState<'POLICE' | 'BANK' | 'TELECOM' | 'MONITOR'>('POLICE');
     const [isBlockingIMEI, setIsBlockingIMEI] = useState(false);
     const [data, setData] = useState<AgencyData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -73,6 +84,8 @@ export default function AgencyPage() {
             }
         };
         fetchData();
+        const interval = setInterval(fetchData, 5000); // Live polling for monitoring
+        return () => clearInterval(interval);
     }, []);
 
     const handleFreezeVPA = async (vpa: string) => {
@@ -103,6 +116,7 @@ export default function AgencyPage() {
     const bankActions = data?.bank?.mule_accounts || [];
     const telecom = data?.telecom || { has_active_threat: false, blocked_imei_count: 0, threat_description: "No active mass-robocall events detected." };
     const triage = data?.triage || { cases_resolved: 0, total_cases: 0, avg_response_time: "—", threat_level: "MODERATE", active_agents: 0 };
+    const simulations = data?.simulations || [];
 
     return (
         <div className="space-y-6 max-w-7xl">
@@ -113,13 +127,13 @@ export default function AgencyPage() {
                     <p className="text-silver mt-4 italic font-medium">Tactical Interface for Law Enforcement & Financial Institutions (Module 7/8/9).</p>
                 </div>
                 <div className="flex bg-white p-1 rounded-2xl border border-silver/10 shadow-sm">
-                    {(['POLICE', 'BANK', 'TELECOM'] as const).map(role => (
+                    {(['POLICE', 'BANK', 'TELECOM', 'MONITOR'] as const).map(role => (
                         <button
                             key={role}
                             onClick={() => setActiveRole(role)}
                             className={`px-6 py-2 rounded-xl text-[10px] font-black tracking-widest transition-all ${activeRole === role ? 'bg-indblue text-white shadow-lg' : 'text-silver hover:bg-boxbg'}`}
                         >
-                            {role}
+                            {role === 'MONITOR' ? 'LIVE MONITOR' : role}
                         </button>
                     ))}
                 </div>
@@ -287,6 +301,67 @@ export default function AgencyPage() {
                                     {isBlockingIMEI ? <Loader2 className="animate-spin" size={20} /> : <PhoneOff size={20} />}
                                     BLOCK DETECTED IMEI RANGE
                                 </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {!loading && activeRole === 'MONITOR' && (
+                        <div className="bg-white p-8 rounded-3xl border border-silver/10 shadow-sm">
+                            <div className="flex justify-between items-center mb-8">
+                                <div className="flex items-center gap-3">
+                                    <Zap className="text-saffron" size={24} />
+                                    <h3 className="text-xl font-bold text-indblue tracking-tight">Live Interception Monitor</h3>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1 bg-indgreen/10 text-indgreen rounded-full text-[9px] font-black border border-indgreen/20 animate-pulse">
+                                    <Activity size={12} /> SECURE FEED ACTIVE
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                {simulations.length === 0 && (
+                                    <div className="text-center py-12 border-2 border-dashed border-silver/10 rounded-3xl">
+                                        <Shield className="mx-auto text-silver/20 mb-4" size={48} />
+                                        <p className="text-silver text-sm font-medium italic">Tracing network for active scam simulations...</p>
+                                        <p className="text-[10px] text-silver/60 mt-2 uppercase tracking-widest">Connect Simulation App to begin monitoring</p>
+                                    </div>
+                                )}
+                                {simulations.map((sim) => (
+                                    <div key={sim.id} className="p-6 bg-boxbg rounded-3xl border border-silver/5 hover:border-saffron/30 transition-all group flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <div className="flex items-center gap-6">
+                                            <div className="relative">
+                                                <div className="p-3 bg-white rounded-2xl shadow-sm border border-silver/10">
+                                                    <Smartphone size={20} className="text-indblue" />
+                                                </div>
+                                                <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${sim.status === 'active' ? 'bg-indgreen animate-pulse' : 'bg-silver'}`} />
+                                            </div>
+                                            <div>
+                                                <div className="flex items-center gap-2">
+                                                    <h4 className="font-bold text-indblue">TRAP_{sim.id}</h4>
+                                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded uppercase tracking-widest ${sim.status === 'active' ? 'bg-indgreen text-white' : 'bg-silver/20 text-silver'}`}>
+                                                        {sim.status}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] font-bold text-silver uppercase mt-1">
+                                                    SOURCE: {sim.caller} | AGENT: {sim.persona}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-6">
+                                            <div className="text-right hidden md:block">
+                                                <p className="text-[10px] font-black text-indblue tracking-widest uppercase">{sim.messages_count} CYCLES</p>
+                                                <p className="text-[9px] text-silver font-medium mt-1">Intercepted Data Extracted</p>
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    performAction('VIEW_INTEL', sim.id);
+                                                    toast.success(`Dossier for ${sim.id} opened. Forensic analysis in progress.`);
+                                                }}
+                                                className="p-3 bg-white border border-silver/10 text-indblue rounded-xl shadow-sm group-hover:bg-saffron group-hover:text-white transition-all">
+                                                <ChevronRight size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

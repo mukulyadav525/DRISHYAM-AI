@@ -18,13 +18,14 @@ class DirectChatRequest(BaseModel):
     message: str
     persona: str = "AI"
     history: List[dict] = []
+    session_id: Optional[str] = None
 
 @router.post("/sessions", response_model=dict)
-def create_honeypot_session(caller_num: str, persona: str, db: Session = Depends(get_db)):
+def create_honeypot_session(caller_num: Optional[str] = None, persona: str = "Sentinel AI", db: Session = Depends(get_db)):
     session_id = str(uuid.uuid4())
     db_session = HoneypotSession(
         session_id=session_id,
-        caller_num=caller_num,
+        caller_num=caller_num or f"+91-{uuid.uuid4().hex[:8]}",
         persona=persona
     )
     db.add(db_session)
@@ -52,15 +53,35 @@ async def honeypot_chat(session_id: str, message: str, db: Session = Depends(get
     return {"response": ai_response, "timestamp": datetime.datetime.utcnow()}
 
 @router.post("/direct-chat", response_model=dict)
-async def direct_chat(req: DirectChatRequest):
-    """Stateless chat for frontend/verification."""
+async def direct_chat(req: DirectChatRequest, db: Session = Depends(get_db)):
+    """Stateless chat with optional session logging."""
     ai_response = await honeypot_ai.generate_response(req.persona, req.history, req.message)
+    
+    if req.session_id:
+        db_session = db.query(HoneypotSession).filter(HoneypotSession.session_id == req.session_id).first()
+        if db_session:
+            # Log scammer message
+            scammer_msg = HoneypotMessage(session_id=db_session.id, role="user", content=req.message)
+            db.add(scammer_msg)
+            # Log AI response
+            ai_msg = HoneypotMessage(session_id=db_session.id, role="assistant", content=ai_response)
+            db.add(ai_msg)
+            db.commit()
+            
     return {"response": ai_response, "timestamp": datetime.datetime.utcnow()}
 
 @router.post("/direct-conclude", response_model=dict)
-async def direct_conclude(req: DirectChatRequest):
-    """Stateless analysis for verification."""
+async def direct_conclude(req: DirectChatRequest, db: Session = Depends(get_db)):
+    """Stateless analysis with optional session finalization."""
     analysis = await honeypot_ai.analyze_scam(req.history)
+    
+    if req.session_id:
+        db_session = db.query(HoneypotSession).filter(HoneypotSession.session_id == req.session_id).first()
+        if db_session:
+            db_session.status = "completed"
+            db_session.metadata_json = analysis
+            db.commit()
+            
     return {"analysis": analysis, "timestamp": datetime.datetime.utcnow()}
 
 @router.post("/sessions/{session_id}/handoff")

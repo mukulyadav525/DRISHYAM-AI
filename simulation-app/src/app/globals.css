@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --color-saffron: #FF6B22;
+  --color-deeporange: #E8501A;
+  --color-indblue: #00216A;
+  --color-indgreen: #007A3D;
+  --color-redalert: #C0392B;
+  --color-charcoal: #2D2D2D;
+  --color-silver: #95A5A6;
+  --color-gold: #D4A017;
+  --color-boxbg: #FAFBFF;
+}
+
+:root {
+  --background: #FFFFFF;
+  --foreground: #171717;
+  --font-inter: "Inter", sans-serif;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: var(--font-inter);
+}
+
+@keyframes pulse-saffron {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 34, 0.4);
+  }
+
+  70% {
+    box-shadow: 0 0 0 20px rgba(255, 107, 34, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 34, 0);
+  }
+}
+
+.pulse-saffron {
+  animation: pulse-saffron 2s infinite;
+}

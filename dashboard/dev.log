@@ -55,3 +55,5 @@
  GET /mule 200 in 3.8s (compile: 3.8s, render: 18ms)
  GET /inoculation 200 in 176ms (compile: 166ms, render: 11ms)
  GET /upi 200 in 244ms (compile: 229ms, render: 14ms)
+ GET / 200 in 108ms (compile: 57ms, render: 51ms)
+ GET /login 200 in 353ms (compile: 323ms, render: 29ms)

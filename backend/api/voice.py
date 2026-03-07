@@ -22,6 +22,7 @@ class VoiceChatRequest(BaseModel):
     persona: str = "Elderly Uncle"
     language: str = "hi-IN"
     history: List[Dict[str, str]] = []
+    session_id: Optional[str] = None
 
 
 class VoiceChatResponse(BaseModel):
@@ -47,22 +48,42 @@ class STTRequest(BaseModel):
 
 
 @router.post("/chat", response_model=VoiceChatResponse)
-async def voice_chat_turn(request: VoiceChatRequest):
+async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_db)):
     """
-    Complete voice chat turn:
-    1. Transcribes scammer audio (STT via Sarvam Saaras)
-    2. Generates AI honeypot response (via Gemini)
-    3. Synthesizes AI voice reply (TTS via Sarvam Bulbul)
+    Complete voice chat turn with optional session persistence.
     """
     try:
         audio_bytes = base64.b64decode(request.audio_base64)
-
+        
+        # 1. Pipeline Execution
         result = await voice_engine.voice_chat_turn(
             scammer_audio=audio_bytes,
             persona=request.persona,
             ai_generate_fn=honeypot_ai.generate_response,
             history=request.history,
         )
+
+        # 2. Optional Session Persistence
+        if request.session_id:
+            db_session = db.query(HoneypotSession).filter(HoneypotSession.session_id == request.session_id).first()
+            if db_session:
+                # Log scammer transcription
+                if result["scammer_transcript"]:
+                    scammer_msg = HoneypotMessage(
+                        session_id=db_session.id, 
+                        role="user", 
+                        content=result["scammer_transcript"]
+                    )
+                    db.add(scammer_msg)
+                
+                # Log AI response
+                ai_msg = HoneypotMessage(
+                    session_id=db_session.id, 
+                    role="assistant", 
+                    content=result["ai_response_text"]
+                )
+                db.add(ai_msg)
+                db.commit()
 
         return VoiceChatResponse(**result)
     except Exception as e:

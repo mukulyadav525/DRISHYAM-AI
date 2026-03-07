@@ -1,0 +1,13 @@
+{
+    "name": "sentinel-1930-workspace",
+    "private": true,
+    "scripts": {
+        "dev:backend": "cd backend && python3 -m uvicorn main:app --reload --port 8000",
+        "dev:dashboard": "cd dashboard && npm run dev -- -p 3000",
+        "dev:simulation": "cd simulation-app && npm run dev -- -p 3001",
+        "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:dashboard\" \"npm run dev:simulation\""
+    },
+    "devDependencies": {
+        "concurrently": "^8.2.2"
+    }
+}
