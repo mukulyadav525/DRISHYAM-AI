@@ -56,6 +56,11 @@ async def perform_action(
             "VIEW_ALERT_HISTORY": "Accessing Historical Broadcast Logs",
             "SAVE_ALERT_DRAFT": "Alert Draft Saved to Sentinel Vault",
             "PREVIEW_SEND_ALERT": "Alert Preview Generated. Awaiting Final Confirmation",
+            "VIEW_CASE": f"Loading Full Case Dossier for {req.target_id or 'Case'}",
+            "MARK_RISK": f"VPA {req.target_id or 'Unknown'} Flagged as High-Risk in NPCI Registry",
+            "BLOCK_IMEI": f"IMEI Block Signal Broadcast for Range {req.target_id or 'Unknown'}",
+            "INTERCEPT_MESSAGE": f"WhatsApp Interception Protocol Activated for {req.target_id or 'Source'}",
+            "VIEW_VPA_HISTORY": f"Loading Transaction History for {req.target_id or 'VPA'}",
         }
 
         user_msg = messages.get(req.action_type.upper(), f"Action {req.action_type} executed successfully")
