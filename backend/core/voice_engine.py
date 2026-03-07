@@ -47,7 +47,7 @@ class SarvamVoiceEngine:
         self,
         audio_bytes: bytes,
         language: str = "hi-IN",
-        model: str = "saaras:v2",
+        model: str = "saaras:v3",
     ) -> Dict[str, Any]:
         """Transcribe scammer's voice to text via Sarvam Saaras."""
         
@@ -96,9 +96,10 @@ class SarvamVoiceEngine:
             logger.info("STT: Using raw webm audio as fallback")
 
         # Upload to Sarvam saaras using persistent client
+        # NOTE: Speech endpoints are NOT under /v1/
         try:
             response = await self.client.post(
-                f"{SARVAM_BASE_URL}/v1/speech-to-text",
+                f"{SARVAM_BASE_URL}/speech-to-text",
                 headers={
                     "api-subscription-key": self.api_key,
                 },
@@ -107,10 +108,13 @@ class SarvamVoiceEngine:
                 },
                 data={
                     "language_code": language,
-                    "model": "saaras:v1",
+                    "model": model,
                 },
             )
-            response.raise_for_status()
+            if response.status_code != 200:
+                logger.error(f"STT API Error ({response.status_code}): {response.text}")
+                response.raise_for_status()
+                
             data = response.json()
 
             transcript = data.get("transcript", "")
@@ -123,8 +127,6 @@ class SarvamVoiceEngine:
             }
         except Exception as e:
             logger.error(f"STT: Transcription API failed: {e}")
-            if hasattr(e, 'response'):
-                logger.error(f"STT Error Detail: {e.response.text}")
             return {
                 "transcript": "",
                 "language_detected": language,
@@ -141,8 +143,9 @@ class SarvamVoiceEngine:
         voice_config = self.default_voice
 
         try:
+            # NOTE: Speech endpoints are NOT under /v1/
             response = await self.client.post(
-                f"{SARVAM_BASE_URL}/v1/text-to-speech",
+                f"{SARVAM_BASE_URL}/text-to-speech",
                 headers={
                     "api-subscription-key": self.api_key,
                     "Content-Type": "application/json",
@@ -151,14 +154,17 @@ class SarvamVoiceEngine:
                     "inputs": [text],
                     "target_language_code": voice_config["language"],
                     "speaker": voice_config["speaker"],
-                    "model": "bulbul:v1", # bulbul:v1 is the standard
+                    "model": voice_config["model"],
                     "pitch": 0,
                     "pace": float(voice_config["pace"]),
                     "loudness": 1.5,
                     "enable_preprocessing": True,
                 },
             )
-            response.raise_for_status()
+            if response.status_code != 200:
+                logger.error(f"TTS API Error ({response.status_code}): {response.text}")
+                response.raise_for_status()
+                
             data = response.json()
 
             audios = data.get("audios", [])

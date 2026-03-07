@@ -96,10 +96,10 @@ class SarvamHoneypot:
                     "max_tokens": 500
                 }
             )
-            logger.info(f"AI: Sarvam API returned status {response.status_code}")
+            
             if response.status_code != 200:
                 logger.error(f"AI: Sarvam API Error ({response.status_code}): {response.text}")
-                response.raise_for_status()
+                return "⚠️ System: AI Engine connection issue (Sarvam Error)."
             
             data = response.json()
             ai_text = data["choices"][0]["message"]["content"]
@@ -108,7 +108,7 @@ class SarvamHoneypot:
 
         except Exception as e:
             logger.error(f"AI: Generation failed: {e}")
-            return "Aapki awaaz thodi kat rahi hai... (Connection issues)"
+            return "⚠️ System: AI Engine failure."
 
     async def analyze_scam(self, history: List[Dict[str, str]]) -> Dict:
         """Analyze a finished conversation to extract scam intelligence."""
