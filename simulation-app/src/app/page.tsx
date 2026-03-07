@@ -45,6 +45,7 @@ export default function SimulationPortal() {
   const [autoPlayVoice, setAutoPlayVoice] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
+  const [sessionData, setSessionData] = useState<{ id: string; caller: string; location: string } | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
 
   useEffect(() => {
@@ -112,6 +113,11 @@ export default function SimulationPortal() {
       if (res.ok) {
         const data = await res.json();
         setSessionId(data.session_id);
+        setSessionData({
+          id: data.session_id,
+          caller: data.caller_num || "+91-TRACE-NODE",
+          location: "SCANNING..." // Will be updated by detection engine
+        });
         console.log("Monitoring session active:", data.session_id);
       }
     } catch (e) {
@@ -413,11 +419,15 @@ export default function SimulationPortal() {
           {(callState === "ringing" || callState === "warning") && (
             <div className="flex-1 flex flex-col p-8 fade-in">
               <div className="mt-16 text-center animate-bounce">
-                <div className="w-20 h-20 bg-boxbg border-2 border-silver/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl">
-                  <User size={40} className="text-silver" />
+                <div className="w-20 h-20 bg-boxbg border-2 border-silver/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-xl text-silver">
+                  <User size={40} />
                 </div>
-                <h3 className="text-2xl font-black text-charcoal tracking-tight">+91 4190 2341</h3>
-                <p className="text-xs text-silver font-bold mt-2 tracking-wide">Mewat, Haryana | Reported Scam Node</p>
+                <h3 className="text-2xl font-black text-charcoal tracking-tight">
+                  {sessionData?.caller || "UNKNOWN_NODE"}
+                </h3>
+                <p className="text-xs text-silver font-bold mt-2 tracking-wide">
+                  {sessionData?.location || "Scanning Origin..."}
+                </p>
               </div>
 
               <div className="flex-1 flex flex-col justify-center">
@@ -425,10 +435,12 @@ export default function SimulationPortal() {
                   <div className="bg-redalert/5 border-2 border-redalert/20 p-5 rounded-3xl animate-pulse">
                     <div className="flex items-center gap-3 mb-3">
                       <ShieldAlert className="text-redalert" size={24} />
-                      <p className="text-base font-black text-redalert tracking-tight uppercase">Threat Level: 98%</p>
+                      <p className="text-base font-black text-redalert tracking-tight uppercase">
+                        {isLoading ? "ANALYZING SCRIPT..." : "THREAT_DETECTED"}
+                      </p>
                     </div>
                     <p className="text-[11px] text-redalert/80 font-bold leading-relaxed">
-                      KYC Extortion Script matching known patterns in our database.
+                      {isLoading ? "Scanning network patterns and voice artifacts..." : "High-probability fraud script matching national risk vectors."}
                     </p>
                   </div>
                 )}
