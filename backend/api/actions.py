@@ -52,7 +52,10 @@ async def perform_action(
             "SUPPORT_TOOL": f"Redirecting to {req.target_id or 'Support Resource'}",
             "OPTIMIZE_STRATEGIES": "AI Strategy Optimization Complete",
             "LAUNCH_PROBE": "Sentinel Agentic Probe Dispatched",
-            "VIEW_MAP": "Sentinel Live Threat Map Initialized",
+            "BROADCAST_EMERGENCY": "Emergency Broadcast Dispatched to Target Region",
+            "VIEW_ALERT_HISTORY": "Accessing Historical Broadcast Logs",
+            "SAVE_ALERT_DRAFT": "Alert Draft Saved to Sentinel Vault",
+            "PREVIEW_SEND_ALERT": "Alert Preview Generated. Awaiting Final Confirmation",
         }
 
         user_msg = messages.get(req.action_type.upper(), f"Action {req.action_type} executed successfully")
