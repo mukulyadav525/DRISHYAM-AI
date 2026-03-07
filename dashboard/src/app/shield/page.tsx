@@ -157,49 +157,83 @@ export default function ShieldSimulationPage() {
             reader.onloadend = async () => {
                 const base64data = (reader.result as string).split(',')[1];
 
-                // Send to voice chat pipeline (STT -> Gemini -> TTS)
-                const res = await fetch(`${API_BASE}/voice/chat`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        audio_base64: base64data,
-                        persona: selectedPersona?.id || "Elderly Uncle",
-                        language: "hi-IN", // Expected language of the scammer
-                        history: messages.map(m => ({
-                            role: m.role === "scammer" ? "user" : "assistant",
-                            content: m.text,
-                        }))
-                    }),
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-
-                    // Display Scammer's transcribed text
+                if (!base64data || base64data.length < 50) {
                     setMessages(prev => [...prev, {
-                        role: "scammer",
-                        text: data.scammer_transcript || "🎤 (Voice Message)",
+                        role: "ai",
+                        text: "⚠️ Recording too short. Hold the microphone button longer while speaking.",
                         timestamp: new Date(),
                     }]);
+                    setIsLoading(false);
+                    return;
+                }
 
-                    // Display AI Response text & audio
-                    const aiMsg: ChatMessage = {
-                        role: "ai",
-                        text: data.ai_response_text,
-                        audioBase64: data.ai_audio_base64,
-                        timestamp: new Date(),
-                    };
-                    setMessages(prev => [...prev, aiMsg]);
+                try {
+                    // Send to voice chat pipeline (STT -> AI -> TTS)
+                    const res = await fetch(`${API_BASE}/voice/chat`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            audio_base64: base64data,
+                            persona: selectedPersona?.id || "Sentinel AI",
+                            language: "hi-IN",
+                            history: messages.map(m => ({
+                                role: m.role === "scammer" ? "user" : "assistant",
+                                content: m.text,
+                            }))
+                        }),
+                    });
 
-                    if (autoPlayVoice && data.ai_audio_base64) {
-                        playAudio(data.ai_audio_base64);
+                    if (res.ok) {
+                        const data = await res.json();
+
+                        // Handle empty transcript (mic didn't pick up anything)
+                        const transcript = data.scammer_transcript || "";
+                        if (transcript.length > 0) {
+                            setMessages(prev => [...prev, {
+                                role: "scammer",
+                                text: transcript,
+                                timestamp: new Date(),
+                            }]);
+                        } else {
+                            setMessages(prev => [...prev, {
+                                role: "scammer",
+                                text: "🎤 (Voice not captured clearly — try speaking louder)",
+                                timestamp: new Date(),
+                            }]);
+                        }
+
+                        // Display AI Response text & audio
+                        const aiMsg: ChatMessage = {
+                            role: "ai",
+                            text: data.ai_response_text,
+                            audioBase64: data.ai_audio_base64,
+                            timestamp: new Date(),
+                        };
+                        setMessages(prev => [...prev, aiMsg]);
+
+                        if (autoPlayVoice && data.ai_audio_base64) {
+                            playAudio(data.ai_audio_base64);
+                        }
+                    } else {
+                        const errorText = await res.text();
+                        console.error("Voice chat error:", errorText);
+
+                        let errorMsg = "Voice Engine Connection Issue";
+                        if (errorText.includes("Quota")) errorMsg = "AI Engine Quota Exceeded";
+                        else if (errorText.includes("SARVAM")) errorMsg = "Sarvam Voice API unavailable";
+                        else if (errorText.includes("ffmpeg")) errorMsg = "Audio processor not available";
+
+                        setMessages(prev => [...prev, {
+                            role: "ai",
+                            text: `⚠️ [System Error: ${errorMsg}]. Try using Text Mode instead.`,
+                            timestamp: new Date(),
+                        }]);
                     }
-                } else {
-                    const errorText = await res.text();
-                    console.error("Voice chat error:", errorText);
+                } catch (fetchErr) {
+                    console.error("Voice fetch failed:", fetchErr);
                     setMessages(prev => [...prev, {
                         role: "ai",
-                        text: `⚠️ [System Error: ${errorText.includes("Quota") ? "AI Engine Quota Exceeded (Gemini)" : "Voice Engine Connection Issue"}]`,
+                        text: "⚠️ [System: Could not reach voice server. Try Text Mode or check your connection.]",
                         timestamp: new Date(),
                     }]);
                 }

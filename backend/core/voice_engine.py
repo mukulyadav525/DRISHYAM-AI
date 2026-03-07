@@ -58,12 +58,15 @@ class SarvamVoiceEngine:
         if len(audio_bytes) < 100:
             return {"transcript": "", "language_detected": language, "confidence": 0.0}
 
+        wav_bytes = None
+        audio_content_type = "audio/wav"
+        audio_filename = "audio.wav"
+
         try:
             # Transcode WebM to WAV in-memory using ffmpeg and pipes
-            # Command: ffmpeg -i pipe:0 -f wav -ar 16000 pipe:1
             process = await asyncio.create_subprocess_exec(
                 "ffmpeg", "-hide_banner", "-loglevel", "error", 
-                "-i", "pipe:0", "-f", "wav", "-ar", "16000", "pipe:1",
+                "-i", "pipe:0", "-f", "wav", "-ar", "16000", "-ac", "1", "pipe:1",
                 stdin=asyncio.subprocess.PIPE,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE
@@ -74,13 +77,23 @@ class SarvamVoiceEngine:
             if process.returncode != 0:
                 logger.error(f"STT: FFMPEG failed with rc {process.returncode}")
                 if stderr: logger.error(f"FFMPEG stderr: {stderr.decode()}")
-                wav_bytes = audio_bytes # Fallback
+                wav_bytes = None  # Will use raw fallback
             else:
                 wav_bytes = stdout
                 logger.info(f"STT: Transcoded {len(audio_bytes)}b -> {len(wav_bytes)}b in-memory")
+        except FileNotFoundError:
+            logger.warning("STT: ffmpeg not found, sending raw audio to Sarvam")
+            wav_bytes = None
         except Exception as e:
             logger.error(f"STT: In-memory conversion failed: {e}")
-            wav_bytes = audio_bytes  # Fallback
+            wav_bytes = None
+
+        # If ffmpeg transcoding failed, try raw webm
+        if wav_bytes is None:
+            wav_bytes = audio_bytes
+            audio_content_type = "audio/webm"
+            audio_filename = "audio.webm"
+            logger.info("STT: Using raw webm audio as fallback")
 
         # Upload to Sarvam saaras using persistent client
         try:
@@ -90,11 +103,11 @@ class SarvamVoiceEngine:
                     "api-subscription-key": self.api_key,
                 },
                 files={
-                    "file": ("audio.wav", wav_bytes, "audio/wav")
+                    "file": (audio_filename, wav_bytes, audio_content_type)
                 },
                 data={
-                    "language_code": language, # Sarvam v1 uses language_code
-                    "model": "saaras:v1",     # saaras:v1 is generally more stable
+                    "language_code": language,
+                    "model": "saaras:v1",
                 },
             )
             response.raise_for_status()
