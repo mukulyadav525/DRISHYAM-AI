@@ -21,23 +21,27 @@ class DirectChatRequest(BaseModel):
     session_id: Optional[str] = None
     customer_id: Optional[str] = None
 
+class SessionCreate(BaseModel):
+    caller_num: Optional[str] = None
+    customer_id: Optional[str] = None
+    persona: str = "Sentinel AI"
+
 @router.post("/sessions", response_model=dict)
 def create_honeypot_session(
-    caller_num: Optional[str] = None, 
-    customer_id: Optional[str] = None,
-    persona: str = "Sentinel AI", 
+    req: SessionCreate,
     db: Session = Depends(get_db)
 ):
     session_id = str(uuid.uuid4())
     db_session = HoneypotSession(
         session_id=session_id,
-        caller_num=caller_num or f"+91-{uuid.uuid4().hex[:8]}",
-        customer_id=customer_id,
-        persona=persona
+        caller_num=req.caller_num or f"+91-{uuid.uuid4().hex[:8]}",
+        customer_id=req.customer_id,
+        persona=req.persona
     )
     db.add(db_session)
     db.commit()
-    return {"session_id": session_id, "status": "active"}
+    logger.info(f"Created honeypot session: {session_id} for customer {req.customer_id}")
+    return {"session_id": session_id, "status": "active", "caller_num": db_session.caller_num}
 
 @router.post("/sessions/{session_id}/chat", response_model=dict)
 async def honeypot_chat(session_id: str, message: str, db: Session = Depends(get_db)):
@@ -137,6 +141,7 @@ async def direct_conclude(req: DirectChatRequest, db: Session = Depends(get_db))
                 caller_num=db_session.caller_num,
                 receiver_num=req.customer_id or "SHIELD_NODE",
                 duration=len(req.history) * 10,
+                timestamp=datetime.datetime.utcnow(),
                 call_type="incoming",
                 verdict="scam",
                 fraud_risk_score=0.98,
@@ -145,6 +150,7 @@ async def direct_conclude(req: DirectChatRequest, db: Session = Depends(get_db))
             db.add(new_call)
 
             db.commit()
+            logger.info(f"Concluded session {req.session_id}: Logged CallRecord and triggered agency notifications.")
             
     return {"analysis": analysis, "timestamp": datetime.datetime.utcnow(), "notified": ["BANK", "POLICE", "TELECOM"]}
 

@@ -122,12 +122,17 @@ export default function SimulationPortal() {
           location: "SCANNING..." // Will be updated by detection engine
         });
         console.log("Monitoring session active:", data.session_id);
+        setTimeout(() => setCallState("warning"), 2000);
+      } else {
+        const err = await res.text();
+        toast.error(`Shield Initialization Failed: ${err.slice(0, 50)}`);
+        setCallState("idle");
       }
     } catch (e) {
       console.error("Failed to initiate monitoring session:", e);
+      toast.error("Could not reach Sentinel Command. Check network.");
+      setCallState("idle");
     }
-
-    setTimeout(() => setCallState("warning"), 2000);
   };
 
   const handOffToAI = () => {
@@ -349,12 +354,18 @@ export default function SimulationPortal() {
       if (res.ok) {
         const data = await res.json();
         setAnalysis(data);
+        setCallState("success");
+        toast.success("Intelligence successfully secured and reported.");
+      } else {
+        toast.error("Conclude failed: Analysis results could not be saved.");
+        setCallState("success"); // Still show success screen but warn user
       }
     } catch (e) {
       console.error("Conclude error:", e);
+      toast.error("Network error during intelligence reporting.");
+      setCallState("success");
     }
     setIsLoading(false);
-    setCallState("success");
   };
 
   const toggleBlock = () => {
