@@ -109,7 +109,10 @@ async def set_secure_headers(request, call_next):
     response.headers["X-Frame-Options"] = "DENY"
     response.headers["X-Content-Type-Options"] = "nosniff"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
-    response.headers["Content-Security-Policy"] = "default-src 'self'"
+    if settings.ENV == "prod":
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+    else:
+        response.headers["Content-Security-Policy"] = "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; img-src 'self' data: https://fastapi.tiangolo.com"
     response.headers["X-XSS-Protection"] = "1; mode=block"
     # Production Data Residency Header
     response.headers["X-Data-Residency"] = "IN-CERT-IN-COMPLIANT"
