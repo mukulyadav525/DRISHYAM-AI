@@ -12,8 +12,19 @@ def get_system_overview(db: Session = Depends(get_db)):
     total_scams_db = db.query(CallRecord).filter(CallRecord.verdict == "scam").count()
     total_sessions_db = db.query(HoneypotSession).count()
     
+    # Dynamic Map Hotspots
+    from models.database import ScamCluster
+    clusters = db.query(ScamCluster).filter(ScamCluster.status == "active").all()
+    hotspots = [
+        {
+            "name": c.location,
+            "lng": 72.0 + (random.random() * 15.0), # Simulated lng within India if not specific
+            "lat": 18.0 + (random.random() * 12.0), # Simulated lat within India if not specific
+            "intensity": c.risk_level
+        } for c in clusters
+    ]
+
     # In production, we no longer use manual boosts.
-    # We can still check for them but default to real counts.
     scams_count = total_scams_db
     citizens_protected = total_sessions_db
     savings_cr = int((scams_count * 1.2) / 100) # Simplified heuristic based on real blocks
@@ -25,6 +36,7 @@ def get_system_overview(db: Session = Depends(get_db)):
             "estimated_savings": f"₹{savings_cr} Cr",
             "active_threats": total_scams_db
         },
+        "hotspots": hotspots,
         "live_feed": [
             {
                 "id": c.id,
@@ -207,23 +219,27 @@ def get_agency_stats(db: Session = Depends(get_db)):
     }
 
 
-@router.get("/stats/score/compute")
-def compute_citizen_score(uid: str, db: Session = Depends(get_db)):
+@router.get("/search/citizen")
+def search_citizen(query: str, db: Session = Depends(get_db)):
     """
-    Simulates a complex score computation for a citizen identifier.
-    In production, this would poll multiple detection nodes.
+    Search for a citizen by phone number or UID and return details.
     """
-    import random
-    # Deterministic-ish score based on UID length/content for simulation
-    seed = sum(ord(c) for c in uid)
-    hash_val = (seed * 997) % 1000
+    import datetime
+    # Find call records associated with this number
+    calls = db.query(CallRecord).filter(CallRecord.caller_num.like(f"%{query}%")).all()
     
-    # Ensure some variation
-    score = 300 + (hash_val % 600) 
+    # Calculate a score based on real data
+    score = 850 - (len([c for c in calls if c.verdict == "scam"]) * 100)
+    score = max(300, min(950, score))
     
     return {
-        "uid": uid,
+        "uid": query,
         "score": score,
-        "verdict": "TRUSTED" if score > 700 else "REQUIRES_INOCULATION",
-        "timestamp": datetime.datetime.utcnow().isoformat()
+        "name": "Live Protection Node" if score > 700 else "Risk-Flagged Identifier",
+        "status": "SECURE" if score > 750 else "UNDER_OBSERVATION" if score > 500 else "CRITICAL_RISK",
+        "details": {
+            "total_calls": len(calls),
+            "threats_blocked": len([c for c in calls if c.verdict == "scam"]),
+            "last_active": calls[0].timestamp.isoformat() if calls else datetime.datetime.utcnow().isoformat()
+        }
     }

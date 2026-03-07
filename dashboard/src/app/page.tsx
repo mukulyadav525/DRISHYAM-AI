@@ -13,6 +13,8 @@ import {
 import StatCard from "@/components/StatCard";
 import IndiaMap from "@/components/IndiaMap";
 import FeedModal from "@/components/FeedModal";
+import CustomerSearchModal from "@/components/CustomerSearchModal";
+import StatDetailModal from "@/components/StatDetailModal";
 import LiveTicker from "@/components/LiveTicker";
 import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
@@ -26,6 +28,12 @@ interface OverviewData {
     estimated_savings: string;
     active_threats: number;
   };
+  hotspots: {
+    name: string;
+    lng: number;
+    lat: number;
+    intensity: string;
+  }[];
   live_feed: {
     id: number;
     location: string;
@@ -44,6 +52,13 @@ export default function OverviewPage() {
   const [showTicker, setShowTicker] = useState(false);
   const [selectedFeed, setSelectedFeed] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchData, setSearchData] = useState<any>(null);
+  const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
+
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [selectedStatType, setSelectedStatType] = useState<"scams" | "citizens" | "savings" | "threats" | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -64,6 +79,24 @@ export default function OverviewPage() {
     const interval = setInterval(fetchData, 15000);
     return () => clearInterval(interval);
   }, []);
+
+  const handleStatAction = async (type: string, query: string) => {
+    if (type === 'TRACE' && query === t("citizens_protected")) {
+      // Trigger customer search mock/input for real life feedback
+      const searchRes = await fetch(`${API_BASE}/system/search/citizen?query=GRID_USER_01`);
+      if (searchRes.ok) {
+        setSearchData(await searchRes.json());
+        setIsSearchModalOpen(true);
+      }
+    } else {
+      performAction(type, query);
+    }
+  };
+
+  const openDetailModal = (type: "scams" | "citizens" | "savings" | "threats") => {
+    setSelectedStatType(type);
+    setIsDetailModalOpen(true);
+  };
 
   if (isLoading && !data) {
     return (
@@ -114,6 +147,8 @@ export default function OverviewPage() {
           color="indblue"
           trend={data?.stats.scams_blocked !== "0" ? { value: "12%", positive: true } : undefined}
           quickActions={true}
+          onAction={(type) => handleStatAction(type, t("total_scams_blocked"))}
+          onClickCard={() => openDetailModal("scams")}
         />
         <StatCard
           label={t("citizens_protected")}
@@ -123,6 +158,8 @@ export default function OverviewPage() {
           color="indgreen"
           trend={data?.stats.citizens_protected !== "0" ? { value: "8%", positive: true } : undefined}
           quickActions={true}
+          onAction={(type) => handleStatAction(type, t("citizens_protected"))}
+          onClickCard={() => openDetailModal("citizens")}
         />
         <StatCard
           label={t("estimated_savings")}
@@ -132,6 +169,8 @@ export default function OverviewPage() {
           color="gold"
           trend={data?.stats.estimated_savings !== "0" ? { value: "15%", positive: true } : undefined}
           quickActions={true}
+          onAction={(type) => handleStatAction(type, t("estimated_savings"))}
+          onClickCard={() => openDetailModal("savings")}
         />
         <StatCard
           label={t("active_threats")}
@@ -141,6 +180,8 @@ export default function OverviewPage() {
           color="redalert"
           trend={data?.stats.active_threats ? { value: "4%", positive: false } : undefined}
           quickActions={true}
+          onAction={(type) => handleStatAction(type, t("active_threats"))}
+          onClickCard={() => openDetailModal("threats")}
         />
       </div>
 
@@ -157,7 +198,7 @@ export default function OverviewPage() {
           </div>
           {showMap ? (
             <div className="flex-1 h-full min-h-[300px]">
-              <IndiaMap />
+              <IndiaMap hotspots={data?.hotspots} />
             </div>
           ) : (
             <div
@@ -234,9 +275,22 @@ export default function OverviewPage() {
         data={selectedFeed}
       />
 
+      <CustomerSearchModal
+        isOpen={isSearchModalOpen}
+        onClose={() => setIsSearchModalOpen(false)}
+        data={searchData}
+      />
+
       <LiveTicker
         items={tickerItems}
         isVisible={showTicker}
+      />
+
+      <StatDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => setIsDetailModalOpen(false)}
+        type={selectedStatType}
+        data={data}
       />
     </div>
   );

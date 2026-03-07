@@ -8,6 +8,8 @@ from models.database import User, SystemAction
 import logging
 import traceback
 import base64
+import os
+from scripts.gen_pro_pdf import generate_report
 
 logger = logging.getLogger("sentinel.actions")
 
@@ -125,23 +127,34 @@ async def get_download_file(
     category: str = "report"
 ):
     """
-    Returns a real minimal PDF file for the simulation from the static directory.
+    Returns a dynamic professional PDF report using real database stats.
     """
-    from fastapi.responses import FileResponse, Response
+    from fastapi.responses import FileResponse
     import os
     
-    # Path to the template we just copied
-    static_file = os.path.join(os.getcwd(), "static", "sentinel_template.pdf")
+    # Ensure static folder exists
+    static_dir = os.path.join(os.getcwd(), "static")
+    os.makedirs(static_dir, exist_ok=True)
     
-    if not os.path.exists(static_file):
-        # Ensure static folder exists
-        os.makedirs(os.path.join(os.getcwd(), "static"), exist_ok=True)
-        # Fallback to a plain text file if the copy failed somehow
-        with open(static_file, "w") as f:
-            f.write("%PDF-1.4\n% Sentinel Dummy\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Count 0 >> endobj\n%%EOF")
+    # Path for the dynamic file
+    dynamic_file = os.path.join(static_dir, f"dynamic_{filename}")
+    
+    try:
+        # Generate the report on the fly
+        generate_report(dynamic_file)
+    except Exception as e:
+        logger.error(f"Failed to generate dynamic report: {e}")
+        # Fallback to template if generation fails
+        template_file = os.path.join(static_dir, "sentinel_template.pdf")
+        if os.path.exists(template_file):
+            dynamic_file = template_file
+        else:
+            # Emergency fallback
+            with open(dynamic_file, "w") as f:
+                f.write("%PDF-1.4\n% Sentinel Emergency Fallback\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Count 0 >> endobj\n%%EOF")
 
     return FileResponse(
-        path=static_file,
+        path=dynamic_file,
         media_type="application/pdf",
         filename=filename
     )

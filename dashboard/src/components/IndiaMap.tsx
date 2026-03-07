@@ -4,15 +4,18 @@ import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
-const hotspots = [
-    { name: "Jamtara, JH", lng: 86.6433, lat: 23.9620, intensity: "CRITICAL" },
-    { name: "Mewat, HR", lng: 77.0163, lat: 28.1415, intensity: "HIGH" },
-    { name: "Ahmedabad, GJ", lng: 72.5714, lat: 23.0225, intensity: "MEDIUM" },
-    { name: "Bengaluru, KA", lng: 77.5946, lat: 12.9716, intensity: "LOW" },
-    { name: "Delhi, DL", lng: 77.2090, lat: 28.6139, intensity: "HIGH" },
-];
+interface Hotspot {
+    name: string;
+    lng: number;
+    lat: number;
+    intensity: string;
+}
 
-export default function IndiaMap() {
+interface IndiaMapProps {
+    hotspots?: Hotspot[];
+}
+
+export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<maplibregl.Map | null>(null);
     const [mapError, setMapError] = useState<string | null>(null);

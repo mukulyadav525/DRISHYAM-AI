@@ -14,13 +14,18 @@ interface StatCardProps {
         positive: boolean;
     };
     quickActions?: boolean;
+    onAction?: (type: string) => void;
+    onClickCard?: () => void;
 }
 
-export default function StatCard({ label, value, subValue, icon: Icon, color, trend, quickActions }: StatCardProps) {
+export default function StatCard({ label, value, subValue, icon: Icon, color, trend, quickActions, onAction, onClickCard }: StatCardProps) {
     const { performAction } = useActions();
 
     return (
-        <div className="bg-white p-6 rounded-2xl border border-silver/10 shadow-sm hover:shadow-md transition-shadow duration-200 group">
+        <div
+            onClick={onClickCard}
+            className="bg-white p-6 rounded-2xl border border-silver/10 shadow-sm hover:shadow-md hover:border-indblue/20 transition-all duration-200 group cursor-pointer active:scale-[0.98]"
+        >
             <div className="flex justify-between items-start mb-4">
                 <div className={`p-3 rounded-xl bg-${color}/10 text-${color}`}>
                     <Icon size={24} />
@@ -39,21 +44,21 @@ export default function StatCard({ label, value, subValue, icon: Icon, color, tr
                     {quickActions && (
                         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
-                                onClick={(e) => { e.stopPropagation(); performAction('INTERCEPT', label); }}
+                                onClick={(e) => { e.stopPropagation(); if (onAction) onAction('INTERCEPT'); else performAction('INTERCEPT', label); }}
                                 title="Intercept"
                                 className="p-1.5 bg-saffron/10 text-saffron rounded-lg hover:bg-saffron hover:text-white transition-colors"
                             >
                                 <Zap size={14} />
                             </button>
                             <button
-                                onClick={(e) => { e.stopPropagation(); performAction('TRACE', label); }}
+                                onClick={(e) => { e.stopPropagation(); if (onAction) onAction('TRACE'); else performAction('TRACE', label); }}
                                 title="Trace"
                                 className="p-1.5 bg-indblue/10 text-indblue rounded-lg hover:bg-indblue hover:text-white transition-colors"
                             >
                                 <Search size={14} />
                             </button>
                             <button
-                                onClick={(e) => { e.stopPropagation(); performAction('BLOCK', label); }}
+                                onClick={(e) => { e.stopPropagation(); if (onAction) onAction('BLOCK'); else performAction('BLOCK', label); }}
                                 title="Block"
                                 className="p-1.5 bg-redalert/10 text-redalert rounded-lg hover:bg-redalert hover:text-white transition-colors"
                             >
