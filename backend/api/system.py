@@ -18,8 +18,8 @@ def get_system_overview(db: Session = Depends(get_db)):
     hotspots = [
         {
             "name": c.location,
-            "lng": 72.0 + (random.random() * 15.0), # Simulated lng within India if not specific
-            "lat": 18.0 + (random.random() * 12.0), # Simulated lat within India if not specific
+            "lng": c.lng if c.lng is not None else (72.0 + (random.random() * 15.0)),
+            "lat": c.lat if c.lat is not None else (18.0 + (random.random() * 12.0)),
             "intensity": c.risk_level
         } for c in clusters
     ]

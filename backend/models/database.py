@@ -124,6 +124,8 @@ class ScamCluster(Base):
     cluster_id = Column(String, unique=True, index=True)
     risk_level = Column(String) # CRITICAL, HIGH, MEDIUM
     location = Column(String)
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
     linked_vpas = Column(Integer, default=0)
     honeypot_hits = Column(Integer, default=0)
     status = Column(String, default="active")
