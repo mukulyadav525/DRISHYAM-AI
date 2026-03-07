@@ -73,6 +73,7 @@ class HoneypotSession(Base):
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String, unique=True, index=True)
     caller_num = Column(String)
+    customer_id = Column(String, index=True, nullable=True)
     persona = Column(String) # e.g., "Elderly Uncle"
     status = Column(String, default="active") # active, completed
     created_at = Column(DateTime, default=datetime.datetime.utcnow)

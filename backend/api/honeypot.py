@@ -19,13 +19,20 @@ class DirectChatRequest(BaseModel):
     persona: str = "AI"
     history: List[dict] = []
     session_id: Optional[str] = None
+    customer_id: Optional[str] = None
 
 @router.post("/sessions", response_model=dict)
-def create_honeypot_session(caller_num: Optional[str] = None, persona: str = "Sentinel AI", db: Session = Depends(get_db)):
+def create_honeypot_session(
+    caller_num: Optional[str] = None, 
+    customer_id: Optional[str] = None,
+    persona: str = "Sentinel AI", 
+    db: Session = Depends(get_db)
+):
     session_id = str(uuid.uuid4())
     db_session = HoneypotSession(
         session_id=session_id,
         caller_num=caller_num or f"+91-{uuid.uuid4().hex[:8]}",
+        customer_id=customer_id,
         persona=persona
     )
     db.add(db_session)
@@ -72,7 +79,7 @@ async def direct_chat(req: DirectChatRequest, db: Session = Depends(get_db)):
 
 @router.post("/direct-conclude", response_model=dict)
 async def direct_conclude(req: DirectChatRequest, db: Session = Depends(get_db)):
-    """Stateless analysis with optional session finalization."""
+    """Stateless analysis with optional session finalization and agency notification."""
     analysis = await honeypot_ai.analyze_scam(req.history)
     
     if req.session_id:
@@ -80,9 +87,66 @@ async def direct_conclude(req: DirectChatRequest, db: Session = Depends(get_db))
         if db_session:
             db_session.status = "completed"
             db_session.metadata_json = analysis
+            if req.customer_id:
+                db_session.customer_id = req.customer_id
+            db.commit()
+
+            # Trigger Multi-Agency Notifications
+            from models.database import SystemAction, CallRecord
+            
+            # 1. Notify Bank
+            bank_action = SystemAction(
+                action_type="BANK_ALERT",
+                target_id=req.customer_id or "UNKNOWN",
+                metadata_json={
+                    "scam_type": analysis.get("scam_type"),
+                    "bank": analysis.get("bank_name"),
+                    "severity": "CRITICAL",
+                    "action": "FREEZE_ACCOUNT_REQUEST"
+                }
+            )
+            db.add(bank_action)
+            
+            # 2. Notify Police
+            police_action = SystemAction(
+                action_type="POLICE_REPORT",
+                target_id=db_session.caller_num,
+                metadata_json={
+                    "victim_id": req.customer_id,
+                    "evidence_id": req.session_id,
+                    "scam_type": analysis.get("scam_type"),
+                    "action": "GENERATE_FIR"
+                }
+            )
+            db.add(police_action)
+            
+            # 3. Notify Telecom
+            telecom_action = SystemAction(
+                action_type="TELECOM_BLOCK",
+                target_id=db_session.caller_num,
+                metadata_json={
+                    "victim_id": req.customer_id,
+                    "reason": "SCAM_INTERCEPTION",
+                    "action": "BLOCK_IMEI"
+                }
+            )
+            db.add(telecom_action)
+
+            # 4. Log a CallRecord for the dashboard grids
+            new_call = CallRecord(
+                caller_num=db_session.caller_num,
+                receiver_num=req.customer_id or "SHIELD_NODE",
+                duration=len(req.history) * 10,
+                call_type="incoming",
+                verdict="scam",
+                fraud_risk_score=0.98,
+                metadata_json={"session_id": req.session_id, "location": "NCR Grid"}
+            )
+            db.add(new_call)
+
             db.commit()
             
-    return {"analysis": analysis, "timestamp": datetime.datetime.utcnow()}
+    return {"analysis": analysis, "timestamp": datetime.datetime.utcnow(), "notified": ["BANK", "POLICE", "TELECOM"]}
 
 @router.post("/sessions/{session_id}/handoff")
 async def handoff_to_ai(session_id: str, db: Session = Depends(get_db)):
