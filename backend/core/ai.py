@@ -13,9 +13,9 @@ class SarvamHoneypot:
         self.api_key = settings.SARVAM_API_KEY
         self.client = httpx.AsyncClient(timeout=30.0)
         if not self.api_key:
-            logger.warning("SARVAM_API_KEY is missing. Voice AI features will be disabled.")
+            logger.warning("SARVAM_API_KEY is missing. AI features will be disabled.")
         else:
-            logger.info("AI ENGINE: Sarvam-M Multilingual Engine initialized.")
+            logger.info("AI ENGINE: Sarvam-M initialized.")
 
     async def close(self):
         """Close the persistent HTTP client."""
@@ -57,20 +57,19 @@ class SarvamHoneypot:
     async def generate_response(self, persona: str, history: List[Dict[str, str]], message: str) -> str:
         system_prompt = self.get_master_prompt(persona)
 
-        # Prepare messages in OpenAI/Sarvam format
+        # Prepare messages in OpenAI format
         messages = [
             {"role": "system", "content": system_prompt}
         ]
         
         # Add history
-        # Sarvam requires the first message (after system) to be from 'user'
         started_with_user = False
         for msg in history[-10:]:
             if not msg.get("content"): continue
             role = "user" if msg.get("role") == "user" else "assistant"
             
             if not started_with_user and role != "user":
-                continue # Skip assistant messages until we find a user message
+                continue
             
             started_with_user = True
             messages.append({"role": role, "content": msg.get("content", "")})
@@ -79,10 +78,9 @@ class SarvamHoneypot:
         if message:
             messages.append({"role": "user", "content": message})
 
-        logger.info(f"AI: Constructing request for Sarvam-M with {len(messages)} messages (history filtered: {started_with_user})")
+        logger.info(f"AI: Sending request to Sarvam-M with {len(messages)} messages")
         
         try:
-            logger.info(f"AI: Calling Sarvam API...")
             response = await self.client.post(
                 SARVAM_CHAT_URL,
                 headers={
@@ -99,7 +97,7 @@ class SarvamHoneypot:
             
             if response.status_code != 200:
                 logger.error(f"AI: Sarvam API Error ({response.status_code}): {response.text}")
-                return "⚠️ System: AI Engine connection issue (Sarvam Error)."
+                return "⚠️ System: AI Engine connection issue."
             
             data = response.json()
             ai_text = data["choices"][0]["message"]["content"]
@@ -130,7 +128,7 @@ class SarvamHoneypot:
             {"role": "user", "content": str(history)}
         ]
 
-        if not self.api_key or self.api_key == "REPLACE_ME":
+        if not self.api_key:
             logger.warning("AI: Using mock analysis fallback")
             return {
                 "scam_type": "BANK_FRAUD",
@@ -150,13 +148,12 @@ class SarvamHoneypot:
                 json={
                     "model": "sarvam-m",
                     "messages": messages,
-                    "temperature": 0.1, # Low temperature for extraction
+                    "temperature": 0.1,
                     "max_tokens": 500
                 }
             )
             if response.status_code == 200:
                 data = response.json()
-                # Sarvam returns text, we need to parse JSON from it
                 import json
                 import re
                 content = data["choices"][0]["message"]["content"]
@@ -174,3 +171,4 @@ class SarvamHoneypot:
 
 
 honeypot_ai = SarvamHoneypot()
+
