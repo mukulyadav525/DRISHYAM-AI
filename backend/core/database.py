@@ -29,16 +29,29 @@ def ensure_schema_compliance():
         # 1. Add customer_id to honeypot_sessions if missing
         if "postgresql" in str(engine.url):
             db.execute(text("ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS customer_id VARCHAR;"))
+            
+            # 2. Add lat/lng to scam_clusters
+            db.execute(text("ALTER TABLE scam_clusters ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;"))
+            db.execute(text("ALTER TABLE scam_clusters ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;"))
+            
             db.commit()
-            print("[SCHEMA] Column 'customer_id' verified/added to honeypot_sessions.")
+            print("[SCHEMA] Columns verified/added to postgresql.")
         elif "sqlite" in str(engine.url):
             # SQLite doesn't support IF NOT EXISTS in ALTER TABLE well, so we check first
             try:
                 db.execute(text("SELECT customer_id FROM honeypot_sessions LIMIT 1;"))
             except Exception:
                 db.execute(text("ALTER TABLE honeypot_sessions ADD COLUMN customer_id VARCHAR;"))
-                db.commit()
                 print("[SCHEMA] Column 'customer_id' added to honeypot_sessions (SQLite).")
+            
+            try:
+                db.execute(text("SELECT lat FROM scam_clusters LIMIT 1;"))
+            except Exception:
+                db.execute(text("ALTER TABLE scam_clusters ADD COLUMN lat FLOAT;"))
+                db.execute(text("ALTER TABLE scam_clusters ADD COLUMN lng FLOAT;"))
+                print("[SCHEMA] Columns 'lat' and 'lng' added to scam_clusters (SQLite).")
+
+            db.commit()
     except Exception as e:
         print(f"[SCHEMA] Migration warning: {e}")
         db.rollback()

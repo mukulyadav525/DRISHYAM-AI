@@ -42,9 +42,12 @@ interface OverviewData {
   }[];
 }
 
+import { useRouter } from "next/navigation";
+
 export default function OverviewPage() {
   const { t } = useLanguage();
   const { performAction, downloadSimulatedFile } = useActions();
+  const router = useRouter();
   const [data, setData] = useState<OverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showMap, setShowMap] = useState(false);
@@ -97,6 +100,42 @@ export default function OverviewPage() {
     setSelectedStatType(type);
     setIsDetailModalOpen(true);
   };
+
+  const handleModalActionClick = async (action: string) => {
+    setIsDetailModalOpen(false); // Close modal before acting
+
+    switch (action) {
+      case "View Detection Grid":
+        router.push("/detection");
+        break;
+      case "Export Forensic Audit":
+        downloadSimulatedFile('forensic_audit', 'pdf');
+        break;
+      case "Search Citizen Registry":
+        handleStatAction('TRACE', t("citizens_protected"));
+        break;
+      case "Initialize New Node":
+        router.push("/bharat");
+        break;
+      case "Financial Impact Report":
+        downloadSimulatedFile('impact_report', 'pdf');
+        break;
+      case "View Recovery Stats":
+        router.push("/recovery");
+        break;
+      case "Initialize Geo-Layer":
+        performAction('INIT_GEO_LAYER');
+        setShowMap(true);
+        break;
+      case "Broadcast Regional Alert":
+        router.push("/alerts");
+        break;
+      default:
+        console.warn(`No action matched for: ${action}`);
+        break;
+    }
+  };
+
 
   if (isLoading && !data) {
     return (
@@ -291,6 +330,7 @@ export default function OverviewPage() {
         onClose={() => setIsDetailModalOpen(false)}
         type={selectedStatType}
         data={data}
+        onActionClick={handleModalActionClick}
       />
     </div>
   );

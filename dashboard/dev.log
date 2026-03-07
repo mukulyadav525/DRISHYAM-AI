@@ -65,3 +65,6 @@
  GET /bharat 200 in 153ms (compile: 144ms, render: 9ms)
  GET / 200 in 8ms (compile: 3ms, render: 5ms)
 ✓ Compiled in 14ms
+✓ Compiled in 99ms
+ GET / 200 in 591ms (compile: 251ms, render: 339ms)
+ GET / 200 in 46ms (compile: 12ms, render: 34ms)

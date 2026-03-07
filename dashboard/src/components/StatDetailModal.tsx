@@ -8,9 +8,10 @@ interface StatDetailModalProps {
     onClose: () => void;
     type: "scams" | "citizens" | "savings" | "threats" | null;
     data: any;
+    onActionClick?: (action: string) => void;
 }
 
-export default function StatDetailModal({ isOpen, onClose, type, data }: StatDetailModalProps) {
+export default function StatDetailModal({ isOpen, onClose, type, data, onActionClick }: StatDetailModalProps) {
     if (!type || !data) return null;
 
     const config = {
@@ -20,11 +21,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
             color: "indblue",
             accent: "blue",
             description: "Deep-dive into blocked fraudulent interactions across the national grid.",
-            metrics: [
-                { label: "AI Voice Cloning", value: "42%", trend: "+5%" },
-                { label: "UPI Fraud", value: "31%", trend: "-2%" },
-                { label: "Job Scams", value: "18%", trend: "+8%" }
-            ],
+            metrics: data?.stat_details?.scams?.metrics || [],
             actions: ["View Detection Grid", "Export Forensic Audit"]
         },
         citizens: {
@@ -33,11 +30,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
             color: "indgreen",
             accent: "green",
             description: "Real-time monitoring of nodes and active protection participants.",
-            metrics: [
-                { label: "Active Guard Nodes", value: "1,248", trend: "+12" },
-                { label: "High-Trust Users", value: "88%", trend: "+1.2%" },
-                { label: "Regional Coverage", value: "28 States", trend: "MAX" }
-            ],
+            metrics: data?.stat_details?.citizens?.metrics || [],
             actions: ["Search Citizen Registry", "Initialize New Node"]
         },
         savings: {
@@ -46,11 +39,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
             color: "gold",
             accent: "amber",
             description: "Projected financial loss prevented through automated intervention.",
-            metrics: [
-                { label: "Direct Interception", value: "₹2.1B", trend: "+15%" },
-                { label: "Mule Account Freezes", value: "342", trend: "+45" },
-                { label: "Avg Loss Prevented/Scam", value: "₹45k", trend: "+5k" }
-            ],
+            metrics: data?.stat_details?.savings?.metrics || [],
             actions: ["Financial Impact Report", "View Recovery Stats"]
         },
         threats: {
@@ -59,11 +48,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
             color: "redalert",
             accent: "red",
             description: "Immediate high-intensity surgences requiring tactical response.",
-            metrics: [
-                { label: "Jamtara Node Density", value: "CRITICAL", trend: "SURGE" },
-                { label: "Mewat Hub Activity", value: "HIGH", trend: "STABLE" },
-                { label: "Mass Phishing Signal", value: "DETECTED", trend: "LIVE" }
-            ],
+            metrics: data?.stat_details?.threats?.metrics || [],
             actions: ["Initialize Geo-Layer", "Broadcast Regional Alert"]
         }
     };
@@ -113,12 +98,12 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
                         {/* Content */}
                         <div className="p-8 space-y-8">
                             <div className="grid grid-cols-3 gap-4">
-                                {current.metrics.map((m, i) => (
+                                {current.metrics.map((m: any, i: number) => (
                                     <div key={i} className="p-4 bg-boxbg rounded-2xl border border-silver/10 hover:border-silver/20 transition-all">
                                         <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1">{m.label}</p>
                                         <div className="flex items-baseline justify-between">
                                             <p className="text-xl font-bold text-indblue">{m.value}</p>
-                                            <span className={`text-[10px] font-black ${m.trend.startsWith('+') || m.trend === 'MAX' || m.trend === 'SURGE' ? 'text-indgreen' : 'text-silver'}`}>
+                                            <span className={`text-[10px] font-black ${m.trend.startsWith('+') || m.trend === 'MAX' || m.trend === 'SURGE' || m.trend === 'LIVE' || m.trend === 'SECURE' ? 'text-indgreen' : 'text-silver'}`}>
                                                 {m.trend}
                                             </span>
                                         </div>
@@ -131,9 +116,10 @@ export default function StatDetailModal({ isOpen, onClose, type, data }: StatDet
                                     <Zap size={16} className="text-saffron" /> Tactical Menu & Actions
                                 </h4>
                                 <div className="grid grid-cols-2 gap-4">
-                                    {current.actions.map((action, i) => (
+                                    {current.actions.map((action: string, i: number) => (
                                         <button
                                             key={i}
+                                            onClick={() => onActionClick?.(action)}
                                             className="flex items-center justify-between p-4 bg-white rounded-xl border border-silver/20 hover:border-indblue hover:shadow-lg transition-all group"
                                         >
                                             <span className="text-sm font-bold text-indblue">{action}</span>
