@@ -182,7 +182,15 @@ class SarvamVoiceEngine:
             logger.error(f"TTS Error: {e}")
             if hasattr(e, 'response'):
                 logger.error(f"TTS Error Detail: {e.response.text}")
-            raise e
+            
+            # Return empty audio fallback instead of crashing
+            return {
+                "audio_base64": "",
+                "format": "wav",
+                "persona": persona,
+                "language": voice_config["language"],
+                "duration_ms": 0,
+            }
 
     # ─── Full Voice Chat Pipeline ────────────────────────────────────
     async def voice_chat_turn(

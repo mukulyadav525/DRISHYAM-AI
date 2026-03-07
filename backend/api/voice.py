@@ -87,7 +87,16 @@ async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_d
 
         return VoiceChatResponse(**result)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Voice chat error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return VoiceChatResponse(
+            scammer_transcript="",
+            ai_response_text=f"⚠️ [System Error: Voice Engine backend failure].",
+            ai_audio_base64="",
+            audio_format="wav",
+            language=request.language,
+            persona=request.persona,
+        )
 
 
 @router.post("/tts")
