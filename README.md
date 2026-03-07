@@ -1,14 +1,24 @@
-# Sentinel 1930 | Unified Fraud Defense Ecosystem
+# Sentinel 1930 | Unified Fraud Defense Ecosystem 🛡️🇮🇳
 
 Welcome to the Sentinel 1930 project. This repository contains the complete "National Level" fraud interception and surveillance system, now architected as a multi-application ecosystem for maximum realism and operational efficiency.
 
+---
+
 ## 🏗️ Project Architecture
 
-The system consists of three primary components:
+The system is split into three high-performance components:
 
-1.  **Backend (FastAPI)**: The central intelligence hub. Manages the AI Honeypot engine, voice processing (STT/TTS), and the persistent fraud database.
-2.  **Agency Dashboard (Next.js - Port 3000)**: The operational portal for Police, Bank, and Telecom authorities. Includes the **Live Interception Monitor** for real-time tracking of scam attempts.
-3.  **Simulation Portal (Next.js - Port 3001)**: A standalone "trap" site where scammers interact with AI personas. This app is isolated from the main dashboard to mimic a realistic external environment.
+1.  **Backend (FastAPI)**: The central intelligence hub. Manages the AI Honeypot engine, voice processing via **Sarvam AI**, and a persistent SQL database for forensic logging.
+2.  **Agency Dashboard (Next.js)**: The operational portal for Police, Bank, and Telecom authorities. Features include the **Live Interception Monitor**, **Bharat Regional Alerts**, and **Scammer Profiling**.
+3.  **Simulation Portal (Next.js)**: A standalone "trap" site (separable from the dashboard) where scammers interact with AI. This mimics a real-world scenario where the trap exists on an independent network node.
+
+---
+
+## ✨ "Real-Life" Mode (Production Purge)
+The system has been transitioned to a **100% Dynamic Operational State**. 
+- **Purged Manual Boosts**: No more "lorem ipsum" or hardcoded 10k+ numbers. Every metric (Scams blocked, Citizens protected, Estimated Savings) is now calculated in real-time from the database.
+- **Dynamic Simulation**: Every trap session generates a unique `caller_num` and `location` based on active network nodes, and AI warnings are generated live from forensic analysis.
+- **Agency Realism**: Police and Bank modules only show active, processed cases, ensuring no reliance on pre-recorded seed data.
 
 ---
 
@@ -17,7 +27,7 @@ The system consists of three primary components:
 We've provided a unified way to run all components simultaneously using `concurrently`.
 
 ### Prerequisites
-- Python 3.10+
+- Python 3.10+ (with `ffmpeg` for voice processing)
 - Node.js 18+
 - Sarvam AI API Key (Set in `backend/.env`)
 
@@ -41,34 +51,25 @@ We've provided a unified way to run all components simultaneously using `concurr
     ```bash
     npm run dev:all
     ```
-    This will start:
-    - Backend on `http://localhost:8000`
-    - Agency Dashboard on `http://localhost:3000`
-    - Simulation Portal on `http://localhost:3001`
+    - Backend: `http://localhost:8000`
+    - Agency Dashboard: `http://localhost:3000`
+    - Simulation Portal: `http://localhost:3001`
 
 ---
 
 ## 🛡️ Operational Workflow
 
-1.  **Access the Dashboard**: Use the Agency Portal to monitor national triage health and active threats.
-2.  **Deploy a Trap**: Open the **Simulation Portal**. Choose an AI Persona (e.g., "Elderly Uncle") and initiate a call.
-3.  **Real-time Surveillance**: Keep the **Live Monitor** tab open in the Agency Dashboard. You will see the trap session appear immediately as it begins.
-4.  **Forensic Reporting**: Once the AI concludes the session (after wasting significant scammer time), the dashboard will provide a full forensic analysis ready for FIR generation.
+1.  **Access the Dashboard**: Monitor national triage health and active threats.
+2.  **Deploy a Trap**: Use the **Simulation Portal**. Initiate a voice call with the AI Persona.
+3.  **Real-time Surveillance**: Monitor the trap session in the **Live Monitor** tab in the Agency Dashboard.
+4.  **Forensic Reporting**: After session conclusion, download the **Restitution Bundle** for FIR generation.
 
 ---
 
 ## ☁️ Cloud Deployment
 
-For a "real-life" production experience, follow the [Deployment Guide](file:///Users/mukul/.gemini/antigravity/brain/42d480fb-9861-4c1d-b966-2e52117d9d31/deployment_plan.md).
-
-### 1. Backend (Railway)
-- Connect your GitHub repository to Railway.
-- Railway will detect the `backend/Dockerfile`.
-- Set the required environment variables: `SARVAM_API_KEY`, `GEMINI_API_KEY`, `SECRET_KEY`.
-
-### 2. Frontends (Vercel)
-- Deploy the `dashboard` and `simulation-app` folders as separate projects on Vercel.
-- Set `NEXT_PUBLIC_API_BASE` for each to your Railway backend URL + `/api/v1`.
+- **Backend**: Deployed to **Railway** (Dockerfile-based).
+- **Frontends**: Deployed to **Vercel** with `NEXT_PUBLIC_API_BASE` pointing to the Railway API.
 
 ---
-*Developed for the Google DeepMind Advanced Agentic Coding initiative.*
+✨ *Developed for the Google DeepMind Advanced Agentic Coding initiative. For A Secured Digital India.*

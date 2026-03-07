@@ -11,7 +11,7 @@ from core.voice_engine import voice_engine
 from core.ai import honeypot_ai
 from sqlalchemy.orm import Session
 from core.database import get_db
-from models.database import HoneypotPersona
+from models.database import HoneypotPersona, HoneypotSession, HoneypotMessage
 
 router = APIRouter(prefix="/voice", tags=["Voice Chat"])
 
