@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     ShieldCheck,
     ShieldAlert,
@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
+import FeedModal from "@/components/FeedModal";
 
 
 interface DeepfakeStats {
@@ -39,6 +40,9 @@ export default function DeepfakePage() {
     const [verdict, setVerdict] = useState<null | 'VERIFIED' | 'DEEPFAKE'>(null);
     const [data, setData] = useState<DeepfakeStats | null>(null);
     const [aiResult, setAiResult] = useState<ForensicResult | null>(null);
+    const [selectedIncident, setSelectedIncident] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -48,7 +52,7 @@ export default function DeepfakePage() {
         fetchStats();
     }, []);
 
-    const startScan = async () => {
+    const startScan = async (file?: File) => {
         setIsScanning(true);
         setProgress(0);
         setVerdict(null);
@@ -61,14 +65,29 @@ export default function DeepfakePage() {
             const authStr = localStorage.getItem('sentinel_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
 
-            const res = await fetch(`${API_BASE}/forensic/deepfake/analyze`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ media_type: 'video' })
-            });
+            let res;
+            if (file) {
+                const formData = new FormData();
+                formData.append("file", file);
+
+                res = await fetch(`${API_BASE}/forensic/deepfake/upload`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+            } else {
+                // Fallback to simulated scan if triggered without a file
+                res = await fetch(`${API_BASE}/forensic/deepfake/analyze`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ media_type: 'video' })
+                });
+            }
 
             if (res.ok) {
                 const result = await res.json();
@@ -77,6 +96,23 @@ export default function DeepfakePage() {
         } catch (err) {
             console.error("Forensic API Error:", err);
         }
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            startScan(e.target.files[0]);
+        }
+    };
+
+    const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+            startScan(e.dataTransfer.files[0]);
+        }
+    };
+
+    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+        e.preventDefault();
     };
 
     useEffect(() => {
@@ -103,7 +139,7 @@ export default function DeepfakePage() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={startScan}
+                        onClick={() => fileInputRef.current?.click()}
                         disabled={isScanning}
                         className="px-6 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2 disabled:opacity-50"
                     >
@@ -160,8 +196,19 @@ export default function DeepfakePage() {
                                 </button>
                             </div>
                         ) : (
-                            <div className="z-10 text-center space-y-4">
-                                <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={startScan}>
+                            <div
+                                className="z-10 text-center space-y-4"
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                            >
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*,video/*"
+                                    onChange={handleFileChange}
+                                />
+                                <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={() => fileInputRef.current?.click()}>
                                     <Upload className="text-silver group-hover:text-saffron transition-colors" size={32} />
                                 </div>
                                 <p className="text-sm font-bold text-indblue">Drop Forensic Image or Video Frame</p>
@@ -210,7 +257,13 @@ export default function DeepfakePage() {
                                 return (
                                     <div
                                         key={i}
-                                        onClick={() => performAction('VIEW_INCIDENT', inc.type)}
+                                        onClick={async () => {
+                                            const result = await performAction('VIEW_INCIDENT', inc.type);
+                                            if (result && result.detail) {
+                                                setSelectedIncident(result.detail);
+                                                setIsModalOpen(true);
+                                            }
+                                        }}
                                         className="p-4 rounded-xl bg-boxbg/50 border border-silver/5 hover:border-saffron/20 transition-all cursor-pointer group"
                                     >
                                         <div className="flex justify-between items-start mb-2">
@@ -255,6 +308,12 @@ export default function DeepfakePage() {
                     </div>
                 </div>
             </div>
+
+            <FeedModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                data={selectedIncident}
+            />
         </div>
     );
 }

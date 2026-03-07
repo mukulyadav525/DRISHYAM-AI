@@ -21,20 +21,41 @@ class SarvamHoneypot:
         """Close the persistent HTTP client."""
         await self.client.aclose()
 
-    def get_master_prompt(self) -> str:
-        return (
+    def get_master_prompt(self, persona: str) -> str:
+        base = (
             "You are the Sentinel Master AI, an advanced scam-interception honeypot. "
             "Your objective is to neutralize phone scammers by keeping them engaged in long, confusing conversations. "
-            "You can adapt your persona dynamically based on the scammer's approach (e.g., act as an elderly person, "
-            "a busy professional, or a confused student). Use a natural mix of Hindi and English (Hinglish). "
             "Never reveal you are an AI. Never provide real OTPs or banking details. "
-            "Waste their time, frustrate their scripts, and extract as much information as possible about their operation."
+            "Waste their time, frustrate their scripts, and extract as much information as possible about their operation. "
         )
+        
+        personas = {
+            "Elderly Uncle": (
+                "Persona: Elderly Uncle (65+). Speak slowly, use filler words like 'acha...', 'beta...', 'ek second ruko'. "
+                "Act slightly confused about technology. Ask the scammer to repeat things. "
+                "Talk about your health or your grandchildren if they pressure you. Mix Hindi and English (Hinglish)."
+            ),
+            "Rural Farmer": (
+                "Persona: Rural Farmer. Use a rustic dialect (Dehati/Village Hindi). "
+                "Mention your crops, the weather, or 'Panchayat' matters. "
+                "Be extremely suspicious but polite. Act like you don't understand 'UPI' or 'Digital Arrest'."
+            ),
+            "College Student": (
+                "Persona: College Student. Speak fast, use modern slang ('bro', 'cool', 'yaar'). "
+                "Act busy with 'exams' or 'assignments'. Be tech-savvy but 'forgetful' of your passwords. "
+                "Try to reverse-interview the scammer about their 'job' at the 'bank'."
+            ),
+            "Housewife": (
+                "Persona: Housewife. Mention household chores, 'kitchen mein hoon', or 'bachon ko school bhejna hai'. "
+                "Be worried about the 'police' or 'bank' call. Cross-question them about which branch they are from."
+            )
+        }
+        
+        persona_prompt = personas.get(persona, "Persona: General Citizen. Natural Hinglish speaker.")
+        return f"{base}\n\n{persona_prompt}"
 
     async def generate_response(self, persona: str, history: List[Dict[str, str]], message: str) -> str:
-        system_prompt = self.get_master_prompt()
-        if persona and persona != "AI":
-            system_prompt += f" Currently, you should behave as: {persona}."
+        system_prompt = self.get_master_prompt(persona)
 
         # Prepare messages in OpenAI/Sarvam format
         messages = [
@@ -108,6 +129,16 @@ class SarvamHoneypot:
             {"role": "system", "content": analysis_prompt},
             {"role": "user", "content": str(history)}
         ]
+
+        if not self.api_key or self.api_key == "REPLACE_ME":
+            logger.warning("AI: Using mock analysis fallback")
+            return {
+                "scam_type": "BANK_FRAUD",
+                "bank_name": "HDFC Bank",
+                "urgency_level": "HIGH",
+                "details": "Scammer requesting UPI transfer for account verification.",
+                "confidence_score": 0.95
+            }
 
         try:
             response = await self.client.post(

@@ -16,6 +16,7 @@ import {
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
+import FeedModal from "@/components/FeedModal";
 
 
 interface MuleAd {
@@ -37,6 +38,8 @@ export default function MulePage() {
     const [isScanning, setIsScanning] = useState(false);
     const [data, setData] = useState<MuleStats | null>(null);
     const [scanProgress, setScanProgress] = useState(0);
+    const [selectedIntel, setSelectedIntel] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -221,13 +224,25 @@ export default function MulePage() {
                             Current surge detected in "Tier-2 College" recruitment drives. Multiple fake HR profiles active on job platforms.
                         </p>
                         <button
-                            onClick={() => performAction('VIEW_INTEL', 'MULE_CAMPAIGNS')}
+                            onClick={async () => {
+                                const result = await performAction('VIEW_INCIDENT', 'MULE_CAMPAIGNS');
+                                if (result && result.detail) {
+                                    setSelectedIntel(result.detail);
+                                    setIsModalOpen(true);
+                                }
+                            }}
                             className="flex items-center gap-2 text-[10px] font-bold uppercase bg-white/10 px-4 py-2 rounded-lg hover:bg-saffron transition-colors">
                             View Detailed Intelligence <ArrowRight size={14} />
                         </button>
                     </div>
                 </div>
             </div>
+
+            <FeedModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                data={selectedIntel}
+            />
         </div>
     );
 }

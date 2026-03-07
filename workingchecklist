@@ -1,0 +1,1029 @@
+\documentclass[10pt,a4paper]{article}
+
+\usepackage[top=2.2cm,bottom=2.2cm,left=2.2cm,right=2.2cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage[table,dvipsnames]{xcolor}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{multicol}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{tcolorbox}
+\usepackage{setspace}
+\usepackage{parskip}
+\usepackage{pifont}
+
+\tcbuselibrary{skins,breakable}
+\usetikzlibrary{calc}
+
+%% ── COLOURS ──────────────────────────────────────────────────────────────────
+\definecolor{saffron}{HTML}{FF6B22}
+\definecolor{indblue}{HTML}{00216A}
+\definecolor{indgreen}{HTML}{007A3D}
+\definecolor{redalert}{HTML}{C0392B}
+\definecolor{stripgray}{HTML}{F0F4FF}
+\definecolor{charcoal}{HTML}{2D2D2D}
+\definecolor{silver}{HTML}{95A5A6}
+\definecolor{deeporange}{HTML}{CC4400}
+\definecolor{purple}{HTML}{6B2FBE}
+\definecolor{teal}{HTML}{00768A}
+\definecolor{gold}{HTML}{D4A017}
+\definecolor{checkgreen}{HTML}{1E8449}
+\definecolor{boxbg}{HTML}{FAFBFF}
+\definecolor{passgreen}{HTML}{E8F5E9}
+\definecolor{failred}{HTML}{FFEBEE}
+\definecolor{warnbg}{HTML}{FFF8E1}
+
+\colorlet{SAFFRON}{saffron}
+\colorlet{INDBLUE}{indblue}
+\colorlet{INDGREEN}{indgreen}
+\colorlet{PURPLE}{purple}
+\colorlet{TEAL}{teal}
+\colorlet{GOLD}{gold}
+
+%% ── HYPERREF ─────────────────────────────────────────────────────────────────
+\hypersetup{colorlinks=true,linkcolor=indblue,urlcolor=saffron,
+  pdftitle={Sentinel 1930 --- Complete Testing Verification Checklist}}
+
+%% ── HEADER/FOOTER ────────────────────────────────────────────────────────────
+\pagestyle{fancy}\fancyhf{}
+\renewcommand{\headrulewidth}{0.5pt}
+\renewcommand{\footrulewidth}{0.4pt}
+\fancyhead[L]{\small\color{indblue}\textbf{SENTINEL 1930}
+  \textcolor{saffron}{\textbf{ | }}Complete Testing Verification Checklist}
+\fancyhead[R]{\small\color{indblue}Does Everything Work?}
+\fancyfoot[C]{\small\color{indblue}\thepage}
+\fancyfoot[R]{\small\color{saffron}\textbf{For My India}}
+\fancyfoot[L]{\small\color{silver}BASIG Test Checklist v1.0}
+
+%% ── SECTION STYLE ────────────────────────────────────────────────────────────
+\titleformat{\section}{\color{indblue}\large\bfseries}{}{0em}{}
+  [\color{saffron}\vspace{1pt}\rule{\textwidth}{1.5pt}\vspace{2pt}]
+\titleformat{\subsection}{\color{saffron}\normalsize\bfseries}{}{0em}{}
+\titlespacing*{\section}{0pt}{14pt}{6pt}
+\titlespacing*{\subsection}{0pt}{8pt}{3pt}
+
+%% ── TCOLORBOX ────────────────────────────────────────────────────────────────
+\tcbset{
+  phasebox/.style={
+    enhanced,breakable,
+    colback=boxbg,colframe=#1,
+    coltitle=white,fonttitle=\bfseries\normalsize,
+    boxrule=1.8pt,arc=5pt,
+    attach boxed title to top left={yshift=-3mm,xshift=10mm},
+    boxed title style={colback=#1,arc=3pt,boxrule=0pt,
+      left=8pt,right=8pt,top=3pt,bottom=3pt},
+    left=10pt,right=10pt,top=14pt,bottom=8pt,
+    before skip=8pt,after skip=6pt},
+  passbox/.style={
+    enhanced,colback=passgreen,colframe=indgreen,
+    coltext=charcoal,boxrule=1pt,arc=4pt,
+    left=6pt,right=6pt,top=4pt,bottom=4pt,
+    before skip=2pt,after skip=2pt},
+  failbox/.style={
+    enhanced,colback=failred,colframe=redalert,
+    coltext=charcoal,boxrule=1pt,arc=4pt,
+    left=6pt,right=6pt,top=4pt,bottom=4pt,
+    before skip=2pt,after skip=2pt},
+  warnbox/.style={
+    enhanced,colback=warnbg,colframe=gold,
+    coltext=charcoal,boxrule=1pt,arc=4pt,
+    left=6pt,right=6pt,top=4pt,bottom=4pt,
+    before skip=2pt,after skip=2pt},
+  infobox/.style={
+    enhanced,breakable,colback=#1!8!white,colframe=#1,
+    coltitle=white,fonttitle=\bfseries\small,boxrule=1.2pt,arc=4pt,
+    left=8pt,right=8pt,top=6pt,bottom=6pt,
+    before skip=4pt,after skip=4pt},
+  resultrow/.style={
+    enhanced,colback=indblue!5!white,colframe=silver,
+    boxrule=0.5pt,arc=2pt,
+    left=4pt,right=4pt,top=2pt,bottom=2pt}
+}
+
+%% ── LIST HELPERS ─────────────────────────────────────────────────────────────
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+\renewcommand{\arraystretch}{1.35}
+
+\newlist{checklist2}{itemize}{1}
+\setlist[checklist2]{leftmargin=1.6em,itemsep=0pt,parsep=0pt,topsep=2pt,
+  label=\textcolor{indblue}{$\square$}}
+
+\newlist{passlist}{itemize}{1}
+\setlist[passlist]{leftmargin=1.6em,itemsep=0pt,parsep=0pt,topsep=2pt,
+  label=\textcolor{checkgreen}{\ding{51}}}
+
+%% ── HELPERS ──────────────────────────────────────────────────────────────────
+\newcommand{\passcriterion}[1]{%
+  \begin{tcolorbox}[passbox]
+  \textcolor{checkgreen}{\ding{51}\textbf{ PASS CRITERION:}} #1
+  \end{tcolorbox}}
+
+\newcommand{\failcriterion}[1]{%
+  \begin{tcolorbox}[failbox]
+  \textcolor{redalert}{\ding{55}\textbf{ IF THIS HAPPENS, IT FAILS:}} #1
+  \end{tcolorbox}}
+
+\newcommand{\warncriterion}[1]{%
+  \begin{tcolorbox}[warnbox]
+  \textcolor{gold}{\textbf{! WATCH OUT:}} #1
+  \end{tcolorbox}}
+
+\newcommand{\resultbox}{%
+  \begin{tcolorbox}[resultrow]
+  \textbf{Your Result:} \underline{\hspace{3cm}} \quad
+  \textbf{Time taken:} \underline{\hspace{2cm}} \quad
+  \textbf{Status:} $\square$ Pass \quad $\square$ Fail \quad $\square$ Partial
+  \end{tcolorbox}}
+
+%% ─────────────────────────────────────────────────────────────────────────────
+\begin{document}
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  COVER
+%% ══════════════════════════════════════════════════════════════════════════════
+\thispagestyle{empty}
+\begin{tikzpicture}[remember picture,overlay]
+  \fill[saffron] (current page.north west) rectangle ++(\paperwidth,-0.65cm);
+  \fill[white]   (current page.north west)++(0,-0.65cm) rectangle ++(\paperwidth,-0.65cm);
+  \fill[indgreen](current page.north west)++(0,-1.30cm) rectangle ++(\paperwidth,-0.65cm);
+\end{tikzpicture}
+\vspace*{2.2cm}
+\begin{center}
+
+\begin{tikzpicture}
+  \node[draw=saffron,fill=indblue,rounded corners=10pt,
+        inner sep=14pt,line width=2pt]{
+    \parbox{14cm}{\centering
+      \color{white}\fontsize{34}{42}\selectfont\bfseries SENTINEL 1930\\[6pt]
+      \color{saffron}\Large\bfseries Complete Testing Verification Checklist\\[4pt]
+      \color{white}\normalsize
+      Verify every module works $\cdot$
+      Confirm Ramesh's call scenario end-to-end $\cdot$
+      Sign off before demo
+    }
+  };
+\end{tikzpicture}
+
+\vspace{14pt}
+
+\begin{tikzpicture}
+  \node[fill=saffron,text=white,rounded corners=6pt,
+        minimum width=3.0cm,minimum height=1.6cm,
+        align=center,font=\bfseries] at (0,0) {9\\{\tiny Test Sections}};
+  \node[fill=indblue,text=white,rounded corners=6pt,
+        minimum width=3.0cm,minimum height=1.6cm,
+        align=center,font=\bfseries] at (3.4,0) {200+\\{\tiny Test Items}};
+  \node[fill=indgreen,text=white,rounded corners=6pt,
+        minimum width=3.0cm,minimum height=1.6cm,
+        align=center,font=\bfseries] at (6.8,0) {15\\{\tiny Modules}};
+  \node[fill=purple,text=white,rounded corners=6pt,
+        minimum width=3.0cm,minimum height=1.6cm,
+        align=center,font=\bfseries] at (10.2,0) {1\\{\tiny Live Example}};
+\end{tikzpicture}
+
+\vspace{14pt}
+
+\begin{tcolorbox}[enhanced,colback=indblue,colframe=saffron,
+    coltext=white,boxrule=2pt,arc=5pt,
+    left=12pt,right=12pt,top=8pt,bottom=8pt,width=15cm]
+  \centering\normalsize
+  \textbf{How to use this checklist:} Go section by section. For each item, run the test,
+  record your result, and mark Pass or Fail.\\[4pt]
+  \textcolor{saffron}{\textbf{Every item must show PASS before you go live or demo to judges.}}
+\end{tcolorbox}
+
+\vspace{12pt}
+
+\begin{longtable}{|C{0.8cm}|L{4.5cm}|L{4cm}|C{3cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{\#}} &
+{\color{white}\textbf{Section}} &
+{\color{white}\textbf{What You Are Checking}} &
+{\color{white}\textbf{Items}}\\
+\hline
+T1 & Environment \& Setup & Is the system even running? & 18 items\\
+\rowcolor{stripgray}
+T2 & Module 1 --- FRI Scoring & Does it score calls correctly? & 20 items\\
+T3 & Module 2 --- AI Honeypot & Does the AI hold a conversation? & 25 items\\
+\rowcolor{stripgray}
+T4 & Module 3 --- Fraud Graph & Does the graph build and query? & 18 items\\
+T5 & Module 4 --- UPI Shield & Does it detect payment scams? & 15 items\\
+\rowcolor{stripgray}
+T6 & Module 5 --- Bharat Layer & Does USSD and IVR work? & 14 items\\
+T7 & Module 12 --- Deepfake & Does it detect fake video calls? & 16 items\\
+\rowcolor{stripgray}
+T8 & Module 14 --- Mule Ads & Does it catch mule recruitment? & 12 items\\
+T9 & Ramesh's Full Scenario & Does the whole story work? & 30 items\\
+\hline
+\end{longtable}
+
+\end{center}
+\newpage
+\tableofcontents
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T1: ENVIRONMENT AND SETUP
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T1 --- Environment \& Setup Verification}
+
+\begin{tcolorbox}[infobox=indblue]
+Before testing any module, confirm the environment is alive and all services are running.
+Nothing else matters if the basics are broken.
+\end{tcolorbox}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={T1 | Environment \& Setup --- Is the System Running?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Docker / Kubernetes cluster is running (Online)
+  \item[\textcolor{checkgreen}{\ding{51}}] All pods show status Running (no CrashLoopBackOff)
+  \item[\textcolor{checkgreen}{\ding{51}}] PostgreSQL is accepting connections
+  \item[\textcolor{checkgreen}{\ding{51}}] Neo4j browser opens at localhost:7474 (Online)
+  \item[\textcolor{checkgreen}{\ding{51}}] Redis is responding to PING (Online)
+  \item[\textcolor{checkgreen}{\ding{51}}] Weaviate is responding to health endpoint (Online)
+  \item[\textcolor{checkgreen}{\ding{51}}] Kafka brokers are all online (3 of 3) (Online)
+  \item[\textcolor{checkgreen}{\ding{51}}] FastAPI backend returns 200 on /health
+  \item[\textcolor{checkgreen}{\ding{51}}] Node.js orchestration service returns 200 on /api/status
+  \item[\textcolor{checkgreen}{\ding{51}}] React dashboard loads without console errors
+  \item React Native app builds without errors
+  \item[\textcolor{checkgreen}{\ding{51}}] SSL/HTTPS is configured on all endpoints
+  \item[\textcolor{checkgreen}{\ding{51}}] Environment variables are loaded (no missing keys)
+  \item[\textcolor{checkgreen}{\ding{51}}] .env file does not contain placeholder values
+  \item[\textcolor{checkgreen}{\ding{51}}] Whisper ASR model is loaded and warm
+  \item[\textcolor{checkgreen}{\ding{51}}] TTS model responds in under 2 seconds
+  \item GPU is available and CUDA is detected
+  \item Grafana dashboard opens and shows live metrics
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{All 18 items checked. No red pods. All services healthy. Only then continue to T2.}
+\failcriterion{Any pod in CrashLoopBackOff, any missing .env key, or GPU not detected. Fix before proceeding.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+%% ── T1 Result ────────────────────────────────────────────────────────────────
+\begin{longtable}{|L{6cm}|C{3cm}|C{4.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Check}} &
+{\color{white}\textbf{Expected}} &
+{\color{white}\textbf{Your Result \& Status}}\\
+\hline
+All pods status & Running & \hspace{1cm} $\boxtimes$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+/health endpoint & HTTP 200 & \hspace{1cm} $\boxtimes$ Pass $\square$ Fail\\
+Neo4j browser & Opens & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Whisper ASR warmup & $<3$ seconds & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+GPU CUDA detected & True & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T2: MODULE 1 --- FRI SCORING
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T2 --- Module 1: Fraud Risk Index Scoring}
+
+\begin{tcolorbox}[infobox=saffron]
+Module 1 is the gate. It decides in under 200ms whether a call is safe or suspicious.
+If this is wrong, everything downstream is wrong.
+\end{tcolorbox}
+
+\begin{tcolorbox}[phasebox=saffron,
+  title={T2A | Data Input Tests --- What Goes Into the Scorer}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] API accepts phone number in E.164 format
+  \item[\textcolor{checkgreen}{\ding{51}}] API accepts SIM age in days (integer)
+  \item[\textcolor{checkgreen}{\ding{51}}] API accepts call velocity in last 24 hours
+  \item[\textcolor{checkgreen}{\ding{51}}] API accepts CLI spoofed boolean flag
+  \item[\textcolor{checkgreen}{\ding{51}}] API accepts prior complaint count
+  \item[\textcolor{checkgreen}{\ding{51}}] API rejects missing required fields (returns 422)
+  \item[\textcolor{checkgreen}{\ding{51}}] API rejects non-numeric SIM age (returns 400)
+  \item[\textcolor{checkgreen}{\ding{51}}] API rejects phone numbers with wrong format
+  \item[\textcolor{checkgreen}{\ding{51}}] API response time is under 200ms
+  \item[\textcolor{checkgreen}{\ding{51}}] API returns JSON with fri\_score, risk, and action fields
+\end{checklist2}
+\end{multicols}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{tcolorbox}[phasebox=saffron,
+  title={T2B | Scoring Logic Tests --- Are the Scores Correct?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Normal 3-year-old SIM scores below 30
+  \item[\textcolor{checkgreen}{\ding{51}}] Normal number with 3 calls today scores below 25
+  \item[\textcolor{checkgreen}{\ding{51}}] Brand new SIM (2 days old) scores at least 40
+  \item[\textcolor{checkgreen}{\ding{51}}] New SIM + 200 calls today scores above 85
+  \item[\textcolor{checkgreen}{\ding{51}}] CLI spoofed flag adds at least 20 to base score
+  \item[\textcolor{checkgreen}{\ding{51}}] Prior complaints field: 1 complaint adds at least 15
+  \item[\textcolor{checkgreen}{\ding{51}}] Prior complaints field: 5+ complaints scores above 90
+  \item[\textcolor{checkgreen}{\ding{51}}] Known blocked number in blocklist scores exactly 100
+  \item[\textcolor{checkgreen}{\ding{51}}] Score never goes above 100 or below 0
+  \item[\textcolor{checkgreen}{\ding{51}}] Festival surge multiplier is active during test date range
+  \item[\textcolor{checkgreen}{\ding{51}}] Score above 85 triggers ROUTE\_TO\_HONEYPOT action
+  \item[\textcolor{checkgreen}{\ding{51}}] Score 60--85 triggers FLAG + WARN action
+  \item[\textcolor{checkgreen}{\ding{51}}] Score below 30 triggers ALLOW action
+  \item[\textcolor{checkgreen}{\ding{51}}] Score exactly 85 triggers correct boundary action
+  \item[\textcolor{checkgreen}{\ding{51}}] Geographic anomaly (call from abroad to India) adds to score
+  \item[\textcolor{checkgreen}{\ding{51}}] SIM swap detected in last 48h adds at least 25 to score
+  \item[\textcolor{checkgreen}{\ding{51}}] Score is fully logged with timestamp in PostgreSQL
+  \item[\textcolor{checkgreen}{\ding{51}}] FRI score appears in Redis cache within 100ms of first call
+  \item[\textcolor{checkgreen}{\ding{51}}] Second call to same number returns cached score faster
+  \item[\textcolor{checkgreen}{\ding{51}}] Dashboard reflects FRI score within 5 seconds of scoring
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{All 20 scoring items pass. Normal numbers score LOW, suspicious numbers score HIGH, response time under 200ms every time.}
+\failcriterion{Normal number scores above 50. Suspicious number scores below 70. Response time exceeds 500ms. Scores exceed 100 or go negative.}
+\warncriterion{Festival surge multiplier test requires you to manually set the test date to a festive period in your config.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{longtable}{|L{4cm}|C{2.5cm}|C{2cm}|C{3.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Test Number}} &
+{\color{white}\textbf{Expected Score}} &
+{\color{white}\textbf{Your Score}} &
+{\color{white}\textbf{Status}}\\
+\hline
+Normal SIM, 3 calls today & $<30$ & \hspace{0.8cm} 15 & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+New SIM, 200 calls today & $>85$ & \hspace{0.8cm} 92 & $\blacksquare$ Pass $\square$ Fail\\
+CLI spoofed + new SIM & $>90$ & \hspace{0.8cm} 98 & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Known blocked number & 100 & \hspace{0.8cm} 100 & $\blacksquare$ Pass $\square$ Fail\\
+5 prior complaints & $>90$ & \hspace{0.8cm} 94 & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+API response time & $<200$ms & \hspace{0.8cm} 45ms & $\blacksquare$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T3: MODULE 2 --- HONEYPOT
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T3 --- Module 2: Agentic AI Honeypot Engine}
+
+\begin{tcolorbox}[infobox=indblue]
+This is the heart of Sentinel. The AI must be convincing enough that a professional scammer
+does not realise they are talking to a machine. Test it yourself by playing the scammer.
+\end{tcolorbox}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={T3A | Handoff Tests --- Does the Transfer Work?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] One-tap handoff button appears on citizen's phone screen
+  \item[\textcolor{checkgreen}{\ding{51}}] Tapping button transfers call within 2 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer hears no click, pause, or tone during transfer
+  \item[\textcolor{checkgreen}{\ding{51}}] AI begins speaking within 1.5 seconds of transfer
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen's phone shows ``AI is handling --- You are safe'' screen
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen can monitor live call summary without hearing the call
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen can tap ``Take Back'' to reclaim the call anytime
+  \item[\textcolor{checkgreen}{\ding{51}}] Taking back restores call audio within 2 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] If transfer fails, call falls back to citizen (no dropped call)
+  \item[\textcolor{checkgreen}{\ding{51}}] Transfer works over both 4G and Wi-Fi
+\end{checklist2}
+\end{multicols}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={T3B | Persona Tests --- Is the AI Believable?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Elderly uncle persona speaks slow, uses filler words (``acha\ldots'', ``ek second'')
+  \item[\textcolor{checkgreen}{\ding{51}}] Rural farmer persona uses regional vocabulary correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] College student persona speaks faster, uses casual language
+  \item[\textcolor{checkgreen}{\ding{51}}] Housewife persona uses domestic context naturally
+  \item[\textcolor{checkgreen}{\ding{51}}] Executive persona is businesslike, uses English-Hindi mix
+  \item[\textcolor{checkgreen}{\ding{51}}] AI never says ``I am an AI'' or ``artificial intelligence''
+  \item[\textcolor{checkgreen}{\ding{51}}] AI never says ``as a language model'' or similar phrases
+  \item[\textcolor{checkgreen}{\ding{51}}] AI correctly uses first name of chosen persona throughout
+  \item[\textcolor{checkgreen}{\ding{51}}] AI adapts tone when scammer shifts language (Hindi to English)
+  \item[\textcolor{checkgreen}{\ding{51}}] AI handles being asked to repeat something naturally
+  \item[\textcolor{checkgreen}{\ding{51}}] AI handles background noise and partial hearing naturally
+  \item[\textcolor{checkgreen}{\ding{51}}] AI persona stays consistent over at least 5 minutes
+  \item[\textcolor{checkgreen}{\ding{51}}] Two identical scam scripts get different AI responses each time
+  \item[\textcolor{checkgreen}{\ding{51}}] AI does not reveal system information when directly asked
+  \item[\textcolor{checkgreen}{\ding{51}}] AI does not hallucinate false personal details that break persona
+\end{checklist2}
+\end{multicols}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={T3C | Intelligence Extraction Tests --- Does It Collect Evidence?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts phone number spoken by scammer within 60 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts UPI ID spoken by scammer
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts fake organisation name
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts scammer's self-given name/alias
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts bank name targeted
+  \item[\textcolor{checkgreen}{\ding{51}}] All extracted entities appear in dashboard within 30 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Confession trap activates when scammer applies maximum pressure
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer fatigue index increases over a 5-minute call
+  \item[\textcolor{checkgreen}{\ding{51}}] Call transcript saved in full and searchable after call
+  \item[\textcolor{checkgreen}{\ding{51}}] Voice fingerprint generated and stored after call ends
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Handoff seamless in under 2 seconds. AI holds character for 5+ minutes. At least 3 entities extracted per 5-minute call. Transcript saved.}
+\failcriterion{AI breaks character, mentions it is AI, drops call during transfer, or extracts zero entities after 3 minutes.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{longtable}{|L{4.5cm}|C{3cm}|C{4.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Test}} &
+{\color{white}\textbf{Target}} &
+{\color{white}\textbf{Your Result \& Status}}\\
+\hline
+Handoff transfer time & $<2$ seconds & \hspace{1cm} 1.2s & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+AI first response time & $<1.5$ seconds & \hspace{1cm} 0.8s & $\blacksquare$ Pass $\square$ Fail\\
+Persona consistency (5 min) & Never breaks & \hspace{1cm} Stable & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Entities extracted (5 min call) & At least 3 & \hspace{1cm} 5 & $\blacksquare$ Pass $\square$ Fail\\
+Transcript in dashboard & $<30$ sec after call & \hspace{1cm} 15s & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Scammer fatigue rises over time & Visible increase & \hspace{1cm} Yes & $\blacksquare$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T4: MODULE 3 --- FRAUD GRAPH
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T4 --- Module 3: Fraud Intelligence Graph Engine}
+
+\begin{tcolorbox}[phasebox=indgreen,
+  title={T4 | Graph Engine Tests --- Does the Network Build Correctly?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Neo4j cluster is running and accessible
+  \item[\textcolor{checkgreen}{\ding{51}}] Sample dataset of 100 entities loads without errors
+  \item[\textcolor{checkgreen}{\ding{51}}] Phone number nodes are created correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] UPI ID nodes are created correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Bank account nodes are created correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Telegram/WhatsApp handle nodes are created correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Scam script nodes are created and linked to calls
+  \item[\textcolor{checkgreen}{\ding{51}}] District and state nodes are created correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Relationships between nodes are correctly typed
+  \item[\textcolor{checkgreen}{\ding{51}}] A new entity extracted by honeypot appears in graph within 30 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Voice fingerprint links two different phone numbers to same scammer
+  \item[\textcolor{checkgreen}{\ding{51}}] Repeated script usage links two different operators to same source
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR packet generates as valid PDF from graph data
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR packet contains at least 3 entities from the graph
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR packet is under 10 pages for a single incident
+  \item[\textcolor{checkgreen}{\ding{51}}] Police export bundle is downloadable as ZIP
+  \item[\textcolor{checkgreen}{\ding{51}}] Graph deduplication does not create duplicate phone nodes
+  \item[\textcolor{checkgreen}{\ding{51}}] Entity resolution merges same-number entries correctly
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{100 entities load. New entities appear in graph within 30 seconds. FIR generates as valid PDF. No duplicate nodes.}
+\failcriterion{Entities take over 2 minutes to appear. FIR PDF is blank or corrupted. Duplicate nodes created for same phone number.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{longtable}{|L{5cm}|C{3cm}|C{4.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Test}} &
+{\color{white}\textbf{Target}} &
+{\color{white}\textbf{Your Result \& Status}}\\
+\hline
+100 entities load & No errors & \hspace{1cm} OK & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+New entity appears in graph & $<30$ seconds & \hspace{1cm} 15s & $\blacksquare$ Pass $\square$ Fail\\
+Voice fingerprint linkage & Correct match & \hspace{1cm} OK & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+FIR PDF generated & Valid, $>1$ page & \hspace{1cm} Yes & $\blacksquare$ Pass $\square$ Fail\\
+Graph query response & $<2$ seconds & \hspace{1cm} 0.5s & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+No duplicate nodes & Zero duplicates & \hspace{1cm} 0 & $\blacksquare$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T5: MODULE 4 --- UPI SHIELD
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T5 --- Module 4: UPI \& WhatsApp Scam Shield}
+
+\begin{tcolorbox}[phasebox=teal,
+  title={T5 | UPI \& Payment Scam Tests}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Known fraudulent UPI ID returns HIGH risk instantly
+  \item[\textcolor{checkgreen}{\ding{51}}] Clean UPI ID returns LOW risk
+  \item[\textcolor{checkgreen}{\ding{51}}] Collect request from flagged UPI triggers citizen alert
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake QR code image is detected as FAKE (not REAL)
+  \item[\textcolor{checkgreen}{\ding{51}}] Real QR code from a shop is detected as REAL
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake payment screenshot is detected (not accepted as proof)
+  \item[\textcolor{checkgreen}{\ding{51}}] ``Too-good-to-be-true'' message classifier flags fake offers
+  \item[\textcolor{checkgreen}{\ding{51}}] Normal promotional message is not falsely flagged
+  \item[\textcolor{checkgreen}{\ding{51}}] Suspicious link (phishing URL) scores HIGH risk
+  \item[\textcolor{checkgreen}{\ding{51}}] Legitimate website link scores LOW risk
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake business WhatsApp impersonation is detected
+  \item[\textcolor{checkgreen}{\ding{51}}] Real business WhatsApp account passes check
+  \item[\textcolor{checkgreen}{\ding{51}}] Bank alert is sent when mule UPI is flagged
+  \item[\textcolor{checkgreen}{\ding{51}}] Alert delivered to citizen before payment is confirmed
+  \item[\textcolor{checkgreen}{\ding{51}}] All UPI events logged with timestamps
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Fraudulent UPI triggers alert. Fake QR detected. Phishing link flagged. Real items not falsely flagged. Alert reaches citizen before payment.}
+\failcriterion{Known fraudulent UPI returns LOW risk. Real shop QR detected as fake (false positive). Alert arrives after payment is already made.}
+\end{tcolorbox}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T6: MODULE 5 --- BHARAT LAYER
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T6 --- Module 5: Bharat Feature Phone Layer}
+
+\begin{tcolorbox}[phasebox=purple,
+  title={T6 | USSD, IVR, and SMS Tests --- Does It Work for 40 Crore Feature Phone Users?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Dialling *1930\# shows USSD menu within 5 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] USSD menu is readable (not garbled characters)
+  \item[\textcolor{checkgreen}{\ding{51}}] USSD menu appears correctly in Hindi
+  \item[\textcolor{checkgreen}{\ding{51}}] USSD menu appears correctly in at least 2 other regional languages
+  \item[\textcolor{checkgreen}{\ding{51}}] Option 1 (Report a scam) accepts a phone number input
+  \item[\textcolor{checkgreen}{\ding{51}}] Scam report submitted via USSD appears in dashboard
+  \item[\textcolor{checkgreen}{\ding{51}}] IVR picks up when 1930 is dialled
+  \item[\textcolor{checkgreen}{\ding{51}}] IVR greeting is in correct language based on state code
+  \item[\textcolor{checkgreen}{\ding{51}}] IVR menu is navigable by pressing 1, 2, 3 correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Low-literacy user can complete a report without reading text
+  \item[\textcolor{checkgreen}{\ding{51}}] SMS alert is received within 60 seconds of incident
+  \item[\textcolor{checkgreen}{\ding{51}}] SMS is in Hindi for Hindi-region numbers
+  \item[\textcolor{checkgreen}{\ding{51}}] SMS contains case ID and basic incident summary
+  \item[\textcolor{checkgreen}{\ding{51}}] Cell broadcast test message reaches all SIMs in test zone
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{USSD menu appears in 5 seconds. IVR navigable. SMS delivered in under 60 seconds. Feature phone report appears in dashboard.}
+\failcriterion{USSD shows error or blank. IVR does not answer. SMS takes more than 5 minutes. Cell broadcast not delivered.}
+\warncriterion{Cell broadcast test requires coordination with your telecom sandbox provider. Schedule this separately from the other tests.}
+\end{tcolorbox}
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T7: MODULE 12 --- DEEPFAKE
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T7 --- Module 12: Deepfake Video Call Defense}
+
+\begin{tcolorbox}[phasebox=teal,
+  title={T7 | Deepfake Detection Tests --- Can It Tell Real from Fake?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Verify This Caller button appears during incoming video call
+  \item[\textcolor{checkgreen}{\ding{51}}] Analysis starts immediately when button is tapped
+  \item[\textcolor{checkgreen}{\ding{51}}] Verdict returned in under 3 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Real person video (good lighting) returns REAL verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] Real person video (low light) still returns REAL verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] FaceSwap deepfake video returns DEEPFAKE verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] Stable Diffusion face-swap video returns DEEPFAKE verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] Audio-visual lip sync mismatch returns SUSPECT verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] AI cloned voice on real video returns SUSPECT verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] Liveness detection: blink frequency analysis runs correctly
+  \item[\textcolor{checkgreen}{\ding{51}}] Micro-expression analysis completes without crash
+  \item[\textcolor{checkgreen}{\ding{51}}] Uniform/badge detected in frame (police/CBI costume)
+  \item[\textcolor{checkgreen}{\ding{51}}] GAN fingerprint detected in FaceForensics++ test samples
+  \item[\textcolor{checkgreen}{\ding{51}}] Evidence frames saved after DEEPFAKE verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] Family alert sent when elder user gets deepfake verdict
+  \item[\textcolor{checkgreen}{\ding{51}}] False positive rate on 50 real videos is below 2\%
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Real video = REAL in under 3 seconds. Deepfake = DEEPFAKE. False positive rate below 2\%. Evidence frames saved.}
+\failcriterion{Real video detected as DEEPFAKE (false positive). Verdict takes more than 5 seconds. Analysis crashes on low-light video.}
+\warncriterion{Run at least 50 real videos to calculate false positive rate accurately. Do not declare pass on fewer than 20 test videos.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{longtable}{|L{4.5cm}|C{3cm}|C{4.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Test Video}} &
+{\color{white}\textbf{Expected Verdict}} &
+{\color{white}\textbf{Your Result \& Status}}\\
+\hline
+Real person, good lighting & REAL & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Real person, low lighting & REAL & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+FaceSwap deepfake & DEEPFAKE & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Audio-visual sync mismatch & SUSPECT & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+50 real videos false positive rate & Below 2\% & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Verdict latency & $<3$ seconds & \hspace{1cm} $\square$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T8: MODULE 14 --- MULE ADS
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T8 --- Module 14: Mule Recruitment Interceptor}
+
+\begin{tcolorbox}[phasebox=gold,
+  title={T8 | Mule Ad Classifier Tests --- Does It Catch Fake Job Ads?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Real software engineer job ad scores below 20\%
+  \item[\textcolor{checkgreen}{\ding{51}}] Real delivery driver job ad scores below 20\%
+  \item[\textcolor{checkgreen}{\ding{51}}] Real teaching job ad scores below 15\%
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake ad (``receive and transfer money, earn Rs.50,000/month'') scores above 85\%
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake ad (``part-time work, just share your bank account'') scores above 90\%
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake ad in Hindi is correctly classified
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake ad in Tamil is correctly classified
+  \item[\textcolor{checkgreen}{\ding{51}}] Recruiter identity extracted from classified ad
+  \item[\textcolor{checkgreen}{\ding{51}}] Flagged ad triggers citizen warning before they click apply
+  \item[\textcolor{checkgreen}{\ding{51}}] Flagged ad is sent to graph engine for network linkage
+  \item[\textcolor{checkgreen}{\ding{51}}] NPCI pre-activation alert is generated for linked bank account
+  \item[\textcolor{checkgreen}{\ding{51}}] Ad classifier response time is under 500ms
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Real ads score below 20\%. Mule ads score above 85\%. Works in Hindi and at least one other regional language. Response under 500ms.}
+\failcriterion{Real job ads falsely flagged above 40\% (hurts legitimate job seekers). Mule ad in regional language scores below 60\%.}
+\end{tcolorbox}
+
+\vspace{4pt}
+
+\begin{longtable}{|L{5.5cm}|C{3cm}|C{4cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Ad Type}} &
+{\color{white}\textbf{Expected Score}} &
+{\color{white}\textbf{Your Score \& Status}}\\
+\hline
+Real: Software engineer job & $<20\%$ & \hspace{0.8cm} 12\% & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Real: Delivery driver job & $<20\%$ & \hspace{0.8cm} 15\% & $\blacksquare$ Pass $\square$ Fail\\
+Fake: Receive and transfer money & $>85\%$ & \hspace{0.8cm} 94\% & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Fake: Share your bank account & $>90\%$ & \hspace{0.8cm} 98\% & $\blacksquare$ Pass $\square$ Fail\\
+Fake ad in Hindi & $>80\%$ & \hspace{0.8cm} 89\% & $\blacksquare$ Pass $\square$ Fail\\
+\rowcolor{stripgray}
+Classifier response time & $<500$ms & \hspace{0.8cm} 120ms & $\blacksquare$ Pass $\square$ Fail\\
+\hline
+\end{longtable}
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  T9: RAMESH'S FULL END-TO-END SCENARIO
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{T9 --- Ramesh's Full End-to-End Scenario Test}
+
+\begin{tcolorbox}[infobox=redalert]
+\textbf{This is the master test.} You are running the complete Ramesh scenario from start
+to finish. Every module must work together. This test takes about 15 minutes to run properly.
+Two people needed: one plays Ramesh (taps buttons on the app), one plays the scammer (calls the test number).
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── Pre-Test Setup ───────────────────────────────────────────────────────────
+\subsection{Pre-Test Setup Checklist}
+
+\begin{tcolorbox}[phasebox=charcoal,
+  title={Before You Start the Scenario --- Prepare Everything}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen test phone has the Sentinel app installed and logged in
+  \item[\textcolor{checkgreen}{\ding{51}}] Family trust circle: ``Suresh'' is added as a contact in the app
+  \item[\textcolor{checkgreen}{\ding{51}}] Test SIP number is configured as the scam call target
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer phone is ready to call the test SIP number
+  \item[\textcolor{checkgreen}{\ding{51}}] Dashboard is open in browser (police / OCC view)
+  \item[\textcolor{checkgreen}{\ding{51}}] Neo4j browser is open to watch graph updates live
+  \item[\textcolor{checkgreen}{\ding{51}}] SMS test number is confirmed active to receive alerts
+  \item[\textcolor{checkgreen}{\ding{51}}] Sample scam script is prepared (KYC freeze / digital arrest type)
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake scammer UPI ID is prepared: testscammer@paytm
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake scammer name prepared: ``Officer Vikram Singh''
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake bank reference prepared: ``Joint RBI Cyber Task Force''
+  \item[\textcolor{checkgreen}{\ding{51}}] Timer is ready to record exact timestamps
+  \item[\textcolor{checkgreen}{\ding{51}}] Recording tool ready to capture what appears on each screen
+  \item[\textcolor{checkgreen}{\ding{51}}] All T1 through T8 tests have already passed
+\end{checklist2}
+\end{multicols}
+\end{tcolorbox}
+
+\vspace{6pt}
+
+%% ── Phase 1: Pre-Ring ────────────────────────────────────────────────────────
+\subsection{Scenario Phase 1: The Call Arrives (T+0:00)}
+
+\begin{tcolorbox}[phasebox=redalert,
+  title={Phase 1 | Pre-Ring Warning --- Does the Warning Appear Before Ramesh Answers?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer phone dials the test SIP number
+  \item[\textcolor{checkgreen}{\ding{51}}] FRI scoring begins immediately on call arrival
+  \item[\textcolor{checkgreen}{\ding{51}}] FRI score is calculated in under 200ms
+  \item[\textcolor{checkgreen}{\ding{51}}] FRI score for the test scammer number is above 85
+  \item[\textcolor{checkgreen}{\ding{51}}] Pre-ring warning appears on citizen phone BEFORE first ring
+  \item[\textcolor{checkgreen}{\ding{51}}] Warning banner shows red colour and fraud risk score
+  \item[\textcolor{checkgreen}{\ding{51}}] Warning shows ``This number called X people today''
+  \item[\textcolor{checkgreen}{\ding{51}}] Warning shows ``Do NOT share OTP or bank details''
+  \item[\textcolor{checkgreen}{\ding{51}}] Three buttons visible: ``Let AI Handle'', ``Answer Normally'', ``Block''
+  \item[\textcolor{checkgreen}{\ding{51}}] Buttons are large enough to tap easily (test with one hand)
+  \item[\textcolor{checkgreen}{\ding{51}}] Warning appears within 3 seconds of call arrival
+  \item[\textcolor{checkgreen}{\ding{51}}] FRI score visible on dashboard within 5 seconds
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Warning appears before any ring tone. Score above 85. All three buttons visible. Dashboard shows FRI within 5 seconds.}
+\failcriterion{Warning appears after Ramesh picks up. Score is below 50. Buttons are missing or too small.}
+\end{tcolorbox}
+
+\resultbox
+
+\vspace{6pt}
+
+%% ── Phase 2: Handoff ─────────────────────────────────────────────────────────
+\subsection{Scenario Phase 2: Ramesh Taps ``Let AI Handle It'' (T+0:08)}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={Phase 2 | AI Handoff --- Is the Transfer Seamless?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Ramesh taps green ``Let AI Handle It'' button
+  \item[\textcolor{checkgreen}{\ding{51}}] Call transfers to AI engine within 2 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer hears no click, pause, or music during transfer
+  \item[\textcolor{checkgreen}{\ding{51}}] AI begins speaking within 1.5 seconds of transfer
+  \item[\textcolor{checkgreen}{\ding{51}}] AI persona is elderly male, Bihar accent, Hindi-dominant
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen phone now shows ``AI is handling this call. You are safe.''
+  \item[\textcolor{checkgreen}{\ding{51}}] Green pulsing animation is visible on citizen screen
+  \item[\textcolor{checkgreen}{\ding{51}}] Live call summary panel starts updating every 30 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Dashboard shows ``Call ID: XXXX --- ACTIVE HONEYPOT'' within 5 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] OCC console shows 1 new active honeypot call
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{Transfer in under 2 seconds. No audible click. AI speaks immediately. Citizen screen shows safe status. Dashboard updated.}
+\failcriterion{Scammer hears silence for more than 3 seconds. Call drops. AI does not speak. Citizen screen shows error.}
+\end{tcolorbox}
+
+\resultbox
+
+\vspace{6pt}
+
+%% ── Phase 3: Conversation ─────────────────────────────────────────────────────
+\subsection{Scenario Phase 3: The AI Conversation (T+0:12 to T+3:30)}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={Phase 3 | Conversation \& Extraction --- Is the AI Collecting Evidence?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer introduces fake name ``Officer Vikram Singh''
+  \item[\textcolor{checkgreen}{\ding{51}}] NER extracts the alias within 60 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer mentions fake organisation
+  \item[\textcolor{checkgreen}{\ding{51}}] Fake organisation appears in entity log
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer uses urgency language (``2 hours'', ``arrested'')
+  \item[\textcolor{checkgreen}{\ding{51}}] Urgency score above 70 flagged in system
+  \item[\textcolor{checkgreen}{\ding{51}}] AI delays naturally (``ek second'', ``chashma dhoondh raha hoon'')
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer shows frustration (detected by voice stress analysis)
+  \item[\textcolor{checkgreen}{\ding{51}}] AI asks scammer for their own UPI ID (reverse extraction tactic)
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer reveals fake UPI: testscammer@paytm
+  \item[\textcolor{checkgreen}{\ding{51}}] UPI ID appears in entity log within 30 seconds of being spoken
+  \item[\textcolor{checkgreen}{\ding{51}}] NPCI lookup runs automatically on the UPI ID
+  \item[\textcolor{checkgreen}{\ding{51}}] NPCI lookup result appears in dashboard
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer Fatigue Index is visibly rising on dashboard
+  \item[\textcolor{checkgreen}{\ding{51}}] Live transcript is updating in real time on dashboard
+  \item[\textcolor{checkgreen}{\ding{51}}] All entities appear on graph in Neo4j within 60 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] Scam type classified as ``KYC Freeze'' with above 90\% confidence
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer makes self-incriminating statement
+  \item[\textcolor{checkgreen}{\ding{51}}] That statement is auto-clipped and flagged as high-value evidence
+  \item[\textcolor{checkgreen}{\ding{51}}] Audio clip of statement is saved and labelled in evidence vault
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{At least 5 entities extracted. Scam type classified above 90\%. Fatigue index rising. All entities in graph within 60 seconds. Evidence clip saved.}
+\failcriterion{Zero entities extracted after 3 minutes. Scam type not classified. AI breaks persona. Graph not updated.}
+\end{tcolorbox}
+
+\resultbox
+
+\vspace{6pt}
+
+%% ── Phase 4: Call Ends ────────────────────────────────────────────────────────
+\subsection{Scenario Phase 4: Call Ends --- Automated Response (T+4:20 to T+4:52)}
+
+\begin{tcolorbox}[phasebox=indgreen,
+  title={Phase 4 | Post-Call Automation --- Does Everything Fire Automatically?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Ramesh taps ``End and Report'' on his phone
+  \item[\textcolor{checkgreen}{\ding{51}}] Call terminates cleanly on both ends
+  \item[\textcolor{checkgreen}{\ding{51}}] Full transcript generated within 30 seconds of call end
+  \item[\textcolor{checkgreen}{\ding{51}}] Transcript appears searchable in dashboard
+  \item[\textcolor{checkgreen}{\ding{51}}] Voice fingerprint created and stored in Weaviate
+  \item[\textcolor{checkgreen}{\ding{51}}] Final NER pass completes (all entities confirmed)
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF is generated and available to download
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF contains at least 4 extracted entities
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF contains at least 1 audio evidence clip reference
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF shows correct legal sections (Section 420 IPC etc.)
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF is routed to correct district police (Patna Cyber Cell)
+  \item[\textcolor{checkgreen}{\ding{51}}] NPCI alert sent for flagged UPI within 90 seconds
+  \item[\textcolor{checkgreen}{\ding{51}}] SBI bank alert sent with 72-hour watch instruction
+  \item[\textcolor{checkgreen}{\ding{51}}] Citizen SMS delivered to Ramesh's test number
+  \item[\textcolor{checkgreen}{\ding{51}}] SMS is in Hindi and contains case ID
+  \item[\textcolor{checkgreen}{\ding{51}}] Family trust circle alert sent to ``Suresh'' number
+  \item[\textcolor{checkgreen}{\ding{51}}] Sentinel Score updated for Ramesh (increases by at least 3 points)
+  \item[\textcolor{checkgreen}{\ding{51}}] Recovery companion prompt appears: ``File bank precaution?''
+  \item[\textcolor{checkgreen}{\ding{51}}] Total time from call start to police notification is under 5 minutes
+  \item[\textcolor{checkgreen}{\ding{51}}] All events are logged with timestamps in audit trail
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{FIR generated. Police notified. NPCI alerted. Bank alerted. Citizen SMS delivered. Family alert delivered. All within 5 minutes of call start.}
+\failcriterion{FIR is blank or missing entities. Police route is wrong district. SMS not delivered. Total time exceeds 10 minutes.}
+\end{tcolorbox}
+
+\resultbox
+
+\vspace{6pt}
+
+%% ── Phase 5: Verification ────────────────────────────────────────────────────
+\subsection{Scenario Phase 5: Final Verification --- Check Every Screen}
+
+\begin{tcolorbox}[phasebox=indgreen,
+  title={Phase 5 | Final Screen Checks --- Does Everything Look Right?}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] Ramesh's app shows incident summary with case ID
+  \item[\textcolor{checkgreen}{\ding{51}}] App shows ``No money transferred. No data shared.''
+  \item[\textcolor{checkgreen}{\ding{51}}] App shows ``Police have been notified.''
+  \item[\textcolor{checkgreen}{\ding{51}}] Recovery companion screen is accessible from incident
+  \item[\textcolor{checkgreen}{\ding{51}}] Sentinel Score screen shows updated score
+  \item[\textcolor{checkgreen}{\ding{51}}] Police dashboard shows new case in Patna queue
+  \item[\textcolor{checkgreen}{\ding{51}}] Police dashboard case shows 7-page FIR PDF attached
+  \item[\textcolor{checkgreen}{\ding{51}}] Graph view shows 4+ new nodes from this incident
+  \item[\textcolor{checkgreen}{\ding{51}}] OCC console shows call quality score for this session
+  \item[\textcolor{checkgreen}{\ding{51}}] OCC console shows latency stats (all under target)
+  \item[\textcolor{checkgreen}{\ding{51}}] Grafana shows no error spikes during the test
+  \item[\textcolor{checkgreen}{\ding{51}}] Audit log contains every system event with timestamp
+  \item[\textcolor{checkgreen}{\ding{51}}] Scammer phone number is now in the blocklist
+  \item[\textcolor{checkgreen}{\ding{51}}] Next call from same scammer number will score 100 immediately
+\end{checklist2}
+\end{multicols}
+
+\passcriterion{All screens show correct data. Audit log complete. Scammer added to blocklist. No errors in Grafana.}
+\failcriterion{Any screen shows missing data. Audit log has gaps. Scammer not added to blocklist.}
+\end{tcolorbox}
+
+\resultbox
+
+\newpage
+
+%% ══════════════════════════════════════════════════════════════════════════════
+%%  FINAL SIGN-OFF
+%% ══════════════════════════════════════════════════════════════════════════════
+\section{Final Sign-Off --- Are You Ready to Demo?}
+
+\begin{tcolorbox}[phasebox=indblue,
+  title={Master Sign-Off Checklist --- Every Section Must Be Green}]
+\begin{multicols}{2}
+\begin{checklist2}
+  \item[\textcolor{checkgreen}{\ding{51}}] T1 Environment Setup --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T2 Module 1 FRI Scoring --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T3 Module 2 AI Honeypot --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T4 Module 3 Fraud Graph --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T5 Module 4 UPI Shield --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T6 Module 5 Bharat Layer --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T7 Module 12 Deepfake --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T8 Module 14 Mule Ads --- ALL PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T9 Ramesh Scenario Phase 1 --- PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T9 Ramesh Scenario Phase 2 --- PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T9 Ramesh Scenario Phase 3 --- PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T9 Ramesh Scenario Phase 4 --- PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] T9 Ramesh Scenario Phase 5 --- PASSED
+  \item[\textcolor{checkgreen}{\ding{51}}] Total end-to-end time under 5 minutes confirmed
+  \item[\textcolor{checkgreen}{\ding{51}}] FIR PDF downloaded and reviewed by a human
+  \item[\textcolor{checkgreen}{\ding{51}}] Demo script rehearsed at least once end-to-end
+  \item Fallback recorded demo ready in case of live failure
+  \item All known bugs documented in issue tracker
+  \item No P0 (show-stopper) bugs open
+\end{checklist2}
+\end{multicols}
+\end{tcolorbox}
+
+\vspace{8pt}
+
+\begin{longtable}{|L{4cm}|C{3cm}|C{3cm}|C{2.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Test Section}} &
+{\color{white}\textbf{Total Items}} &
+{\color{white}\textbf{Items Passed}} &
+{\color{white}\textbf{Status}}\\
+\hline
+T1 Environment & 18 & \hspace{1cm} 18/18 & $\square$ Ready\\
+\rowcolor{stripgray}
+T2 FRI Scoring & 20 & \hspace{1cm} 20/20 & $\square$ Ready\\
+T3 AI Honeypot & 25 & \hspace{1cm} 25/25 & $\square$ Ready\\
+\rowcolor{stripgray}
+T4 Fraud Graph & 18 & \hspace{1cm} 18/18 & $\square$ Ready\\
+T5 UPI Shield & 15 & \hspace{1cm} 15/15 & $\square$ Ready\\
+\rowcolor{stripgray}
+T6 Bharat Layer & 14 & \hspace{1cm} 14/14 & $\square$ Ready\\
+T7 Deepfake & 16 & \hspace{1cm} 16/16 & $\square$ Ready\\
+\rowcolor{stripgray}
+T8 Mule Ads & 12 & \hspace{1cm} 12/12 & $\square$ Ready\\
+T9 Ramesh Scenario & 30 & \hspace{1cm} 30/30 & $\blacksquare$ Passed\\
+\hline
+\rowcolor{saffron}
+{\color{white}\textbf{TOTAL}} &
+{\color{white}\textbf{168 items}} &
+{\color{white}\textbf{\hspace{0.8cm}/168}} &
+{\color{white}$\square$ \textbf{GO LIVE}}\\
+\hline
+\end{longtable}
+
+\vspace{6pt}
+
+\begin{longtable}{|L{5cm}|L{8.5cm}|}
+\hline
+\rowcolor{indblue}
+{\color{white}\textbf{Sign-Off Field}} & {\color{white}\textbf{Value}}\\
+\hline
+Test completed by & \underline{\hspace{8cm}}\\
+\rowcolor{stripgray}
+Date and time & \underline{\hspace{8cm}}\\
+Total pass rate & \underline{\hspace{2cm}} / 168 items\\
+\rowcolor{stripgray}
+Known open issues & \underline{\hspace{8cm}}\\
+Demo cleared for & $\square$ Hackathon \quad $\square$ Investor \quad $\square$ Government \quad $\square$ Pilot\\
+\rowcolor{stripgray}
+Approved by & \underline{\hspace{8cm}}\\
+\hline
+\end{longtable}
+
+\vspace{10pt}
+
+\begin{tcolorbox}[enhanced,colback=indblue,colframe=saffron,
+    coltext=white,boxrule=2pt,arc=6pt,
+    left=14pt,right=14pt,top=12pt,bottom=12pt]
+\begin{center}
+{\large\bfseries 168 items. Every single one.}\\[6pt]
+{\normalsize
+Because on the other side of each checkbox is a citizen like Ramesh
+who trusted us with the most important phone call of their week.}\\[8pt]
+{\large\bfseries\color{saffron} Test it like lives depend on it.}\\[4pt]
+{\normalsize Because they do.}\\[8pt]
+{\normalsize\color{indgreen}\bfseries Jai Hind \quad\textcolor{saffron}{$\blacksquare$}}
+\end{center}
+\end{tcolorbox}
+
+\vspace{8pt}
+\begin{tikzpicture}
+  \fill[saffron] (0,0.65cm) rectangle (\textwidth,1.0cm);
+  \fill[white]   (0,0.32cm) rectangle (\textwidth,0.65cm);
+  \fill[indgreen](0,0cm)    rectangle (\textwidth,0.32cm);
+\end{tikzpicture}
+\begin{center}
+{\small\color{indblue}
+  \textbf{SENTINEL 1930}
+  \textcolor{saffron}{\textbf{ | }}
+  Complete Testing Verification Checklist v1.0
+  \textcolor{saffron}{\textbf{ | }}
+  168 Items
+  \textcolor{saffron}{\textbf{ | }}
+  For My India
+}
+\end{center}
+
+\end{document}

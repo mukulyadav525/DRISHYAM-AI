@@ -7,6 +7,9 @@ class CallCreate(BaseModel):
     receiver_num: str
     duration: Optional[int] = 0
     call_type: str = "incoming"
+    sim_age: Optional[int] = 365
+    cli_spoofed: Optional[bool] = False
+    prior_complaints: Optional[int] = 0
     metadata: Optional[Dict] = {}
 
 class DetectionResponse(BaseModel):

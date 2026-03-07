@@ -67,8 +67,11 @@ export const useActions = () => {
 
             setTimeout(() => {
                 toast.success(`Downloaded ${data.filename}`, { id: 'dl-toast' });
-                window.open(data.download_url, '_blank');
-                console.log(`Simulated download: ${data.download_url}`);
+                const downloadUrl = data.download_url.startsWith('http') || data.download_url.startsWith('data:')
+                    ? data.download_url
+                    : `${API_BASE.replace('/api/v1', '')}${data.download_url}`;
+                window.open(downloadUrl, '_blank');
+                console.log(`Simulated download: ${downloadUrl}`);
             }, 1500);
 
             return data;

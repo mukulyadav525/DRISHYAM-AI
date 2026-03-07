@@ -1,7 +1,8 @@
 import os
 from pydantic_settings import BaseSettings
+from pydantic import Field, validator, field_validator
 from dotenv import load_dotenv
-from supabase import create_client, Client
+from typing import Optional
 
 # Load .env file explicitly
 load_dotenv()
@@ -9,56 +10,80 @@ load_dotenv()
 class Settings(BaseSettings):
     PROJECT_NAME: str = "Sentinel 1930"
     API_V1_STR: str = "/api/v1"
+    
+    # Environment Mode: 'dev' or 'prod'
+    ENV: str = Field("dev", env="ENV")
 
     # JWT Auth
-    SECRET_KEY: str = os.getenv("SECRET_KEY", "sentinel-1930-basig-secret-key-change-in-production")
+    SECRET_KEY: str = Field(..., env="SECRET_KEY")
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     
     # External APIs
-    GEMINI_API_KEY: str = os.getenv("GEMINI_API_KEY", "")
-    SARVAM_API_KEY: str = os.getenv("SARVAM_API_KEY", "")
-    TWILIO_ACCOUNT_SID: str = os.getenv("TWILIO_ACCOUNT_SID", "")
-    TWILIO_AUTH_TOKEN: str = os.getenv("TWILIO_AUTH_TOKEN", "")
-
+    SARVAM_API_KEY: str = Field(..., env="SARVAM_API_KEY")
+    GEMINI_API_KEY: Optional[str] = Field(None, env="GEMINI_API_KEY")
+    
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./sentinel.db")
+    DATABASE_URL: str = Field("sqlite:///./sentinel.db", env="DATABASE_URL")
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
-        # For SQLAlchemy 2.0+ and Railway (postgres:// vs postgresql://)
         uri = self.DATABASE_URL
         if uri.startswith("postgres://"):
             uri = uri.replace("postgres://", "postgresql://", 1)
         return uri
 
-    # Redis
-    REDIS_HOST: str = os.getenv("REDIS_HOST", "localhost")
-    REDIS_PORT: int = 6379
+    # Redis (Optional in dev, recommended in prod)
+    REDIS_URL: Optional[str] = Field(None, env="REDIS_URL")
 
     # Neo4j
-    NEO4J_URI: str = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-    NEO4J_USER: str = os.getenv("NEO4J_USER", "neo4j")
-    NEO4J_PASSWORD: str = os.getenv("NEO4J_PASSWORD", "sentinel_password")
+    NEO4J_URI: Optional[str] = Field(None, env="NEO4J_URI")
+    NEO4J_USER: str = Field("neo4j", env="NEO4J_USER")
+    NEO4J_PASSWORD: str = Field("password", env="NEO4J_PASSWORD")
 
-    # Supabase (Injected via Railway/Env)
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL", "")
-    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY", "")
+    # Security Restraints
+    CORS_ORIGINS: list[str] = ["https://sentinel-1930-77sx.vercel.app", "http://localhost:3000"]
+    RATE_LIMIT_PER_MINUTE: int = 100
 
     class Config:
         case_sensitive = True
         env_file = ".env"
+        extra = "ignore" # Ignore extra env vars
 
-settings = Settings()
+    @field_validator("SECRET_KEY")
+    @classmethod
+    def validate_secret_key(cls, v: str, info):
+        if info.data.get("ENV") == "prod" and "change-in-production" in v:
+            raise ValueError("SECRET_KEY must be changed for production!")
+        return v
 
-# Validation before client initialization
-if not settings.SUPABASE_URL or not settings.SUPABASE_ANON_KEY:
-    print(f"[WARN] Supabase credentials missing! Authentication features will be disabled.")
-    print(f"SUPABASE_URL: {'[SET]' if settings.SUPABASE_URL else '[MISSING]'}")
-    print(f"SUPABASE_ANON_KEY: {'[SET]' if settings.SUPABASE_ANON_KEY else '[MISSING]'}")
-
-# Initialize Supabase client safely
-supabase: Client = create_client(
-    settings.SUPABASE_URL if settings.SUPABASE_URL else "https://placeholder-supa.supabase.co", 
-    settings.SUPABASE_ANON_KEY if settings.SUPABASE_ANON_KEY else "placeholder-key-for-boot"
-)
+try:
+    # Use a dummy secret for validation if not provided in dev
+    if os.getenv("ENV") != "prod" and not os.getenv("SECRET_KEY"):
+        os.environ["SECRET_KEY"] = "dev-secret-key-only"
+    if os.getenv("ENV") != "prod" and not os.getenv("SARVAM_API_KEY"):
+        os.environ["SARVAM_API_KEY"] = "mock-sarvam-key"
+        
+    settings = Settings()
+except Exception as e:
+    print(f"Configuration Error: {e}")
+    if os.getenv("ENV") != "prod":
+        print("Falling back to robust mock settings for development...")
+        class MockSettings:
+            PROJECT_NAME = "Sentinel 1930 (MOCK)"
+            API_V1_STR = "/api/v1"
+            ENV = "dev"
+            SECRET_KEY = "mock-secret"
+            ALGORITHM = "HS256"
+            ACCESS_TOKEN_EXPIRE_MINUTES = 480
+            SARVAM_API_KEY = "mock-key"
+            SQLALCHEMY_DATABASE_URI = "sqlite:///./sentinel.db"
+            REDIS_URL = None
+            NEO4J_URI = None
+            NEO4J_USER = "neo4j"
+            NEO4J_PASSWORD = "password"
+            CORS_ORIGINS = ["*"]
+            RATE_LIMIT_PER_MINUTE = 1000
+        settings = MockSettings()
+    else:
+        raise e

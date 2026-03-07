@@ -1,0 +1,1541 @@
+INFO:     Started server process [39199]
+INFO:     Waiting for application startup.
+INFO:sentinel.main:[STARTUP] Initializing database...
+INFO:sentinel.main:[STARTUP] Database tables verified/created.
+INFO:sentinel.main:[STARTUP] Admin user already exists.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57092 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57154 - "GET /api/v1/actions/download-file?filename=SENTINEL_REPORT.pdf HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57209 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57216 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57228 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57241 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57242 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/download-sim
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57242 - "OPTIONS /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57241 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57241 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57245 - "GET /api/v1/actions/download-file?filename=SENTINEL_OVERVIEW_admin.pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57252 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57260 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57266 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57266 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57247 - "GET /api/v1/actions/download-file?filename=SENTINEL_OVERVIEW_admin.pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57272 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57278 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57282 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57295 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57299 - "GET /api/v1/actions/download-file?filename=SENTINEL_SECURITY_REPORT.pdf HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57303 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57315 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57315 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57324 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57324 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57315 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57315 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57324 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57315 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57334 - "GET /api/v1/actions/download-file?filename=SENTINEL_OVERVIEW_admin.pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57337 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57340 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57342 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57358 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57372 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57388 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57400 - "GET /api/v1/actions/download-file?filename=SENTINEL_SECURITY_REPORT.pdf HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57409 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57409 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57414 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57419 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57426 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57443 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57441 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57441 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57443 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57443 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57457 - "GET /api/v1/actions/download-file?filename=SENTINEL_OVERVIEW_admin.pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57462 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57462 - "OPTIONS /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57462 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57462 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57464 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57466 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57469 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57474 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57474 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57474 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57483 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57474 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57483 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57488 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57488 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57485 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57488 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57490 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57495 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/graph
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57507 - "GET /api/v1/system/graph HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/graph
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57507 - "GET /api/v1/system/graph HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: GENERATE_FIR_FROM_GRAPH
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57518 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: GENERATE_FIR_FROM_GRAPH
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57518 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/download-sim
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57518 - "OPTIONS /api/v1/actions/download-sim?file_type=pdf&category=FRAUD_GRAPH_EVIDENCE HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading FRAUD_GRAPH_EVIDENCE as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57518 - "GET /api/v1/actions/download-sim?file_type=pdf&category=FRAUD_GRAPH_EVIDENCE HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-file
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57531 - "GET /api/v1/actions/download-file?filename=SENTINEL_FRAUD_GRAPH_EVIDENCE_admin.pdf&category=FRAUD_GRAPH_EVIDENCE HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57529 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57529 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57541 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57547 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57560 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57560 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57569 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57575 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57575 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57577 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57577 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57577 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57577 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57577 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57628 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57640 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57644 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57644 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57644 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57646 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57646 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57646 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57644 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57644 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57652 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57658 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57660 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57658 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57658 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57669 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57675 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57682 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57685 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57808 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57822 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57826 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57828 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57837 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57837 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57839 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57837 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57839 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57841 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57837 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57843 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57845 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57848 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57848 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57850 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57848 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57852 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57850 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57848 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57852 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57856 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57863 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57871 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57882 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57888 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57890 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57897 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57984 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57984 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57997 - "OPTIONS /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57997 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57997 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INTERCEPT
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57999 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: TRACE
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57999 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:57999 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_FEED_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58012 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58012 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58012 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58021 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58023 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58033 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58037 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58039 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58043 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58051 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58056 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58056 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58122 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58130 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58140 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58143 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58150 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58154 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58165 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58170 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58175 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58183 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58187 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58195 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58201 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58212 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58216 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58224 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58233 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58240 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58248 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58264 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58270 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58279 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58286 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58294 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58299 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58305 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58309 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58315 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58320 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58328 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58332 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58334 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58346 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58352 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58356 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58358 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58368 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58394 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58435 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58437 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58437 - "OPTIONS /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58435 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58453 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58459 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58473 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58477 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58485 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58487 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58518 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58520 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58529 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58548 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58586 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58627 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58627 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58636 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: INIT_GEO_LAYER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58636 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58648 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58648 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58659 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58676 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58690 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58729 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58743 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58743 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58743 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_MAP
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58743 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58766 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58787 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58796 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58822 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58870 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58875 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58879 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58891 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58895 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58901 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58904 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58913 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58917 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58926 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58926 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:58930 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59015 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59024 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59033 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59039 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59061 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59079 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59091 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59136 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59150 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59150 - "OPTIONS /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: CONNECT_TICKER
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59150 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59152 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59166 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59169 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59172 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59182 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59188 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59189 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59188 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59189 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59199 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59200 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59206 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59206 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59208 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59213 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59212 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59218 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59217 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59228 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59227 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59228 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59227 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59240 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59238 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59247 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59245 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59254 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59253 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59260 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59259 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59266 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59265 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59277 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59275 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59285 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59284 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59297 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59296 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59297 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59297 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59300 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59297 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59311 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59311 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59313 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59311 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59313 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59311 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59322 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59320 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59322 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59320 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59328 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59327 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59328 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59327 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59333 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59335 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59333 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59335 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59345 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59343 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59345 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59343 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59349 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59348 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59357 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59356 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59362 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59361 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59371 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59372 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59381 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59380 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59381 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59380 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59380 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59381 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59401 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59400 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59401 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59405 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59405 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59414 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59412 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59411 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59416 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59411 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_DETAIL
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59416 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59411 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59416 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59419 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59420 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59426 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59425 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_HISTORY
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59432 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: NEXT_PAGE
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_HISTORY
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: VIEW_HISTORY
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59434 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59430 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59446 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59445 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: NEXT_PAGE
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59445 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: POST /api/v1/actions/perform
+INFO:sentinel.actions:User admin (ID: 1) performing action: NEXT_PAGE
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59445 - "POST /api/v1/actions/perform HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59445 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59448 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59445 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59448 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59456 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59455 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59460 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59459 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59466 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59465 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59470 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59469 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59479 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59478 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59495 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59494 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59495 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59494 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59506 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59505 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59510 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59509 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59516 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59515 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59524 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59523 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59528 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59527 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59538 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59537 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59537 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59538 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59538 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59537 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59550 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59549 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59549 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59550 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59560 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59558 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59566 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59567 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59571 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59570 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59577 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59578 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59587 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59586 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59587 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59586 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59603 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59606 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59606 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59603 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59603 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59619 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59618 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59619 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59618 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59618 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59619 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59619 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59604 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59618 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59619 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59618 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59607 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59627 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59627 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59627 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59627 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59627 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59628 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59635 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59640 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59639 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59640 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59639 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59639 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59640 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59642 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59646 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59646 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59642 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59648 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59646 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59642 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59651 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59651 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59642 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59651 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59642 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59651 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59646 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59661 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59660 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/stats
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/detection/calls
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59661 - "GET /api/v1/detection/stats HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:59660 - "GET /api/v1/detection/calls?limit=10 HTTP/1.1" 200 OK

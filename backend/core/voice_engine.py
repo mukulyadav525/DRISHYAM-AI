@@ -82,10 +82,10 @@ class SarvamVoiceEngine:
             logger.error(f"STT: In-memory conversion failed: {e}")
             wav_bytes = audio_bytes  # Fallback
 
-        # 2. Upload to Sarvam saaras using persistent client
+        # Upload to Sarvam saaras using persistent client
         try:
             response = await self.client.post(
-                f"{SARVAM_BASE_URL}/speech-to-text",
+                f"{SARVAM_BASE_URL}/v1/speech-to-text",
                 headers={
                     "api-subscription-key": self.api_key,
                 },
@@ -93,8 +93,8 @@ class SarvamVoiceEngine:
                     "file": ("audio.wav", wav_bytes, "audio/wav")
                 },
                 data={
-                    "prompt": language,
-                    "model": model,
+                    "language_code": language, # Sarvam v1 uses language_code
+                    "model": "saaras:v1",     # saaras:v1 is generally more stable
                 },
             )
             response.raise_for_status()
@@ -110,6 +110,8 @@ class SarvamVoiceEngine:
             }
         except Exception as e:
             logger.error(f"STT: Transcription API failed: {e}")
+            if hasattr(e, 'response'):
+                logger.error(f"STT Error Detail: {e.response.text}")
             return {
                 "transcript": "",
                 "language_detected": language,
@@ -125,35 +127,43 @@ class SarvamVoiceEngine:
         """Convert AI response to natural Indian-language speech via Sarvam Bulbul."""
         voice_config = self.default_voice
 
-        response = await self.client.post(
-            f"{SARVAM_BASE_URL}/text-to-speech",
-            headers={
-                "api-subscription-key": self.api_key,
-                "Content-Type": "application/json",
-            },
-            json={
-                "inputs": [text],
-                "target_language_code": voice_config["language"],
-                "speaker": voice_config["speaker"],
-                "model": voice_config["model"],
-                "pace": float(voice_config["pace"]),
-                "enable_preprocessing": True,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
+        try:
+            response = await self.client.post(
+                f"{SARVAM_BASE_URL}/v1/text-to-speech",
+                headers={
+                    "api-subscription-key": self.api_key,
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "inputs": [text],
+                    "target_language_code": voice_config["language"],
+                    "speaker": voice_config["speaker"],
+                    "model": "bulbul:v1", # bulbul:v1 is the standard
+                    "pitch": 0,
+                    "pace": float(voice_config["pace"]),
+                    "loudness": 1.5,
+                    "enable_preprocessing": True,
+                },
+            )
+            response.raise_for_status()
+            data = response.json()
 
-        audios = data.get("audios", [])
-        audio_base64 = audios[0] if audios else ""
-        logger.info(f"TTS: Synthesized {len(audio_base64)} chars for '{persona}'")
+            audios = data.get("audios", [])
+            audio_base64 = audios[0] if audios else ""
+            logger.info(f"TTS: Synthesized {len(audio_base64)} chars for '{persona}'")
 
-        return {
-            "audio_base64": audio_base64,
-            "format": "wav",
-            "persona": persona,
-            "language": voice_config["language"],
-            "duration_ms": data.get("duration_ms", 0),
-        }
+            return {
+                "audio_base64": audio_base64,
+                "format": "wav",
+                "persona": persona,
+                "language": voice_config["language"],
+                "duration_ms": data.get("duration_ms", 0),
+            }
+        except Exception as e:
+            logger.error(f"TTS Error: {e}")
+            if hasattr(e, 'response'):
+                logger.error(f"TTS Error Detail: {e.response.text}")
+            raise e
 
     # ─── Full Voice Chat Pipeline ────────────────────────────────────
     async def voice_chat_turn(

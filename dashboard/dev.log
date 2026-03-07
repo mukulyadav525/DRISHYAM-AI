@@ -1,0 +1,57 @@
+
+> dashboard@0.1.0 dev
+> next dev
+
+⚠ `eslint` configuration in next.config.ts is no longer supported. See more info here: https://nextjs.org/docs/app/api-reference/cli/next#next-lint-options
+⚠ Invalid next.config.ts options detected: 
+⚠     Unrecognized key(s) in object: 'eslint'
+⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+⚠ Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /Users/mukul/Desktop/SENTINEL-1930/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /Users/mukul/Desktop/SENTINEL-1930/dashboard/package-lock.json
+
+▲ Next.js 16.1.6 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://10.237.36.114:3000
+
+✓ Starting...
+✓ Ready in 1268ms
+ GET / 200 in 2.1s (compile: 1932ms, render: 166ms)
+ GET / 200 in 49ms (compile: 9ms, render: 39ms)
+ GET / 200 in 21ms (compile: 1837µs, render: 19ms)
+ GET / 200 in 16ms (compile: 1788µs, render: 14ms)
+ GET / 200 in 17ms (compile: 1866µs, render: 16ms)
+ GET / 200 in 18ms (compile: 1425µs, render: 16ms)
+ GET / 200 in 17ms (compile: 1754µs, render: 15ms)
+ GET / 200 in 19ms (compile: 1680µs, render: 17ms)
+ GET / 200 in 37ms (compile: 7ms, render: 30ms)
+ GET /detection 200 in 336ms (compile: 323ms, render: 13ms)
+ GET / 200 in 2.4s (compile: 1388ms, render: 979ms)
+ GET /detection 200 in 180ms (compile: 155ms, render: 25ms)
+ GET /honeypot 200 in 1800ms (compile: 1776ms, render: 24ms)
+ GET /honeypot 200 in 8ms (compile: 1185µs, render: 7ms)
+ GET /detection 200 in 11ms (compile: 3ms, render: 8ms)
+ GET /honeypot 200 in 13ms (compile: 4ms, render: 10ms)
+✓ Compiled in 180ms
+ GET /graph 200 in 232ms (compile: 223ms, render: 9ms)
+ GET /alerts 200 in 464ms (compile: 425ms, render: 39ms)
+ GET /deepfake 200 in 280ms (compile: 259ms, render: 21ms)
+ GET /detection 200 in 135ms (compile: 98ms, render: 36ms)
+ GET /honeypot 200 in 28ms (compile: 14ms, render: 14ms)
+ GET /deepfake 200 in 27ms (compile: 9ms, render: 17ms)
+✓ Compiled in 115ms
+ GET /deepfake 200 in 2.4s (compile: 1874ms, render: 573ms)
+ GET /deepfake 200 in 51ms (compile: 17ms, render: 34ms)
+ GET /deepfake 200 in 27ms (compile: 3ms, render: 24ms)
+ GET /deepfake 200 in 27ms (compile: 4ms, render: 23ms)
+ GET /deepfake 200 in 22ms (compile: 2ms, render: 19ms)
+ GET /deepfake 200 in 16ms (compile: 1572µs, render: 15ms)
+ GET /deepfake 200 in 18ms (compile: 2ms, render: 16ms)
+ GET /deepfake 200 in 13ms (compile: 1297µs, render: 12ms)
+○ Compiling /mule ...
+ GET /mule 200 in 3.8s (compile: 3.8s, render: 18ms)
+ GET /inoculation 200 in 176ms (compile: 166ms, render: 11ms)
+ GET /upi 200 in 244ms (compile: 229ms, render: 14ms)

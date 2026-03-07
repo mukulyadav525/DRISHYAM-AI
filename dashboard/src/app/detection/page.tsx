@@ -14,6 +14,7 @@ import {
 import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
+import FeedModal from "@/components/FeedModal";
 
 
 interface CallRecord {
@@ -39,6 +40,8 @@ export default function DetectionGrid() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterRisk, setFilterRisk] = useState<'ALL' | 'SCAM'>('ALL');
+    const [selectedCall, setSelectedCall] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -153,12 +156,12 @@ export default function DetectionGrid() {
                                         <div className="flex flex-col items-center gap-1">
                                             <div className="w-24 h-1.5 bg-boxbg rounded-full overflow-hidden">
                                                 <div
-                                                    className={`h-full transition-all duration-500 ${call.score > 0.7 ? "bg-redalert" : call.score > 0.3 ? "bg-gold" : "bg-indgreen"
+                                                    className={`h-full transition-all duration-500 ${call.score > 70 ? "bg-redalert" : call.score > 30 ? "bg-gold" : "bg-indgreen"
                                                         }`}
-                                                    style={{ width: `${call.score * 100}%` }}
+                                                    style={{ width: `${call.score}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[10px] font-mono font-bold">{(call.score * 100).toFixed(0)}%</span>
+                                            <span className="text-[10px] font-mono font-bold">{Number(call.score).toFixed(0)}%</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -177,7 +180,13 @@ export default function DetectionGrid() {
                                                 <ShieldAlert size={16} />
                                             </button>
                                             <button
-                                                onClick={() => performAction('VIEW_DETAIL', call.number)}
+                                                onClick={async () => {
+                                                    const result = await performAction('VIEW_DETAIL', call.number, { location: call.location });
+                                                    if (result && result.detail) {
+                                                        setSelectedCall(result.detail);
+                                                        setIsModalOpen(true);
+                                                    }
+                                                }}
                                                 className="text-[10px] font-bold text-indblue uppercase tracking-widest hover:text-saffron transition-colors flex items-center gap-1">
                                                 {t("details")} <ArrowRight size={14} />
                                             </button>
@@ -238,6 +247,12 @@ export default function DetectionGrid() {
                     </div>
                 </div>
             </div>
+
+            <FeedModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                data={selectedCall}
+            />
         </div>
     );
 }

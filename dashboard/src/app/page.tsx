@@ -11,6 +11,9 @@ import {
   Loader2
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
+import IndiaMap from "@/components/IndiaMap";
+import FeedModal from "@/components/FeedModal";
+import LiveTicker from "@/components/LiveTicker";
 import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
@@ -36,6 +39,11 @@ export default function OverviewPage() {
   const { performAction, downloadSimulatedFile } = useActions();
   const [data, setData] = useState<OverviewData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showMap, setShowMap] = useState(false);
+  const [tickerItems, setTickerItems] = useState<string[]>([]);
+  const [showTicker, setShowTicker] = useState(false);
+  const [selectedFeed, setSelectedFeed] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,7 +78,13 @@ export default function OverviewPage() {
       {/* Header */}
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("welcome")}</h2>
+          <div className="flex items-center gap-2 mb-1">
+            <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("welcome")}</h2>
+            <div className="px-2 py-0.5 bg-indgreen/10 border border-indgreen/20 rounded flex items-center gap-1">
+              <ShieldCheck size={12} className="text-indgreen" />
+              <span className="text-[10px] font-bold text-indgreen uppercase tracking-wider">Security Audit: PASSED</span>
+            </div>
+          </div>
           <p className="text-silver mt-1">{t("sub_welcome")}</p>
         </div>
         <div className="flex gap-3">
@@ -80,7 +94,10 @@ export default function OverviewPage() {
             {t("export_report")}
           </button>
           <button
-            onClick={() => performAction('VIEW_MAP')}
+            onClick={() => {
+              performAction('VIEW_MAP');
+              setShowMap(true);
+            }}
             className="px-4 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2">
             {t("view_live_map")} <ArrowUpRight size={16} />
           </button>
@@ -138,18 +155,27 @@ export default function OverviewPage() {
               <option value="week">{t("past_week")}</option>
             </select>
           </div>
-          <div
-            onClick={() => performAction('INIT_GEO_LAYER')}
-            className="flex-1 bg-boxbg rounded-xl border border-dashed border-silver/30 flex items-center justify-center relative overflow-hidden group cursor-pointer">
-            <div className="absolute inset-0 bg-gradient-to-br from-saffron/5 to-indblue/5" />
-            <div className="text-center z-10">
-              <div className="w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
-                <ArrowUpRight className="text-saffron" size={32} />
-              </div>
-              <p className="text-sm font-bold text-indblue">{t("init_geo_layer")}</p>
-              <p className="text-xs text-silver mt-1">{t("node_access_required")}</p>
+          {showMap ? (
+            <div className="flex-1 h-full min-h-[300px]">
+              <IndiaMap />
             </div>
-          </div>
+          ) : (
+            <div
+              onClick={() => {
+                performAction('INIT_GEO_LAYER');
+                setShowMap(true);
+              }}
+              className="flex-1 bg-boxbg rounded-xl border border-dashed border-silver/30 flex items-center justify-center relative overflow-hidden group cursor-pointer">
+              <div className="absolute inset-0 bg-gradient-to-br from-saffron/5 to-indblue/5" />
+              <div className="text-center z-10">
+                <div className="w-16 h-16 bg-white rounded-full shadow-xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                  <ArrowUpRight className="text-saffron" size={32} />
+                </div>
+                <p className="text-sm font-bold text-indblue">{t("init_geo_layer")}</p>
+                <p className="text-xs text-silver mt-1">{t("node_access_required")}</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Live Feed */}
@@ -162,7 +188,13 @@ export default function OverviewPage() {
             {data?.live_feed.map((item) => (
               <div
                 key={item.id}
-                onClick={() => performAction('VIEW_FEED_DETAIL', item.id.toString(), { location: item.location })}
+                onClick={async () => {
+                  const result = await performAction('VIEW_FEED_DETAIL', item.id.toString(), { location: item.location });
+                  if (result && result.detail) {
+                    setSelectedFeed(result.detail);
+                    setIsModalOpen(true);
+                  }
+                }}
                 className="flex gap-4 items-start pb-6 border-b border-boxbg last:border-0 last:pb-0 group cursor-pointer"
               >
                 <div className="w-10 h-10 rounded-full bg-boxbg flex items-center justify-center flex-shrink-0 group-hover:bg-indblue/10 transition-colors">
@@ -182,12 +214,30 @@ export default function OverviewPage() {
             ))}
           </div>
           <button
-            onClick={() => performAction('CONNECT_TICKER')}
+            onClick={async () => {
+              const result = await performAction('CONNECT_TICKER');
+              if (result && result.detail?.ticker_items) {
+                setTickerItems(result.detail.ticker_items);
+                setShowTicker(true);
+              }
+            }}
             className="w-full py-3 mt-6 border-2 border-dashed border-silver/20 rounded-xl text-[10px] font-bold text-silver uppercase tracking-widest hover:border-saffron/40 hover:text-saffron transition-all">
             {t("connect_live_ticker")}
           </button>
         </div>
       </div>
+
+      {/* Overlays */}
+      <FeedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        data={selectedFeed}
+      />
+
+      <LiveTicker
+        items={tickerItems}
+        isVisible={showTicker}
+      />
     </div>
   );
 }

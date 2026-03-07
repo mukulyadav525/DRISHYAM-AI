@@ -16,6 +16,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
+import FeedModal from "@/components/FeedModal";
 
 
 interface Scenario {
@@ -29,6 +30,8 @@ export default function AlertsPage() {
     const { performAction } = useActions();
     const [scenarios, setScenarios] = useState<Scenario[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [selectedAlert, setSelectedAlert] = useState<any>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchScenarios = async () => {
@@ -189,8 +192,16 @@ export default function AlertsPage() {
                         <h4 className="font-bold text-indblue mb-6">{t("recent_records")}</h4>
                         <div className="space-y-4">
                             {scenarios.slice(0, 3).map((b, i) => (
-                                <div key={i} className="flex gap-3 group cursor-pointer pb-4 border-b border-boxbg last:border-0 last:pb-0">
-                                    <div className="w-8 h-8 rounded-lg bg-boxbg flex items-center justify-center text-silver">
+                                <div
+                                    onClick={async () => {
+                                        const result = await performAction('VIEW_INCIDENT', b.id);
+                                        if (result && result.detail) {
+                                            setSelectedAlert(result.detail);
+                                            setIsModalOpen(true);
+                                        }
+                                    }}
+                                    className="flex gap-3 group cursor-pointer pb-4 border-b border-boxbg last:border-0 last:pb-0">
+                                    <div className="w-8 h-8 rounded-lg bg-boxbg flex items-center justify-center text-silver group-hover:bg-saffron/10 group-hover:text-saffron transition-all">
                                         <CheckCircle2 size={16} />
                                     </div>
                                     <div>
@@ -216,6 +227,12 @@ export default function AlertsPage() {
                     </div>
                 </div>
             </div>
+
+            <FeedModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                data={selectedAlert}
+            />
         </div>
     );
 }

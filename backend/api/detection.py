@@ -12,8 +12,16 @@ router = APIRouter()
 
 @router.post("/detect", response_model=DetectionResponse)
 def detect_fraud(call_in: CallCreate, db: Session = Depends(get_db)):
+    # Prepare comprehensive metadata for scoring
+    scoring_metadata = call_in.metadata or {}
+    scoring_metadata.update({
+        "sim_age": call_in.sim_age,
+        "cli_spoofed": call_in.cli_spoofed,
+        "prior_complaints": call_in.prior_complaints
+    })
+
     # Calculate Risk Score
-    scoring_result = calculate_fraud_risk(call_in.caller_num, call_in.metadata)
+    scoring_result = calculate_fraud_risk(call_in.caller_num, scoring_metadata)
     
     # Create Call Record
     db_call = CallRecord(
@@ -21,7 +29,7 @@ def detect_fraud(call_in: CallCreate, db: Session = Depends(get_db)):
         receiver_num=call_in.receiver_num,
         duration=call_in.duration,
         call_type=call_in.call_type,
-        metadata_json=call_in.metadata,
+        metadata_json=scoring_metadata,
         fraud_risk_score=scoring_result["score"],
         verdict=scoring_result["verdict"]
     )

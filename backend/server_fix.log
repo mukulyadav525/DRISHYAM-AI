@@ -1,0 +1,36 @@
+INFO:     Started server process [37243]
+INFO:     Waiting for application startup.
+INFO:sentinel.main:[STARTUP] Initializing database...
+INFO:sentinel.main:[STARTUP] Database tables verified/created.
+INFO:sentinel.main:[STARTUP] Admin user already exists.
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55769 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: OPTIONS /api/v1/actions/download-sim
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55801 - "OPTIONS /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55801 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55838 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55901 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55935 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55936 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/actions/download-sim
+INFO:sentinel.actions:User admin downloading overview as pdf
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:55936 - "GET /api/v1/actions/download-sim?file_type=pdf&category=overview HTTP/1.1" 200 OK
+INFO:sentinel.main:[NODE] Incoming Request: GET /api/v1/system/overview
+INFO:sentinel.main:[NODE] Outgoing Response: 200
+INFO:     127.0.0.1:56013 - "GET /api/v1/system/overview HTTP/1.1" 200 OK
