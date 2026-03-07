@@ -118,8 +118,26 @@ def get_category_stats(category: str, db: Session = Depends(get_db)):
         }
 
     stats = db.query(SystemStat).filter(SystemStat.category == category).all()
+    
+    # Return skeletons for dashboard reliability if no data exists
     if not stats:
+        if category == "score":
+            return {
+                "national": {"value": 0, "change": "0%", "nodes": 0, "heatmap": [0,0,0,0,0,0]},
+                "factors": []
+            }
+        if category == "upi":
+            return {
+                "dashboard": {"vpa_checks_24h": "0", "flags": "0", "vpa_risk_percent": 0},
+                "threat_feed": []
+            }
+        if category == "inoculation":
+            return {
+                "scenarios": {},
+                "impact": {"prevented": "0", "velocity": "0"}
+            }
         return {}
+    
     return {s.key: (s.metadata_json if s.metadata_json else s.value) for s in stats}
 
 @router.get("/stats/agency")

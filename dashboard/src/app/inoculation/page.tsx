@@ -60,7 +60,7 @@ export default function InoculationPage() {
 
     let step = 0;
     const interval = setInterval(() => {
-      if (step < data.scenarios[scenario].steps.length) {
+      if (data?.scenarios?.[scenario]?.steps && step < data.scenarios[scenario].steps.length) {
         setLogs(prev => [...prev, data.scenarios[scenario].steps[step]]);
         step++;
       } else {
@@ -186,11 +186,11 @@ export default function InoculationPage() {
             <div className="space-y-4">
               <div className="flex justify-between items-center text-xs">
                 <span className="text-silver">Phishing Clicks Prevented</span>
-                <span className="font-mono font-bold text-indblue">{data?.impact.prevented || "..."}</span>
+                <span className="font-mono font-bold text-indblue">{data?.impact?.prevented || "0"}</span>
               </div>
               <div className="flex justify-between items-center text-xs">
                 <span className="text-silver">Reporting Velocity</span>
-                <span className="font-mono font-bold text-indgreen">{data?.impact.velocity || "..."}</span>
+                <span className="font-mono font-bold text-indgreen">{data?.impact?.velocity || "0%"}</span>
               </div>
             </div>
           </div>

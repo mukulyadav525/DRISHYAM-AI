@@ -118,9 +118,9 @@ export default function ScorePage() {
                                 <p className="text-xs text-silver mt-1">Aggregated trust score across all operational districts.</p>
                             </div>
                             <div className="text-right">
-                                <span className="text-4xl font-black text-indblue tracking-tighter">{data?.national.value || "..."}</span>
+                                <span className="text-4xl font-black text-indblue tracking-tighter">{data?.national?.value ?? "0"}</span>
                                 <p className="text-[10px] uppercase font-bold text-indgreen flex items-center justify-end gap-1">
-                                    <ArrowUpRight size={12} /> {data?.national.change}
+                                    <ArrowUpRight size={12} /> {data?.national?.change || "0%"}
                                 </p>
                             </div>
                         </div>

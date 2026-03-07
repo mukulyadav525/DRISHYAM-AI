@@ -64,3 +64,4 @@
  GET /agency 200 in 215ms (compile: 200ms, render: 15ms)
  GET /bharat 200 in 153ms (compile: 144ms, render: 9ms)
  GET / 200 in 8ms (compile: 3ms, render: 5ms)
+✓ Compiled in 14ms

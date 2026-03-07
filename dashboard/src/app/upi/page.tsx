@@ -419,15 +419,15 @@ export default function UPIPage() {
                             <div className="flex justify-between items-end">
                                 <div>
                                     <p className="text-[10px] uppercase font-bold text-silver">VPA Checks (24h)</p>
-                                    <p className="text-2xl font-bold">{data?.dashboard.vpa_checks_24h || "..."}</p>
+                                    <p className="text-2xl font-bold">{data?.dashboard?.vpa_checks_24h || "0"}</p>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] uppercase font-bold text-indgreen">Flags</p>
-                                    <p className="text-lg font-bold">{data?.dashboard.flags || "..."}</p>
+                                    <p className="text-lg font-bold">{data?.dashboard?.flags || "0"}</p>
                                 </div>
                             </div>
                             <div className="w-full bg-white/10 h-1 rounded-full overflow-hidden">
-                                <div className="bg-saffron h-full" style={{ width: `${data?.dashboard.vpa_risk_percent || 0}%` }} />
+                                <div className="bg-saffron h-full" style={{ width: `${data?.dashboard?.vpa_risk_percent || 0}%` }} />
                             </div>
                         </div>
                     </div>
