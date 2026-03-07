@@ -50,6 +50,10 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("[STARTUP] Database tables verified/created.")
         
+        # 1. Ensure Schema Compliance (migrations for existing tables)
+        from core.database import ensure_schema_compliance
+        ensure_schema_compliance()
+        
         # Seed Admin
         db = SessionLocal()
         try:
