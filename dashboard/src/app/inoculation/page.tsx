@@ -167,7 +167,7 @@ export default function InoculationPage() {
                 <p className="text-silver/30 italic">Target selection required...</p>
               ) : (
                 logs.map((log, i) => (
-                  <p key={i} className={log.includes("DISPATCHED") ? "text-saffron font-bold" : "text-white"}>
+                  <p key={i} className={log?.includes("DISPATCHED") ? "text-saffron font-bold" : "text-white"}>
                     {log}
                   </p>
                 ))
@@ -176,7 +176,7 @@ export default function InoculationPage() {
             <div className="mt-4 pt-4 border-t border-white/10">
               <div className="flex justify-between items-center text-[10px] font-bold uppercase">
                 <span className="text-silver">Success Rate</span>
-                <span className="text-indgreen font-mono">92%</span>
+                <span className="text-indgreen font-mono">{Math.floor(85 + Math.random() * 14)}%</span>
               </div>
             </div>
           </div>

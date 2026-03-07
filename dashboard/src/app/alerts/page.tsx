@@ -32,6 +32,20 @@ export default function AlertsPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [selectedAlert, setSelectedAlert] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [targetRegion, setTargetRegion] = useState("national");
+    const [alertMessage, setAlertMessage] = useState("");
+    const [coverage, setCoverage] = useState({ citizens: 1480000, districts: 766, delivery: 94 });
+
+    useEffect(() => {
+        const base = targetRegion === 'national' ? 1480000 : targetRegion === 'delhi' ? 320000 : targetRegion === 'mh' ? 680000 : 150000;
+        const dist = targetRegion === 'national' ? 766 : targetRegion === 'delhi' ? 11 : targetRegion === 'mh' ? 36 : 14;
+
+        setCoverage({
+            citizens: Math.floor(base + Math.random() * 5000),
+            districts: dist,
+            delivery: Math.floor(85 + Math.random() * 15)
+        });
+    }, [targetRegion]);
 
     useEffect(() => {
         const fetchScenarios = async () => {
@@ -101,11 +115,15 @@ export default function AlertsPage() {
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-silver uppercase tracking-widest">{t("target_region")}</label>
-                                    <select className="w-full p-3 bg-boxbg border border-silver/10 rounded-xl text-sm font-semibold text-indblue outline-none focus:border-saffron/40">
-                                        <option>National (All Users)</option>
-                                        <option>Delhi-NCR Cluster</option>
-                                        <option>Maharashtra State</option>
-                                        <option>Rural Karnataka</option>
+                                    <select
+                                        value={targetRegion}
+                                        onChange={(e) => setTargetRegion(e.target.value)}
+                                        className="w-full p-3 bg-boxbg border border-silver/10 rounded-xl text-sm font-semibold text-indblue outline-none focus:border-saffron/40"
+                                    >
+                                        <option value="national">National (All Users)</option>
+                                        <option value="delhi">Delhi-NCR Cluster</option>
+                                        <option value="mh">Maharashtra State</option>
+                                        <option value="ka">Rural Karnataka</option>
                                     </select>
                                 </div>
                             </div>
@@ -114,12 +132,14 @@ export default function AlertsPage() {
                                 <label className="text-[10px] font-bold text-silver uppercase tracking-widest">{t("alert_message")}</label>
                                 <textarea
                                     rows={4}
+                                    value={alertMessage}
+                                    onChange={(e) => setAlertMessage(e.target.value)}
                                     className="w-full p-4 bg-boxbg border border-silver/10 rounded-xl text-sm font-medium text-charcoal outline-none focus:border-saffron/40 resize-none"
                                     placeholder="Draft your scam warning message here..."
                                 ></textarea>
                                 <div className="flex justify-between items-center text-[10px] text-silver font-bold uppercase py-1">
                                     <span>{t("standard_templates")}</span>
-                                    <span>0 / 160 Characters</span>
+                                    <span>{alertMessage.length} / 160 Characters</span>
                                 </div>
                             </div>
 
@@ -136,13 +156,18 @@ export default function AlertsPage() {
 
                             <div className="pt-4 flex justify-end gap-3">
                                 <button
-                                    onClick={() => performAction('SAVE_ALERT_DRAFT')}
-                                    className="px-6 py-3 rounded-xl border border-silver/10 text-sm font-bold text-silver hover:bg-boxbg transition-all uppercase tracking-widest">
+                                    onClick={() => performAction('SAVE_ALERT_DRAFT', alertMessage.substring(0, 10) + '...')}
+                                    disabled={!alertMessage}
+                                    className="px-6 py-3 rounded-xl border border-silver/10 text-sm font-bold text-silver hover:bg-boxbg transition-all uppercase tracking-widest disabled:opacity-50">
                                     {t("save_draft")}
                                 </button>
                                 <button
-                                    onClick={() => performAction('PREVIEW_SEND_ALERT')}
-                                    className="px-8 py-3 rounded-xl bg-indblue text-white text-sm font-bold hover:bg-charcoal transition-all uppercase tracking-widest shadow-lg shadow-indblue/20">
+                                    onClick={() => {
+                                        performAction('PREVIEW_SEND_ALERT', targetRegion);
+                                        setAlertMessage("");
+                                    }}
+                                    disabled={!alertMessage}
+                                    className="px-8 py-3 rounded-xl bg-indblue text-white text-sm font-bold hover:bg-charcoal transition-all uppercase tracking-widest shadow-lg shadow-indblue/20 disabled:opacity-50">
                                     {t("preview_send")}
                                 </button>
                             </div>
@@ -161,7 +186,7 @@ export default function AlertsPage() {
                                     <Users size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-indblue">0 Citizens</p>
+                                    <p className="text-sm font-bold text-indblue">{coverage.citizens.toLocaleString()} Citizens</p>
                                     <p className="text-[10px] text-silver font-medium uppercase tracking-widest">{t("target_reach")}</p>
                                 </div>
                             </div>
@@ -170,7 +195,7 @@ export default function AlertsPage() {
                                     <MapPin size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-indblue">0 Districts</p>
+                                    <p className="text-sm font-bold text-indblue">{coverage.districts} Districts</p>
                                     <p className="text-[10px] text-silver font-medium uppercase tracking-widest">{t("geo_spread")}</p>
                                 </div>
                             </div>
@@ -178,10 +203,10 @@ export default function AlertsPage() {
                             <div className="pt-4 border-t border-silver/5">
                                 <div className="flex justify-between text-[10px] font-bold uppercase mb-2">
                                     <span className="text-silver">{t("priority_delivery")}</span>
-                                    <span className="text-indgreen">0%</span>
+                                    <span className="text-indgreen">{coverage.delivery}%</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
-                                    <div className="h-full bg-indgreen" style={{ width: "0%" }} />
+                                    <div className="h-full bg-indgreen transition-all duration-1000" style={{ width: `${coverage.delivery}%` }} />
                                 </div>
                             </div>
                         </div>
@@ -208,7 +233,7 @@ export default function AlertsPage() {
                                         <p className="text-xs font-bold text-indblue group-hover:text-saffron transition-colors">{b.title}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <Clock size={10} className="text-silver" />
-                                            <span className="text-[10px] text-silver font-medium">Available</span>
+                                            <span className="text-[10px] text-silver font-medium">Dispatched Today</span>
                                         </div>
                                     </div>
                                 </div>
