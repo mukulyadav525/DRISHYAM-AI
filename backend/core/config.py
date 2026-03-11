@@ -23,6 +23,12 @@ class Settings(BaseSettings):
     SARVAM_API_KEY: str = Field(..., env="SARVAM_API_KEY")
     GEMINI_API_KEY: Optional[str] = Field(None, env="GEMINI_API_KEY")
     
+    # Twilio Voice Calling
+    TWILIO_ACCOUNT_SID: Optional[str] = Field(None, env="TWILIO_ACCOUNT_SID")
+    TWILIO_AUTH_TOKEN: Optional[str] = Field(None, env="TWILIO_AUTH_TOKEN")
+    TWILIO_PHONE_NUMBER: Optional[str] = Field(None, env="TWILIO_PHONE_NUMBER")
+    TWILIO_WEBHOOK_BASE_URL: Optional[str] = Field(None, env="TWILIO_WEBHOOK_BASE_URL")
+    
     # Database
     DATABASE_URL: str = Field("sqlite:///./sentinel.db", env="DATABASE_URL")
     
@@ -94,6 +100,10 @@ except Exception as e:
             NEO4J_PASSWORD = "password"
             CORS_ORIGINS = ["*"]
             RATE_LIMIT_PER_MINUTE = 1000
+            TWILIO_ACCOUNT_SID = None
+            TWILIO_AUTH_TOKEN = None
+            TWILIO_PHONE_NUMBER = None
+            TWILIO_WEBHOOK_BASE_URL = None
         settings = MockSettings()
     else:
         raise e

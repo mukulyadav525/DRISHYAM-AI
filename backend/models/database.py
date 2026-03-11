@@ -77,6 +77,8 @@ class HoneypotSession(Base):
     persona = Column(String) # e.g., "Elderly Uncle"
     status = Column(String, default="active") # active, completed
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    handoff_timestamp = Column(DateTime, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
     
     messages = relationship("HoneypotMessage", back_populates="session")
 

@@ -28,12 +28,16 @@ def ensure_schema_compliance():
     
     queries_pg = [
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS customer_id VARCHAR;",
+        "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS handoff_timestamp TIMESTAMP;",
+        "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS metadata_json JSON;",
         "ALTER TABLE scam_clusters ADD COLUMN IF NOT EXISTS lat DOUBLE PRECISION;",
         "ALTER TABLE scam_clusters ADD COLUMN IF NOT EXISTS lng DOUBLE PRECISION;"
     ]
     
     queries_sqlite = [
         "ALTER TABLE honeypot_sessions ADD COLUMN customer_id VARCHAR;",
+        "ALTER TABLE honeypot_sessions ADD COLUMN handoff_timestamp TIMESTAMP;",
+        "ALTER TABLE honeypot_sessions ADD COLUMN metadata_json JSON;",
         "ALTER TABLE scam_clusters ADD COLUMN lat FLOAT;",
         "ALTER TABLE scam_clusters ADD COLUMN lng FLOAT;"
     ]
