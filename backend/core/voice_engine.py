@@ -127,11 +127,48 @@ class SarvamVoiceEngine:
             }
         except Exception as e:
             logger.error(f"STT: Transcription API failed: {e}")
-            return {
-                "transcript": "",
-                "language_detected": language,
-                "confidence": 0.0,
-            }
+            # ─── FALLBACK TO GEMINI ───
+            return await self.transcribe_with_gemini(audio_bytes, language)
+
+    async def transcribe_with_gemini(self, audio_bytes: bytes, language: str) -> Dict[str, Any]:
+        """Fallback STT using Google Gemini 1.5 Flash."""
+        if not settings.GEMINI_API_KEY:
+            return {"transcript": "", "language_detected": language, "confidence": 0.0}
+        
+        logger.info("STT: Using Gemini Fallback...")
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+            
+            # Encode audio to base64 for Gemini multimodal input
+            audio_b64 = base64.b64encode(audio_bytes).decode('utf-8')
+            
+            response = await self.client.post(
+                url,
+                json={
+                    "contents": [{
+                        "parts": [
+                            {"text": f"Transcribe this audio. The language is likely {language}."},
+                            {"inline_data": {"mime_type": "audio/webm", "data": audio_b64}}
+                        ]
+                    }]
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                text = data['candidates'][0]['content']['parts'][0]['text']
+                logger.info(f"STT (Gemini): {text[:60]}...")
+                return {
+                    "transcript": text.strip(),
+                    "language_detected": language,
+                    "confidence": 1.0,
+                }
+            
+            logger.error(f"STT: Gemini fallback failed with status {response.status_code}")
+            return {"transcript": "", "language_detected": language, "confidence": 0.0}
+        except Exception as e:
+            logger.error(f"STT: Gemini fallback exception: {e}")
+            return {"transcript": "", "language_detected": language, "confidence": 0.0}
 
     # ─── Text-to-Speech (TTS) ────────────────────────────────────────
     async def synthesize_speech(

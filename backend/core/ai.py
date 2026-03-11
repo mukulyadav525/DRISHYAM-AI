@@ -97,16 +97,55 @@ class SarvamHoneypot:
             
             if response.status_code != 200:
                 logger.error(f"AI: Sarvam API Error ({response.status_code}): {response.text}")
-                return "⚠️ System: AI Engine connection issue."
+                # Fallback to Gemini if Sarvam fails
+                return await self.generate_with_gemini(messages)
             
             data = response.json()
             ai_text = data["choices"][0]["message"]["content"]
+            
+            # ─── STRIP THINKING BLOCKS ───
+            import re
+            ai_text = re.sub(r'<think>.*?</think>', '', ai_text, flags=re.DOTALL).strip()
+            
             logger.info(f"AI: Generated response (Sarvam-M)")
             return ai_text
 
         except Exception as e:
             logger.error(f"AI: Generation failed: {e}")
-            return "⚠️ System: AI Engine failure."
+            return await self.generate_with_gemini(messages)
+
+    async def generate_with_gemini(self, messages: List[Dict[str, str]]) -> str:
+        """Fallback to Google Gemini if Sarvam quota is reached."""
+        if not settings.GEMINI_API_KEY:
+            return "⚠️ System: AI Engine failure (Quota exceeded & No fallback)."
+        
+        logger.info("AI: Using Gemini Fallback...")
+        try:
+            # Flatten messages for Gemini
+            flattened_prompt = ""
+            for m in messages:
+                flattened_prompt += f"{m['role'].upper()}: {m['content']}\n"
+            flattened_prompt += "ASSISTANT: "
+
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+            
+            response = await self.client.post(
+                url,
+                json={
+                    "contents": [{"parts": [{"text": flattened_prompt}]}],
+                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 300}
+                }
+            )
+            
+            if response.status_code == 200:
+                data = response.json()
+                text = data['candidates'][0]['content']['parts'][0]['text']
+                return text.strip()
+            
+            return "⚠️ System: AI Fallback Engine failed."
+        except Exception as e:
+            logger.error(f"Gemini fallback failed: {e}")
+            return "⚠️ System: AI Critical Failure."
 
     async def analyze_scam(self, history: List[Dict[str, str]]) -> Dict:
         """Analyze a finished conversation to extract scam intelligence."""
