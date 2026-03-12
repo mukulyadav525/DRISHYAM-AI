@@ -30,16 +30,22 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
     setIsLoading(true);
     try {
       const authStr = localStorage.getItem('sentinel_auth');
-      const token = authStr ? JSON.parse(authStr).token : null;
+      const auth = authStr ? JSON.parse(authStr) : null;
+      const token = auth?.token;
       
       const res = await fetch(`${API_BASE}/auth/simulation/list`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      
       if (res.ok) {
         setRequests(await res.json());
+      } else {
+        const errText = await res.text();
+        console.error("Dashboard list error:", res.status, errText);
+        toast.error(`HQ Error: ${res.status}`);
       }
-    } catch (e) {
-      toast.error("Failed to fetch requests");
+    } catch (e: any) {
+      toast.error(`Connection Failed: ${e.message}`);
     } finally {
       setIsLoading(false);
     }

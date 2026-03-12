@@ -621,9 +621,11 @@ export default function SimulationPortal() {
                     if (res.ok) {
                       setAuthStatus("pending");
                       toast.success(`Request Sent to HQ: ${customerId}`);
+                    } else {
+                        toast.error(`HQ Rejected Request: ${res.status}`);
                     }
-                  } catch (e) {
-                    toast.error("HQ Connection Failed");
+                  } catch (e: any) {
+                    toast.error("HQ Connection Failed: " + e.message);
                   }
                 } else {
                   toast.error("Please enter a valid Phone Number");
