@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/simulation/:path*",
+      "destination": "/simulation-app/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/dashboard/$1"
+    }
+  ]
+}
