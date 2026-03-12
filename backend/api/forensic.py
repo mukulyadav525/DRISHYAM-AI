@@ -129,7 +129,7 @@ async def upload_and_analyze_deepfake(
         content = await file.read()
         
         # We process the content via the Multimodal Vision Engine
-        ai_data = await vision_engine.analyze_multimodal_forensic(content, mime_type=file.content_type)
+        ai_data = await vision_engine.analyze_multimodal_forensic(content, mime_type=file.content_type, filename=file.filename)
         
         # Log the action
         new_action = SystemAction(
