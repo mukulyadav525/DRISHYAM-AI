@@ -171,6 +171,15 @@ export default function LoginPage() {
                             <span>RBAC Protected</span>
                         </div>
                     </div>
+
+                    {/* Evaluator Credentials */}
+                    <div className="mt-6 pt-4 border-t border-white/5 text-center">
+                        <div className="inline-block px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
+                            <p className="text-[10px] text-white/40 font-mono">
+                                <span className="text-saffron/60">ID:</span> admin <span className="mx-2 opacity-30">|</span> <span className="text-saffron/60">Pass:</span> password123
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Footer */}
