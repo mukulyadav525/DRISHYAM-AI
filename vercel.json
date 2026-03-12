@@ -1,12 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/_next/:path*",
-      "destination": "/dashboard/_next/:path*"
-    },
-    {
       "source": "/simulation/:path*",
-      "destination": "/simulation-app/:path*"
+      "destination": "/simulation-app/simulation/:path*"
     },
     {
       "source": "/(api/.*)",

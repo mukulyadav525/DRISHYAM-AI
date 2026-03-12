@@ -40,8 +40,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     const role = user?.role || "common";
     const allowedPages = ROLE_ACCESS[role] || ROLE_ACCESS["common"];
     
-    // Normalize pathname for check (remove /dashboard prefix if present)
-    const normalizedPath = pathname.startsWith("/dashboard") ? pathname.replace("/dashboard", "") || "/" : pathname;
+    // Normalize path for comparison (remove /dashboard prefix or handle root)
+    let normalizedPath = pathname.startsWith("/dashboard") ? pathname.replace("/dashboard", "") : pathname;
+    if (!normalizedPath || normalizedPath === "") normalizedPath = "/";
+    
     const isAllowed = allowedPages.includes(normalizedPath);
 
     if (!isAllowed) {
