@@ -1,1 +1,13 @@
 backend/.env
+node_modules/
+.DS_Store
+__pycache__/
+*.py[cod]
+*$py.class
+dist/
+build/
+.next/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
