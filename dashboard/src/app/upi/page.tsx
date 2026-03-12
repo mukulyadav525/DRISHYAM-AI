@@ -65,17 +65,21 @@ export default function UPIPage() {
         fetchStats();
     }, []);
 
-    const handleLookup = () => {
+    const handleLookup = async () => {
         if (!upiId) return;
         setIsLookingUp(true);
         setLookupResult(null);
-        performAction('VPA_LOOKUP', upiId);
-
-        setTimeout(() => {
+        
+        try {
+            const result = await performAction('VPA_LOOKUP', upiId);
+            if (result && result.detail) {
+                setLookupResult(result.detail.is_flagged ? 'RISK' : 'SAFE');
+            }
+        } catch (e) {
+            console.error("Lookup failed", e);
+        } finally {
             setIsLookingUp(false);
-            // Simulate risk logic
-            setLookupResult(upiId.toLowerCase().includes('win') || upiId.toLowerCase().includes('prize') ? 'RISK' : 'SAFE');
-        }, 1500);
+        }
     };
 
     const handleMessageScan = async () => {

@@ -69,7 +69,70 @@ async def perform_action(
 
         # Rich Metadata for UI feedback
         detail_data = {}
-        if req.action_type.upper() in ["VIEW_FEED_DETAIL", "VIEW_DETAIL", "VIEW_INCIDENT"]:
+        
+        if req.action_type.upper() == "SCAN_MULE_FEED":
+            # Simulate Intercepting new Ads
+            from models.database import MuleAd
+            import random
+            
+            # Check if we already have ads, if not, or 50% chance, create a new one
+            ad_titles = ["International Payments Helper", "Flexible Process Executive", "E-Commerce Reviewer", "Remote Treasury Associate"]
+            platforms = ["Telegram", "WhatsApp", "Facebook Meta", "LinkedIn"]
+            
+            new_ad = MuleAd(
+                title=random.choice(ad_titles),
+                salary=f"₹{random.randint(20, 80)},000 / month",
+                platform=random.choice(platforms),
+                risk_score=random.uniform(0.85, 0.99),
+                status="Mule Campaign",
+                recruiter_id=f"AGENT_{random.randint(1000, 9999)}"
+            )
+            db.add(new_ad)
+            db.commit()
+            db.refresh(new_ad)
+            
+            user_msg = f"Neural Interception Complete: {new_ad.title} flagged on {new_ad.platform}"
+            detail_data = {"new_ad_id": new_ad.id}
+
+            # Also create a CrimeReport for centralized tracking
+            from models.database import CrimeReport
+            import uuid
+            new_report = CrimeReport(
+                report_id=f"MLE-{uuid.uuid4().hex[:6].upper()}",
+                category="police",
+                scam_type="Mule Recruitment Campaign",
+                platform=new_ad.platform,
+                priority="HIGH",
+                metadata_json={
+                    "ad_title": new_ad.title,
+                    "risk_score": new_ad.risk_score
+                }
+            )
+            db.add(new_report)
+
+        elif req.action_type.upper() == "VPA_LOOKUP" and req.target_id:
+            # Connect to real UPI blocklist
+            from api.upi import BLOCKLIST_VPAS
+            is_blocked = req.target_id.lower() in BLOCKLIST_VPAS
+            detail_data = {
+                "vpa": req.target_id,
+                "is_flagged": is_blocked,
+                "risk_level": "CRITICAL" if is_blocked else "SAFE",
+                "reputation": "Known Malicious" if is_blocked else "Established / Clean"
+            }
+            user_msg = f"VPA Analysis for {req.target_id} Complete. Risk: {'HIGH' if is_blocked else 'LOW'}"
+
+        elif req.action_type.upper() == "DECOMPILE_AGENT":
+            # Simulated forensic attribution
+            detail_data = {
+                "attribution": "Shadow_Mule_Network",
+                "ip_origin": "103.21.XX.XX (Kolkata Proxy)",
+                "fingerprint": "BH-992-MULE",
+                "related_cases": 14
+            }
+            user_msg = f"Forensic Attribution for {req.target_id or 'Agent'} Complete."
+
+        elif req.action_type.upper() in ["VIEW_FEED_DETAIL", "VIEW_DETAIL", "VIEW_INCIDENT"]:
             detail_data = {
                 "id": req.target_id,
                 "victim_id": f"V-{req.target_id}09",

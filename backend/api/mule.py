@@ -71,6 +71,23 @@ async def analyze_mule_ad(
         status="success"
     )
     db.add(new_action)
+    
+    if final_score > 0.5:
+        from models.database import CrimeReport
+        new_report = CrimeReport(
+            report_id=f"MLE-{uuid.uuid4().hex[:6].upper()}",
+            category="police",
+            scam_type="Money Mule Recruitment",
+            platform=req.source,
+            priority="HIGH" if final_score > 0.8 else "MEDIUM",
+            metadata_json={
+                "score": final_score,
+                "keywords": detected_keywords,
+                "ad_sample": req.ad_text[:200]
+            }
+        )
+        db.add(new_report)
+
     db.commit()
     
     logger.info(f"MULE ANALYZE: Score={final_score} | Keywords={detected_keywords}")

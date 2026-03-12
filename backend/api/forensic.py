@@ -88,6 +88,23 @@ async def analyze_deepfake(
             }
         )
         db.add(new_action)
+        
+        if data.get("verdict") == "DEEPFAKE":
+            from models.database import CrimeReport
+            import uuid
+            new_report = CrimeReport(
+                report_id=f"VFR-{uuid.uuid4().hex[:6].upper()}",
+                category="police",
+                scam_type="Deepfake Identity Spoofing",
+                platform="Live Video Feed",
+                priority="CRITICAL",
+                metadata_json={
+                    "confidence": data.get("confidence"),
+                    "details": data.get("analysis_details")
+                }
+            )
+            db.add(new_report)
+
         db.commit()
 
         return ForensicResponse(
@@ -145,6 +162,23 @@ async def upload_and_analyze_deepfake(
             }
         )
         db.add(new_action)
+
+        if ai_data.get("verdict") == "DEEPFAKE":
+            from models.database import CrimeReport
+            import uuid
+            new_report = CrimeReport(
+                report_id=f"VFR-{uuid.uuid4().hex[:6].upper()}",
+                category="police",
+                scam_type="Visual Media deepfake",
+                platform=f"Uploaded: {file.filename}",
+                priority="HIGH",
+                metadata_json={
+                    "confidence": ai_data.get("confidence"),
+                    "details": ai_data.get("analysis_details")
+                }
+            )
+            db.add(new_report)
+
         db.commit()
 
         return ForensicResponse(

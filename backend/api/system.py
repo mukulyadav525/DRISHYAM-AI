@@ -170,12 +170,22 @@ def get_category_stats(category: str, db: Session = Depends(get_db)):
         }
 
     if category == "mule":
-        # Dynamic recruitment patterns
+        # Pull real ads from DB
+        from models.database import MuleAd
+        ads = db.query(MuleAd).order_by(MuleAd.created_at.desc()).limit(10).all()
+        
+        # Dynamic recruitment patterns based on real risk scores
         scams = db.query(CallRecord).filter(CallRecord.verdict == "scam").count()
         return {
             "ads": [
-                {"id": 1, "title": "Flexible Process Executive", "salary": "₹35,000 + Bonus", "platform": "Telegram", "risk": 0.95, "status": "Mule Campaign"},
-                {"id": 2, "title": "Data Entry Specialist", "salary": "₹15,000 / week", "platform": "WhatsApp", "risk": 0.88, "status": "Suspected Mule"}
+                {
+                    "id": ad.id,
+                    "title": ad.title,
+                    "salary": ad.salary or "₹35,000 + Bonus",
+                    "platform": ad.platform,
+                    "risk": ad.risk_score,
+                    "status": ad.status
+                } for ad in ads
             ],
             "patterns": [
                 {"label": "Remote Job Scam", "value": 75 + (scams % 25)},
@@ -249,48 +259,36 @@ def get_agency_stats(db: Session = Depends(get_db)):
     ).order_by(SystemAction.created_at.desc()).limit(15).all()
 
     # Build police cases from real recent actions
-    police_cases = []
-    case_counter = 5000 # New series for real cases
+    from models.database import CrimeReport
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all()
     
-    scam_types = ["UPI Fraud", "Investment Scam", "QR Trap", "Phishing Link", "Digital Arrest", "Voice Cloning"]
-    amounts = ["₹4,500", "₹12,000", "₹8,500", "₹25,000", "₹1,500", "₹50,000"]
-    platforms = ["WhatsApp", "Telegram", "SMS", "Phone Call", "Sentinel Shield"]
-    priorities = ["CRITICAL", "HIGH", "MEDIUM"]
+    police_cases = [
+        {
+            "id": r.report_id,
+            "amount": r.amount or "₹0",
+            "type": r.scam_type,
+            "platform": r.platform,
+            "status": r.status,
+            "priority": r.priority
+        } for r in reports if r.category == "police"
+    ]
 
-    for i, action in enumerate(recent_actions):
-        if action.action_type in ["SCAN_MESSAGE", "SCAN_QR", "INTERCEPT_MESSAGE", "POLICE_REPORT"]:
-            meta = action.metadata_json or {}
-            police_cases.append({
-                "id": f"REQ-{case_counter + i}",
-                "amount": meta.get("amount", amounts[i % len(amounts)]),
-                "type": meta.get("scam_type", scam_types[i % len(scam_types)]),
-                "platform": platforms[i % len(platforms)],
-                "status": "PENDING" if action.status != "success" else "RESOLVED",
-                "priority": meta.get("severity", priorities[i % len(priorities)])
-            })
-
-    # Bank mule accounts from recent freeze/risk actions
-    bank_accounts = []
-    recent_risk_actions = db.query(SystemAction).filter(
-        SystemAction.action_type.in_(["MARK_RISK", "BANK_ALERT"])
-    ).limit(8).all()
-    for action in recent_risk_actions:
-        metadata = action.metadata_json or {}
-        bank_accounts.append({
-            "vpa": metadata.get("vpa", metadata.get("target_vpa", "unknown@upi")),
-            "holder": metadata.get("holder", "Flagged Account"),
-            "bank": metadata.get("bank", "Detected Bank"),
-            "action": metadata.get("action", "FREEZE_REQUIRED")
-        })
+    # Bank accounts from reports
+    bank_accounts = [
+        {
+            "vpa": r.metadata_json.get("vpa", "unknown@upi") if r.metadata_json else "unknown@upi",
+            "holder": r.metadata_json.get("holder", "Flagged Account") if r.metadata_json else "Flagged Account",
+            "bank": r.metadata_json.get("bank", "Detected Bank") if r.metadata_json else "Detected Bank",
+            "action": r.metadata_json.get("recommended_action", "FREEZE_REQUIRED") if r.metadata_json else "FREEZE_REQUIRED"
+        } for r in reports if r.category == "bank"
+    ]
 
     # Check if any VPAs were recently frozen
-    frozen_count = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
+    frozen_count = db.query(CrimeReport).filter(CrimeReport.category == "bank", CrimeReport.status == "RESOLVED").count()
 
     # Telecom threat status
-    robocall_actions = db.query(SystemAction).filter(
-        SystemAction.action_type.in_(["BLOCK_IMEI", "TELECOM_BLOCK"])
-    ).count()
-    has_active_threat = robocall_actions > 0
+    telecom_reports = [r for r in reports if r.category == "telecom"]
+    has_active_threat = len([r for r in telecom_reports if r.status == "PENDING"]) > 0
 
     # National Triage Health
     total_actions = db.query(SystemAction).count()

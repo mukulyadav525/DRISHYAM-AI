@@ -140,3 +140,29 @@ class SimulationRequest(Base):
     status = Column(String, default="pending") # pending, approved, rejected
     requested_at = Column(DateTime, default=datetime.datetime.utcnow)
     processed_at = Column(DateTime, nullable=True)
+
+class MuleAd(Base):
+    __tablename__ = "mule_ads"
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String)
+    salary = Column(String, nullable=True)
+    platform = Column(String)
+    risk_score = Column(Float, default=0.0)
+    status = Column(String)
+    recruiter_id = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class CrimeReport(Base):
+    __tablename__ = "crime_reports"
+    id = Column(Integer, primary_key=True, index=True)
+    report_id = Column(String, unique=True, index=True) # e.g., REQ-5001
+    category = Column(String) # police, bank, telecom
+    scam_type = Column(String)
+    amount = Column(String, nullable=True)
+    platform = Column(String)
+    priority = Column(String) # CRITICAL, HIGH, MEDIUM
+    status = Column(String, default="PENDING") # PENDING, RESOLVED, DISMISSED
+    reporter_num = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)

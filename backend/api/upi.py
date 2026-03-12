@@ -167,6 +167,24 @@ async def scan_whatsapp_message(req: MessageScanRequest, db: Session = Depends(g
         status="success"
     )
     db.add(new_action)
+    
+    # T9 requirement: Automated Crime Reporting
+    if ai_result.get("verdict") == "RISK":
+        from models.database import CrimeReport
+        new_report = CrimeReport(
+            report_id=f"CYB-{uuid.uuid4().hex[:6].upper()}",
+            category="police",
+            scam_type=ai_result.get("pattern_detected", "WhatsApp Phishing"),
+            platform="WhatsApp/SMS",
+            priority="HIGH" if ai_result.get("confidence", 0) > 90 else "MEDIUM",
+            metadata_json={
+                "message_sample": message_text[:200],
+                "vpas_found": found_vpas,
+                "confidence": ai_result.get("confidence")
+            }
+        )
+        db.add(new_report)
+
     db.commit()
 
     return {
@@ -273,6 +291,24 @@ async def scan_qr_forensic(file: UploadFile = File(...), db: Session = Depends(g
             status="success"
         )
         db.add(new_action)
+
+        if not is_safe:
+            from models.database import CrimeReport
+            new_report = CrimeReport(
+                report_id=f"UPI-{uuid.uuid4().hex[:6].upper()}",
+                category="bank" if "upi://" in raw_payload.lower() else "police",
+                scam_type="Malicious QR Overlay" if "upi://" in raw_payload.lower() else "Phishing QR Redirection",
+                amount="₹0 (Pre-emptive)",
+                platform="Physical QR/Image",
+                priority="CRITICAL",
+                metadata_json={
+                    "vpa": merchant_vpa,
+                    "payload": raw_payload,
+                    "risk_factors": risk_factors
+                }
+            )
+            db.add(new_report)
+
         db.commit()
         
         return {

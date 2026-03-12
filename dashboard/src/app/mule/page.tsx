@@ -41,46 +41,44 @@ export default function MulePage() {
     const [selectedIntel, setSelectedIntel] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
+    const fetchStats = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/system/stats/mule`);
+            if (res.ok) setData(await res.json());
+        } catch (error) {
+            console.error("Error fetching mule stats:", error);
+        }
+    };
+
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/system/stats/mule`);
-                if (res.ok) setData(await res.json());
-            } catch (error) {
-                console.error("Error fetching mule stats:", error);
-            }
-        };
         fetchStats();
     }, []);
 
-    const startScan = () => {
+    const startScan = async () => {
         setIsScanning(true);
         setScanProgress(0);
-        performAction('SCAN_MULE_FEED');
-
+        
         let progress = 0;
-        const interval = setInterval(() => {
-            progress += 10;
-            setScanProgress(progress);
-            if (progress >= 100) {
-                clearInterval(interval);
-                setTimeout(() => {
-                    setIsScanning(false);
-                    // Mock updated feed after scan
-                    if (data) {
-                        const newAd = {
-                            id: data.ads.length + 1,
-                            title: "International Payments Helper",
-                            salary: "10% Commission",
-                            platform: "Facebook Meta",
-                            risk: 0.98,
-                            status: "Mule Campaign"
-                        };
-                        setData({ ...data, ads: [newAd, ...data.ads] });
-                    }
-                }, 500);
+        const progInterval = setInterval(() => {
+            progress += 5;
+            if (progress <= 90) setScanProgress(progress);
+        }, 100);
+
+        try {
+            const result = await performAction('SCAN_MULE_FEED');
+            clearInterval(progInterval);
+            setScanProgress(100);
+            
+            if (result && result.status === 'success') {
+                toast.success(result.message);
+                // Fetch fresh stats to see the new ad
+                await fetchStats();
             }
-        }, 150);
+        } catch (e) {
+            toast.error("Interception Pipeline Failed");
+        } finally {
+            setIsScanning(false);
+        }
     };
 
     return (
@@ -165,14 +163,15 @@ export default function MulePage() {
                                     </div>
                                     <div className="mt-4 flex gap-2">
                                         <button
-                                            onClick={() => {
+                                            onClick={async () => {
                                                 const id = toast.loading("Intercepting encrypted packet...");
-                                                setTimeout(() => toast.loading("Bypassing VPN relay...", { id }), 800);
-                                                setTimeout(() => toast.loading("Tracing MAC address: 4A:3B:CC...", { id }), 1600);
-                                                setTimeout(() => {
-                                                    toast.success("Identity Decompiled: Agent 'Shadow_Mule'", { id });
-                                                    performAction('DECOMPILE_AGENT', `AD-${ad.id}`);
-                                                }, 2400);
+                                                const result = await performAction('DECOMPILE_AGENT', `AD-${ad.id}`);
+                                                if (result && result.detail) {
+                                                    toast.success(result.message, { id });
+                                                    toast.success(`Attribution: ${result.detail.attribution}`, { duration: 4000 });
+                                                } else {
+                                                    toast.error("Decompilation Failed", { id });
+                                                }
                                             }}
                                             className="text-[10px] font-bold text-indblue bg-indblue/5 px-4 py-2 rounded-lg hover:bg-indblue hover:text-white transition-all uppercase tracking-widest">
                                             Decompile Agent Identity
