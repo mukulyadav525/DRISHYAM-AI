@@ -1070,15 +1070,15 @@ export default function SimulationPortal() {
                                     type="file"
                                     ref={fileInputRef}
                                     className="hidden"
-                                    accept="image/*,video/*"
+                                    accept="image/*,video/*,audio/*,application/pdf"
                                     onChange={(e) => e.target.files?.[0] && startDeepfakeScan(e.target.files[0])}
                                 />
                                 <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={() => fileInputRef.current?.click()}>
-                                    <Volume2 className="text-silver group-hover:text-saffron transition-colors" size={32} />
+                                    <FileWarning className="text-silver group-hover:text-saffron transition-colors" size={32} />
                                 </div>
-                                <p className="text-sm font-bold text-indblue">Drop Forensic Image or Video Frame</p>
+                                <p className="text-sm font-bold text-indblue">Drop Forensic Media or Documents</p>
                                 <p className="text-[10px] text-silver font-medium uppercase tracking-widest leading-relaxed">
-                                    Supports .mp4, .png, .jpg • MAX 50MB
+                                    Supports .mp4, .png, .mp3, .pdf • MAX 50MB
                                 </p>
                                 <button
                                     onClick={() => startDeepfakeScan()}
@@ -1090,15 +1090,16 @@ export default function SimulationPortal() {
                         )}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
-                            { label: "Blink Frequency", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.blink_frequency || "Normal") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
-                            { label: "Temporal Consistency", value: isDeepfakeScanning ? "Calculating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.temporal_consistency || "98.2%") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
-                            { label: "Lip-Sync Match", value: isDeepfakeScanning ? "Validating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" }
+                            { label: "Blink Frequency", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.blink_frequency || "Normal") : "Ready" },
+                            { label: "Temporal Sync", value: isDeepfakeScanning ? "Calculating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.temporal_consistency || "98.2%") : "Ready" },
+                            { label: "Correctness Prob", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? `${((deepfakeAiResult?.probability || 0.85) * 100).toFixed(1)}%` : "Ready" },
+                            { label: "False +ve Rate", value: isDeepfakeScanning ? "Estimating..." : deepfakeVerdict ? `${((deepfakeAiResult?.false_positive_rate || 0.02) * 100).toFixed(2)}%` : "Ready" }
                         ].map(f => (
                             <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm">
-                                <p className="text-[9px] font-bold text-silver uppercase tracking-wider mb-1">{f.label}</p>
-                                <p className={`text-sm font-bold ${f.color}`}>{f.value}</p>
+                                <p className="text-[9px] font-extrabold text-silver uppercase tracking-wider mb-1">{f.label}</p>
+                                <p className={`text-xs font-black ${deepfakeVerdict === 'DEEPFAKE' ? 'text-redalert' : 'text-indblue'}`}>{f.value}</p>
                             </div>
                         ))}
                     </div>

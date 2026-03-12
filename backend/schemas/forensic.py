@@ -10,5 +10,7 @@ class ForensicRequest(BaseModel):
 class ForensicResponse(BaseModel):
     verdict: str  # DEEPFAKE | VERIFIED
     confidence: float
+    probability: float # Probability of correctness
+    false_positive_rate: float
     analysis_details: Dict[str, Any]
     timestamp: datetime
