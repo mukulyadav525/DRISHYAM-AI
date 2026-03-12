@@ -49,6 +49,9 @@ export default function SimulationPortal() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [customerId, setCustomerId] = useState<string>("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [authStatus, setAuthStatus] = useState<"login" | "pending" | "approved">("login");
+  const [activeFeature, setActiveFeature] = useState<"chat" | "deepfake" | "upi" | null>(null);
+  const [isVideoMode, setIsVideoMode] = useState(false);
 
   useEffect(() => {
     const fetchPersonas = async () => {
@@ -367,29 +370,29 @@ export default function SimulationPortal() {
     <div className="flex flex-col items-center justify-center h-screen bg-boxbg overflow-hidden p-4 selection:bg-indblue/10 selection:text-indblue">
       <Toaster position="top-center" />
 
-      {!isLoggedIn ? (
+      {authStatus === "login" && (
         <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl border border-silver/10 fade-in">
           <div className="flex flex-col items-center text-center mb-8">
             <div className="w-20 h-20 bg-indblue rounded-3xl flex items-center justify-center text-white mb-6 shadow-xl shadow-indblue/20">
               <User size={40} />
             </div>
             <h2 className="text-3xl font-black text-indblue tracking-tight mb-2">Citizen Login</h2>
-            <p className="text-sm text-silver font-medium">Verify your identity to enter the protective grid.</p>
+            <p className="text-sm text-silver font-medium">Verify your phone to enter the protective grid.</p>
           </div>
 
           <div className="space-y-6">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-indblue uppercase tracking-widest ml-1">UID / Phone Number</label>
+              <label className="text-[10px] font-black text-indblue uppercase tracking-widest ml-1">Phone Number</label>
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Enter 12-digit UID or 10-digit Phone"
+                  placeholder="Enter 10-digit Phone Number"
                   value={customerId}
                   onChange={(e) => setCustomerId(e.target.value)}
                   className="w-full bg-boxbg border border-silver/20 rounded-2xl px-5 py-4 text-sm font-bold text-indblue focus:outline-none focus:border-indblue transition-all"
                 />
                 <div className="absolute right-4 top-1/2 -translate-y-1/2 text-silver">
-                  <ShieldCheck size={20} />
+                  <Phone size={20} />
                 </div>
               </div>
             </div>
@@ -397,15 +400,15 @@ export default function SimulationPortal() {
             <button
               onClick={() => {
                 if (customerId.length >= 10) {
-                  setIsLoggedIn(true);
-                  toast.success(`Identity Verified: ${customerId}`);
+                  setAuthStatus("pending");
+                  toast.success(`Request Sent for approval: ${customerId}`);
                 } else {
-                  toast.error("Please enter a valid UID or Phone Number");
+                  toast.error("Please enter a valid Phone Number");
                 }
               }}
               className="w-full py-5 bg-indblue text-white rounded-2xl font-black text-sm hover:bg-indblue/90 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98]"
             >
-              AUTHENTICATE <ArrowRight size={18} />
+              REQUEST ACCESS <ArrowRight size={18} />
             </button>
 
             <div className="pt-4 flex items-center gap-3">
@@ -415,23 +418,115 @@ export default function SimulationPortal() {
             </div>
           </div>
         </div>
-      ) : (
-        <div className="flex flex-col items-center w-full max-w-6xl h-full py-2">
+      )}
+
+      {authStatus === "pending" && (
+        <div className="w-full max-w-md bg-white rounded-[3rem] p-12 shadow-2xl border border-silver/10 text-center fade-in">
+          <div className="w-24 h-24 bg-saffron/10 text-saffron rounded-full flex items-center justify-center mx-auto mb-8 animate-pulse">
+            <Loader2 size={48} className="animate-spin" />
+          </div>
+          <h2 className="text-3xl font-black text-indblue mb-4 tracking-tight">Access Pending</h2>
+          <p className="text-silver text-sm font-medium mb-10 px-4">
+            Security clearance is being verified by the National Command Dashboard. Please wait for official approval.
+          </p>
+          
+          <button
+            onClick={() => {
+              setAuthStatus("approved");
+              toast.success("Identity Clear: Access Granted");
+            }}
+            className="w-full py-5 bg-indgreen text-white rounded-2xl font-black text-sm hover:bg-indgreen/90 transition-all shadow-xl shadow-indgreen/20 flex items-center justify-center gap-3"
+          >
+            <ShieldCheck size={20} /> SIMULATE ADMIN APPROVAL
+          </button>
+        </div>
+      )}
+
+      {authStatus === "approved" && !activeFeature && (
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8 p-6 fade-in">
+          <div className="col-span-1 md:col-span-3 text-center mb-6">
+            <h2 className="text-4xl font-black text-indblue tracking-tighter mb-2">Unified Defense Simulation</h2>
+            <p className="text-silver text-sm font-bold uppercase tracking-[0.2em]">Select an anti-fraud operational module</p>
+          </div>
+
+          {/* Feature 1: Chat */}
+          <button
+            onClick={() => setActiveFeature("chat")}
+            className="group bg-white p-8 rounded-[2.5rem] border border-silver/10 shadow-lg hover:shadow-2xl hover:border-indblue/20 transition-all flex flex-col items-center text-center"
+          >
+            <div className="w-20 h-20 bg-indblue/5 text-indblue rounded-3xl flex items-center justify-center mb-8 group-hover:bg-indblue group-hover:text-white transition-all transform group-hover:-translate-y-2">
+              <Mic size={36} />
+            </div>
+            <h3 className="text-2xl font-black text-indblue mb-4">Voice & Video</h3>
+            <p className="text-xs text-silver font-medium leading-relaxed mb-6">Interactive AI Honeypot to intercept and analyze scam caller tactics in real-time.</p>
+            <div className="mt-auto flex items-center gap-2 text-[10px] font-black text-indblue uppercase tracking-widest opacity-40 group-hover:opacity-100">
+              Initialize Ops <ArrowRight size={14} />
+            </div>
+          </button>
+
+          {/* Feature 2: Deepfake */}
+          <button
+            onClick={() => setActiveFeature("deepfake")}
+            className="group bg-white p-8 rounded-[2.5rem] border border-silver/10 shadow-lg hover:shadow-2xl hover:border-saffron/20 transition-all flex flex-col items-center text-center"
+          >
+            <div className="w-20 h-20 bg-saffron/5 text-saffron rounded-3xl flex items-center justify-center mb-8 group-hover:bg-saffron group-hover:text-white transition-all transform group-hover:-translate-y-2">
+              <ShieldAlert size={36} />
+            </div>
+            <h3 className="text-2xl font-black text-indblue mb-4">Deepfake Defense</h3>
+            <p className="text-xs text-silver font-medium leading-relaxed mb-6">Visual forensics to detect synthetic identity manipulations and biometric bypass attempts.</p>
+            <div className="mt-auto flex items-center gap-2 text-[10px] font-black text-saffron uppercase tracking-widest opacity-40 group-hover:opacity-100">
+              Deploy Shield <ArrowRight size={14} />
+            </div>
+          </button>
+
+          {/* Feature 3: UPI Shield */}
+          <button
+            onClick={() => setActiveFeature("upi")}
+            className="group bg-white p-8 rounded-[2.5rem] border border-silver/10 shadow-lg hover:shadow-2xl hover:border-indgreen/20 transition-all flex flex-col items-center text-center"
+          >
+            <div className="w-20 h-20 bg-indgreen/5 text-indgreen rounded-3xl flex items-center justify-center mb-8 group-hover:bg-indgreen group-hover:text-white transition-all transform group-hover:-translate-y-2">
+              <Zap size={36} />
+            </div>
+            <h3 className="text-2xl font-black text-indblue mb-4">UPI Armor</h3>
+            <p className="text-xs text-silver font-medium leading-relaxed mb-6">Secure payment simulation with instant merchant verification and risk scoring.</p>
+            <div className="mt-auto flex items-center gap-2 text-[10px] font-black text-indgreen uppercase tracking-widest opacity-40 group-hover:opacity-100">
+              Secure App <ArrowRight size={14} />
+            </div>
+          </button>
+          
+          <div className="col-span-1 md:col-span-3 text-center mt-8">
+            <button
+              onClick={() => setAuthStatus("login")}
+              className="text-[10px] font-black text-silver hover:text-indblue transition-colors uppercase tracking-[0.2em]"
+            >
+              Termination Session <X size={10} className="inline ml-1" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {authStatus === "approved" && activeFeature && (
+        <div className="flex flex-col items-center w-full max-w-6xl h-full py-2 fade-in">
           {/* Header */}
           <div className="text-center mb-4 w-full relative shrink-0">
             <button
-              onClick={() => setIsLoggedIn(false)}
+              onClick={() => setActiveFeature(null)}
               className="absolute left-0 top-1/2 -translate-y-1/2 text-[10px] font-black text-indblue uppercase tracking-widest flex items-center gap-1 hover:text-saffron transition-colors"
             >
-              <X size={14} /> Log Out
+              <X size={14} /> Back to Hub
             </button>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indblue/10 text-indblue rounded-full text-[10px] font-bold tracking-widest uppercase mb-1">
-              <ShieldCheck size={12} /> Official Trap Node: Mewat-NCR
+              <ShieldCheck size={12} /> Active Node: {activeFeature === 'chat' ? 'Voice_INT' : activeFeature === 'deepfake' ? 'Visual_DF' : 'Fin_Sec'}
             </div>
-            <h2 className="text-3xl font-extrabold text-indblue tracking-tight">Sentinel Trace</h2>
+            <h2 className="text-3xl font-extrabold text-indblue tracking-tight">
+              {activeFeature === 'chat' && "Sentinel Voice/Video Trace"}
+              {activeFeature === 'deepfake' && "Sentinel Deepfake Defense"}
+              {activeFeature === 'upi' && "Sentinel UPI Armor"}
+            </h2>
           </div>
 
-          <div className="flex flex-row items-center justify-center gap-12 w-full flex-1 min-h-0">
+          {activeFeature === 'chat' && (
+            <div className="flex flex-row items-center justify-center gap-12 w-full flex-1 min-h-0">
             {/* Phone Container */}
             <div className="relative w-[320px] h-[600px] bg-charcoal rounded-[3rem] border-[10px] border-charcoal shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] overflow-hidden transition-all shrink-0">
               {/* Phone Notch */}
@@ -733,6 +828,81 @@ export default function SimulationPortal() {
               ))}
             </div>
           </div>
+        )}
+
+          {activeFeature === 'deepfake' && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-[2.5rem] border border-silver/10 shadow-2xl fade-in max-w-2xl w-full mx-auto my-8 relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-saffron to-deeporange" />
+               <div className="w-24 h-24 bg-saffron/10 text-saffron rounded-full flex items-center justify-center mb-8 pulse-saffron">
+                 <ShieldAlert size={48} />
+               </div>
+               <h3 className="text-3xl font-black text-indblue mb-4 tracking-tighter">Forensic Scanner Alpha</h3>
+               <p className="text-silver text-sm font-medium text-center mb-10 max-w-md leading-relaxed">
+                 Our visual intelligence engine is scanning for synthetic biometric artifacts. 
+                 Real-time analysis detects AI-generated facial structures and voice clones.
+               </p>
+               
+               <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="p-6 bg-boxbg rounded-2xl border border-silver/5 flex flex-col items-center gap-3 group hover:border-indblue/20 transition-all cursor-pointer">
+                    <div className="w-10 h-10 bg-indblue text-white rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <ShieldCheck size={20} />
+                    </div>
+                    <span className="text-[10px] font-black text-indblue uppercase tracking-widest">Verify Skin</span>
+                  </div>
+                  <div className="p-6 bg-boxbg rounded-2xl border border-silver/5 flex flex-col items-center gap-3 group hover:border-saffron/20 transition-all cursor-pointer">
+                    <div className="w-10 h-10 bg-saffron text-white rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                       <Zap size={20} />
+                    </div>
+                    <span className="text-[10px] font-black text-saffron uppercase tracking-widest">Deep Scan</span>
+                  </div>
+               </div>
+               
+               <button 
+                 onClick={() => toast.success("Scanning complete: No synthetic artifacts found.")}
+                 className="mt-10 w-full py-5 bg-indblue text-white rounded-2xl font-black text-sm hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+               >
+                 START FORENSIC ANALYSIS <ArrowRight size={18} />
+               </button>
+            </div>
+          )}
+
+          {activeFeature === 'upi' && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-[2.5rem] border border-silver/10 shadow-2xl fade-in max-w-2xl w-full mx-auto my-8 relative overflow-hidden">
+               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indgreen to-emerald-400" />
+               <div className="w-24 h-24 bg-indgreen/10 text-indgreen rounded-full flex items-center justify-center mb-8">
+                 <Zap size={48} />
+               </div>
+               <h3 className="text-3xl font-black text-indblue mb-4 tracking-tighter">UPI Armor v4</h3>
+               <p className="text-silver text-sm font-medium text-center mb-10 max-w-md leading-relaxed">
+                 Sentinel UPI Shield provides a secure wrapper for high-risk transactions. 
+                 Merchant reputation and transaction velocity are checked against the national grid.
+               </p>
+
+               <div className="w-full bg-boxbg rounded-[2rem] p-8 border border-silver/10 mb-8">
+                  <div className="flex justify-between items-center mb-6">
+                    <span className="text-[10px] font-black text-silver uppercase tracking-widest">Transaction Status</span>
+                    <span className="px-2 py-1 bg-indgreen/10 text-indgreen rounded text-[8px] font-black tracking-widest uppercase">SECURE</span>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center border-b border-silver/5 pb-2">
+                       <span className="text-xs font-bold text-silver uppercase tracking-widest">Recipient</span>
+                       <span className="text-sm font-black text-indblue">SENTINEL_GOV @ SBI</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                       <span className="text-xs font-bold text-silver uppercase tracking-widest">Risk Score</span>
+                       <span className="text-sm font-black text-indgreen">0.02 (CLEAN)</span>
+                    </div>
+                  </div>
+               </div>
+               
+               <button 
+                onClick={() => toast.success("Transaction Shielded: Safety Verified")}
+                className="w-full py-5 bg-indgreen text-white rounded-2xl font-black text-sm hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
+              >
+                AUTHORIZE SECURE PAY <ArrowRight size={18} />
+              </button>
+            </div>
+          )}
 
           {/* Footer */}
           <footer className="w-full text-center pb-4 mt-4 shrink-0">
