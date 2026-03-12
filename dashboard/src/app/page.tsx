@@ -62,6 +62,7 @@ export default function OverviewPage() {
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [selectedStatType, setSelectedStatType] = useState<"scams" | "citizens" | "savings" | "threats" | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -70,9 +71,13 @@ export default function OverviewPage() {
         if (res.ok) {
           const overviewData = await res.json();
           setData(overviewData);
+          setFetchError(null);
+        } else {
+          throw new Error(`API returned ${res.status}`);
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching overview data:", error);
+        setFetchError("Grid Connection Blocked or Backend Offline");
       } finally {
         setIsLoading(false);
       }
@@ -176,8 +181,15 @@ export default function OverviewPage() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Main Grid Content */}
+      {fetchError && (
+        <div className="mb-6 p-4 bg-redalert/10 border border-redalert/20 rounded-2xl flex items-center justify-center gap-3 animate-pulse">
+          <AlertTriangle className="text-redalert" size={20} />
+          <p className="text-sm font-black text-redalert uppercase tracking-widest">{fetchError}</p>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           label={t("total_scams_blocked")}
           value={data?.stats.scams_blocked || "0"}

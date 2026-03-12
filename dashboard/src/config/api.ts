@@ -9,5 +9,8 @@ if (!API_BASE_RAW.startsWith("http://") && !API_BASE_RAW.startsWith("https://"))
 export const API_BASE = API_BASE_RAW.endsWith("/") ? API_BASE_RAW.slice(0, -1) : API_BASE_RAW;
 
 if (typeof window !== 'undefined') {
+    if (API_BASE.includes("localhost") && window.location.hostname !== "localhost") {
+        console.warn("[SENTINEL] WARNING: Frontend is running on", window.location.hostname, "but API_BASE is pointing to localhost. API calls will likely fail.");
+    }
     console.log("[SENTINEL] API Gateway initialized at:", API_BASE);
 }

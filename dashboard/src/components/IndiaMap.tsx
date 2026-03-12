@@ -19,12 +19,12 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
     const mapContainer = useRef<HTMLDivElement>(null);
     const map = useRef<maplibregl.Map | null>(null);
     const [mapError, setMapError] = useState<string | null>(null);
+    const [isGeoLoading, setIsGeoLoading] = useState(true);
 
     useEffect(() => {
         if (!mapContainer.current || map.current) return;
 
         try {
-            // Using a basic local-compatible style or OpenFreeMap with fallback
             map.current = new maplibregl.Map({
                 container: mapContainer.current,
                 style: {
@@ -32,9 +32,7 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
                     sources: {
                         'osm': {
                             type: 'raster',
-                            tiles: [
-                                'https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'
-                            ],
+                            tiles: ['https://a.tile.openstreetmap.org/{z}/{x}/{y}.png'],
                             tileSize: 256,
                             attribution: '&copy; OpenStreetMap Contributors'
                         }
@@ -45,7 +43,7 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
                             type: 'raster',
                             source: 'osm',
                             layout: { visibility: 'visible' },
-                            paint: { 'raster-opacity': 0.15 } // Faded look for tech theme
+                            paint: { 'raster-opacity': 0.15 }
                         }
                     ]
                 },
@@ -56,70 +54,82 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
 
             map.current.on('error', (e) => {
                 console.error('MapLibre Error:', e);
-                // Non-fatal errors (like tiles failing) shouldn't break the UI
+                setMapError("Failed to initialize map engine");
             });
 
-            map.current.on('load', () => {
+            map.current.on('load', async () => {
                 if (!map.current) return;
 
-                // Load the OFFICIAL GeoJSON
-                map.current.addSource('india-boundary', {
-                    type: 'geojson',
-                    data: '/data/india.json'
-                });
+                // Load GeoJSON with fetch to have better control/progress
+                try {
+                    const response = await fetch('/data/india.json', { cache: 'force-cache' });
+                    if (!response.ok) throw new Error("Failed to load map data");
+                    const data = await response.json();
 
-                // Land fill with glow effect
-                map.current.addLayer({
-                    id: 'india-fill',
-                    type: 'fill',
-                    source: 'india-boundary',
-                    paint: {
-                        'fill-color': '#0f172a',
-                        'fill-opacity': 0.8
-                    }
-                });
+                    if (!map.current) return;
 
-                // Borders - OFFICIAL SCALE
-                map.current.addLayer({
-                    id: 'india-border',
-                    type: 'line',
-                    source: 'india-boundary',
-                    paint: {
-                        'line-color': '#F97316',
-                        'line-width': 1.5,
-                        'line-opacity': 0.8
-                    }
-                });
+                    map.current.addSource('india-boundary', {
+                        type: 'geojson',
+                        data: data
+                    });
 
-                // Add pulse markers
-                hotspots.forEach((spot) => {
-                    const el = document.createElement('div');
-                    el.className = 'map-marker';
+                    map.current.addLayer({
+                        id: 'india-fill',
+                        type: 'fill',
+                        source: 'india-boundary',
+                        paint: {
+                            'fill-color': '#0f172a',
+                            'fill-opacity': 0.8
+                        }
+                    });
 
-                    const pulse = document.createElement('div');
-                    pulse.className = `pulse-ring ${spot.intensity === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-500'}`;
-                    el.appendChild(pulse);
+                    map.current.addLayer({
+                        id: 'india-border',
+                        type: 'line',
+                        source: 'india-boundary',
+                        paint: {
+                            'line-color': '#F97316',
+                            'line-width': 1.5,
+                            'line-opacity': 0.8
+                        }
+                    });
 
-                    const dot = document.createElement('div');
-                    dot.className = `dot ${spot.intensity === 'CRITICAL' ? 'bg-red-600' : 'bg-orange-400'}`;
-                    el.appendChild(dot);
+                    // Add markers after boundary is loaded
+                    hotspots.forEach((spot) => {
+                        const el = document.createElement('div');
+                        el.className = 'map-marker';
 
-                    new maplibregl.Marker({ element: el })
-                        .setLngLat([spot.lng, spot.lat])
-                        .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false })
-                            .setHTML(`<div class="p-3 bg-white rounded-xl shadow-xl border border-silver/20 min-w-[120px]">
-                                        <p class="text-[9px] font-black text-silver uppercase tracking-widest mb-1">${spot.intensity} SECTOR</p>
-                                        <p class="text-xs font-bold text-indblue font-sans">${spot.name}</p>
-                                      </div>`))
-                        .addTo(map.current!);
-                });
+                        const pulse = document.createElement('div');
+                        pulse.className = `pulse-ring ${spot.intensity === 'CRITICAL' ? 'bg-red-500' : 'bg-orange-500'}`;
+                        el.appendChild(pulse);
 
-                // Resize to fit container
-                map.current.resize();
+                        const dot = document.createElement('div');
+                        dot.className = `dot ${spot.intensity === 'CRITICAL' ? 'bg-red-600' : 'bg-orange-400'}`;
+                        el.appendChild(dot);
+
+                        new maplibregl.Marker({ element: el })
+                            .setLngLat([spot.lng, spot.lat])
+                            .setPopup(new maplibregl.Popup({ offset: 25, closeButton: false })
+                                .setHTML(`<div class="p-3 bg-white rounded-xl shadow-xl border border-silver/20 min-w-[120px]">
+                                            <p class="text-[9px] font-black text-silver uppercase tracking-widest mb-1">${spot.intensity} SECTOR</p>
+                                            <p class="text-xs font-bold text-indblue font-sans">${spot.name}</p>
+                                          </div>`))
+                            .addTo(map.current!);
+                    });
+
+                    map.current.resize();
+                    setIsGeoLoading(false);
+                } catch (geoErr) {
+                    console.error("GeoJSON Load Error:", geoErr);
+                    setMapError("Failed to load geo-boundary data"); // Set error for GeoJSON loading
+                    setIsGeoLoading(false);
+                    // Map still works, just no boundary
+                }
             });
 
         } catch (err: any) {
             setMapError(err.message);
+            setIsGeoLoading(false);
         }
 
         return () => {
@@ -132,6 +142,13 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
 
     return (
         <div className="relative w-full h-full rounded-2xl overflow-hidden border border-white/5 bg-[#0b1739] shadow-inner group">
+            {isGeoLoading && !mapError && (
+                <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-[#0b1739]/80 backdrop-blur-sm">
+                    <div className="w-8 h-8 border-2 border-saffron border-t-transparent rounded-full animate-spin mb-4" />
+                    <p className="text-[10px] font-black text-saffron uppercase tracking-[0.2em] animate-pulse">Syncing National Grid...</p>
+                </div>
+            )}
+
             {mapError ? (
                 <div className="absolute inset-0 flex items-center justify-center text-red-400 text-xs font-mono p-4 text-center">
                     [ERROR] GEO_INT_PIPELINE_FAILURE: {mapError}
