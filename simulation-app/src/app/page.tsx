@@ -15,10 +15,24 @@ import {
   Send,
   Mic,
   Volume2,
-  Loader2
+  Loader2,
+  Search,
+  QrCode,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  Copy,
+  ExternalLink,
+  Upload,
+  Scan,
+  Eye,
+  FileWarning,
+  Activity
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
 import { Toaster, toast } from "react-hot-toast";
+import { useActions } from "@/hooks/useActions";
+import FeedModal from "@/components/FeedModal";
 
 interface Persona {
   id: string;
@@ -53,6 +67,29 @@ export default function SimulationPortal() {
   const [activeFeature, setActiveFeature] = useState<"chat" | "deepfake" | "upi" | null>(null);
   const [isVideoMode, setIsVideoMode] = useState(false);
 
+  // ── Deepfake Defense State (Ported from Dashboard) ──
+  const { performAction } = useActions();
+  const [isDeepfakeScanning, setIsDeepfakeScanning] = useState(false);
+  const [scanProgress, setScanProgress] = useState(0);
+  const [deepfakeVerdict, setDeepfakeVerdict] = useState<null | 'VERIFIED' | 'DEEPFAKE'>(null);
+  const [deepfakeStats, setDeepfakeStats] = useState<any>(null);
+  const [deepfakeAiResult, setDeepfakeAiResult] = useState<any>(null);
+  const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // ── UPI Shield State (Ported from Dashboard) ──
+  const [upiId, setUpiId] = useState("");
+  const [isLookingUp, setIsLookingUp] = useState(false);
+  const [lookupResult, setLookupResult] = useState<null | 'SAFE' | 'RISK'>(null);
+  const [activeUpiTab, setActiveUpiTab] = useState<'lookup' | 'qr' | 'message'>('lookup');
+  const [upiStats, setUpiStats] = useState<any>(null);
+  const [qrScanning, setQrScanning] = useState(false);
+  const [forensicResult, setForensicResult] = useState<any>(null);
+  const [messageText, setMessageText] = useState("");
+  const [isMessageScanning, setIsMessageScanning] = useState(false);
+  const [scanResult, setScanResult] = useState<any>(null);
+
   useEffect(() => {
     const fetchPersonas = async () => {
       try {
@@ -73,6 +110,51 @@ export default function SimulationPortal() {
     };
     fetchPersonas();
   }, []);
+
+  // Fetch Deepfake stats
+  useEffect(() => {
+    if (activeFeature === 'deepfake') {
+      const fetchDFStats = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/system/stats/deepfake`);
+          if (res.ok) setDeepfakeStats(await res.json());
+        } catch (e) {
+          console.error("DF Stats fetch failed:", e);
+        }
+      };
+      fetchDFStats();
+    }
+  }, [activeFeature]);
+
+  // Fetch UPI stats
+  useEffect(() => {
+    if (activeFeature === 'upi') {
+      const fetchUPIStats = async () => {
+        try {
+          const res = await fetch(`${API_BASE}/system/stats/upi`);
+          if (res.ok) setUpiStats(await res.json());
+        } catch (e) {
+          console.error("UPI Stats fetch failed:", e);
+        }
+      };
+      fetchUPIStats();
+    }
+  }, [activeFeature]);
+
+  // Deepfake Scan Progress Effect
+  useEffect(() => {
+    if (isDeepfakeScanning && scanProgress < 100) {
+      const timer = setTimeout(() => {
+        setScanProgress(prev => prev + 5);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else if (scanProgress >= 100) {
+      setTimeout(() => {
+        setIsDeepfakeScanning(false);
+        setDeepfakeVerdict(deepfakeAiResult?.verdict || 'DEEPFAKE');
+      }, 500);
+    }
+  }, [isDeepfakeScanning, scanProgress, deepfakeAiResult]);
 
   const speechRecRef = useRef<any>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -149,6 +231,109 @@ export default function SimulationPortal() {
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+
+  // ── Deepfake Handlers (Ported from Dashboard) ──
+  const startDeepfakeScan = async (file?: File) => {
+    setIsDeepfakeScanning(true);
+    setScanProgress(0);
+    setDeepfakeVerdict(null);
+    setDeepfakeAiResult(null);
+
+    performAction('SCAN_VIDEO', 'FORENSIC_PIPELINE');
+
+    try {
+      const authStr = localStorage.getItem('sentinel_auth');
+      const token = authStr ? JSON.parse(authStr).token : null;
+
+      let res;
+      if (file) {
+        const formData = new FormData();
+        formData.append("file", file);
+        res = await fetch(`${API_BASE}/forensic/deepfake/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+      } else {
+        res = await fetch(`${API_BASE}/forensic/deepfake/analyze`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ media_type: 'video' })
+        });
+      }
+
+      if (res.ok) {
+        const result = await res.json();
+        setDeepfakeAiResult(result);
+      }
+    } catch (err) {
+      console.error("Forensic API Error:", err);
+    }
+  };
+
+  const handleLookup = () => {
+    if (!upiId) return;
+    setIsLookingUp(true);
+    setLookupResult(null);
+    performAction('VPA_LOOKUP', upiId);
+
+    setTimeout(() => {
+      setIsLookingUp(false);
+      setLookupResult(upiId.toLowerCase().includes('win') || upiId.toLowerCase().includes('prize') ? 'RISK' : 'SAFE');
+    }, 1500);
+  };
+
+  const handleMessageScan = async () => {
+    if (!messageText) return;
+    setIsMessageScanning(true);
+    setScanResult(null);
+
+    try {
+      const res = await fetch(`${API_BASE}/upi/scan-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: messageText })
+      });
+      if (res.ok) {
+        setScanResult(await res.json());
+      }
+    } catch (error) {
+      console.error("Error scanning message:", error);
+    } finally {
+      setIsMessageScanning(false);
+    }
+  };
+
+  const handleQRUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setQrScanning(true);
+    setForensicResult(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch(`${API_BASE}/upi/scan-qr`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setForensicResult(data);
+        performAction('SCAN_QR', data.is_safe === false ? 'MALICIOUS_QR_FOUND' : 'SAFE_QR_SCANNED');
+      }
+    } catch (err) {
+      console.error("QR Scan failed:", err);
+    } finally {
+      setQrScanning(false);
+    }
+  };
 
   // ── Real-Time Voice Processing via Backend (Sarvam Saaras + Bulbul) ──
   const startRecording = async () => {
@@ -831,85 +1016,365 @@ export default function SimulationPortal() {
         )}
 
           {activeFeature === 'deepfake' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-[2.5rem] border border-silver/10 shadow-2xl fade-in max-w-2xl w-full mx-auto my-8 relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-saffron to-deeporange" />
-               <div className="w-24 h-24 bg-saffron/10 text-saffron rounded-full flex items-center justify-center mb-8 pulse-saffron">
-                 <ShieldAlert size={48} />
-               </div>
-               <h3 className="text-3xl font-black text-indblue mb-4 tracking-tighter">Forensic Scanner Alpha</h3>
-               <p className="text-silver text-sm font-medium text-center mb-10 max-w-md leading-relaxed">
-                 Our visual intelligence engine is scanning for synthetic biometric artifacts. 
-                 Real-time analysis detects AI-generated facial structures and voice clones.
-               </p>
-               
-               <div className="grid grid-cols-2 gap-4 w-full">
-                  <div className="p-6 bg-boxbg rounded-2xl border border-silver/5 flex flex-col items-center gap-3 group hover:border-indblue/20 transition-all cursor-pointer">
-                    <div className="w-10 h-10 bg-indblue text-white rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                       <ShieldCheck size={20} />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 w-full max-w-6xl mt-4">
+                {/* Analysis Interface */}
+                <div className="lg:col-span-2 space-y-6">
+                    <div className="bg-white rounded-2xl border border-silver/10 p-8 shadow-sm h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-boxbg/30" />
+
+                        {isDeepfakeScanning ? (
+                            <div className="z-10 text-center space-y-6 w-full max-w-xs">
+                                <div className="relative w-32 h-32 mx-auto">
+                                    <div className="absolute inset-0 border-4 border-saffron/10 rounded-full" />
+                                    <div
+                                        className="absolute inset-0 border-4 border-saffron rounded-full border-t-transparent animate-spin"
+                                        style={{ animationDuration: '2s' }}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indblue">
+                                        {scanProgress}%
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <p className="text-sm font-bold text-indblue">Analyzing Facial Geometry...</p>
+                                    <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-saffron transition-all duration-300"
+                                            style={{ width: `${scanProgress}%` }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : deepfakeVerdict ? (
+                            <div className="z-10 text-center space-y-6">
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg ${deepfakeVerdict === 'DEEPFAKE' ? 'bg-redalert/10 text-redalert' : 'bg-indgreen/10 text-indgreen'}`}>
+                                    {deepfakeVerdict === 'DEEPFAKE' ? <ShieldAlert size={48} /> : <ShieldCheck size={48} />}
+                                </div>
+                                <div>
+                                    <h3 className={`text-2xl font-bold ${deepfakeVerdict === 'DEEPFAKE' ? 'text-redalert' : 'text-indgreen'}`}>
+                                        {deepfakeVerdict === 'DEEPFAKE' ? 'Deepfake Detected' : 'Verified Identity'}
+                                    </h3>
+                                    <p className="text-silver mt-2">Forensic analysis complete.</p>
+                                </div>
+                                <button
+                                    onClick={() => { setDeepfakeVerdict(null); performAction('RESET_SCAN'); }}
+                                    className="px-4 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-wider hover:text-indblue"
+                                >
+                                    Reset Scan
+                                </button>
+                            </div>
+                        ) : (
+                            <div
+                                className="z-10 text-center space-y-4"
+                            >
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*,video/*"
+                                    onChange={(e) => e.target.files?.[0] && startDeepfakeScan(e.target.files[0])}
+                                />
+                                <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={() => fileInputRef.current?.click()}>
+                                    <Volume2 className="text-silver group-hover:text-saffron transition-colors" size={32} />
+                                </div>
+                                <p className="text-sm font-bold text-indblue">Drop Forensic Image or Video Frame</p>
+                                <p className="text-[10px] text-silver font-medium uppercase tracking-widest leading-relaxed">
+                                    Supports .mp4, .png, .jpg • MAX 50MB
+                                </p>
+                                <button
+                                    onClick={() => startDeepfakeScan()}
+                                    className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-deeporange transition-all"
+                                >
+                                    SIMULATE SCAN
+                                </button>
+                            </div>
+                        )}
                     </div>
-                    <span className="text-[10px] font-black text-indblue uppercase tracking-widest">Verify Skin</span>
-                  </div>
-                  <div className="p-6 bg-boxbg rounded-2xl border border-silver/5 flex flex-col items-center gap-3 group hover:border-saffron/20 transition-all cursor-pointer">
-                    <div className="w-10 h-10 bg-saffron text-white rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                       <Zap size={20} />
+
+                    <div className="grid grid-cols-3 gap-4">
+                        {[
+                            { label: "Blink Frequency", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.blink_frequency || "Normal") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
+                            { label: "Temporal Consistency", value: isDeepfakeScanning ? "Calculating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.temporal_consistency || "98.2%") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
+                            { label: "Lip-Sync Match", value: isDeepfakeScanning ? "Validating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready", color: deepfakeVerdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" }
+                        ].map(f => (
+                            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm">
+                                <p className="text-[9px] font-bold text-silver uppercase tracking-wider mb-1">{f.label}</p>
+                                <p className={`text-sm font-bold ${f.color}`}>{f.value}</p>
+                            </div>
+                        ))}
                     </div>
-                    <span className="text-[10px] font-black text-saffron uppercase tracking-widest">Deep Scan</span>
-                  </div>
-               </div>
-               
-               <button 
-                 onClick={() => toast.success("Scanning complete: No synthetic artifacts found.")}
-                 className="mt-10 w-full py-5 bg-indblue text-white rounded-2xl font-black text-sm hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-               >
-                 START FORENSIC ANALYSIS <ArrowRight size={18} />
-               </button>
+                </div>
+
+                {/* Intelligence Sidebar */}
+                <div className="space-y-6">
+                    <div className="bg-white rounded-2xl border border-silver/10 p-6 shadow-sm">
+                        <h4 className="font-bold text-indblue mb-6 flex items-center gap-2">
+                            <Brain size={18} className="text-saffron" />
+                            Recent Incidents
+                        </h4>
+                        <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                            {deepfakeStats?.incidents && Array.isArray(deepfakeStats.incidents) ? deepfakeStats.incidents.map((inc: any, i: number) => {
+                                return (
+                                    <div
+                                        key={i}
+                                        onClick={async () => {
+                                            const result = await performAction('VIEW_INCIDENT', inc.type);
+                                            if (result && result.detail) {
+                                                setSelectedIncident(result.detail);
+                                                setIsModalOpen(true);
+                                            }
+                                        }}
+                                        className="p-4 rounded-xl bg-boxbg/50 border border-silver/5 hover:border-saffron/20 transition-all cursor-pointer group"
+                                    >
+                                        <div className="flex justify-between items-start mb-2">
+                                            <ShieldAlert size={18} className={inc.status === "Deepfake" ? "text-redalert" : "text-indgreen"} />
+                                            <span className="text-[10px] font-bold uppercase text-silver">{inc.risk} Risk</span>
+                                        </div>
+                                        <p className="text-xs font-bold text-indblue group-hover:text-saffron transition-colors">{inc.type}</p>
+                                        <p className="text-[10px] text-silver mt-1">Verdict: <span className="font-bold">{inc.status}</span></p>
+                                    </div>
+                                );
+                            }) : (
+                                <p className="text-[10px] text-silver italic">No recent incidents found.</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="bg-indblue p-6 rounded-2xl border border-saffron/20 text-white shadow-xl relative overflow-hidden group">
+                        <h4 className="font-bold mb-4 flex items-center gap-2">
+                            <ShieldCheck className="text-indgreen" size={18} />
+                            Model Status
+                        </h4>
+                        <div className="space-y-4">
+                            <div className="flex justify-between text-xs font-bold">
+                                <span className="text-silver">Liveness V4</span>
+                                <span className="text-indgreen uppercase">{deepfakeStats?.model_status?.liveness || "Operational"}</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-bold">
+                                <span className="text-silver">GAN Detector</span>
+                                <span className="text-indgreen uppercase">{deepfakeStats?.model_status?.gan_detector || "Active"}</span>
+                            </div>
+                            <div className="flex justify-between text-xs font-bold border-t border-white/5 pt-4 mt-4">
+                                <span className="text-silver">False Positive</span>
+                                <span className="text-saffron">{deepfakeStats?.model_status?.false_positive_rate || "0.01%"}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
           )}
 
           {activeFeature === 'upi' && (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-white rounded-[2.5rem] border border-silver/10 shadow-2xl fade-in max-w-2xl w-full mx-auto my-8 relative overflow-hidden">
-               <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indgreen to-emerald-400" />
-               <div className="w-24 h-24 bg-indgreen/10 text-indgreen rounded-full flex items-center justify-center mb-8">
-                 <Zap size={48} />
-               </div>
-               <h3 className="text-3xl font-black text-indblue mb-4 tracking-tighter">UPI Armor v4</h3>
-               <p className="text-silver text-sm font-medium text-center mb-10 max-w-md leading-relaxed">
-                 Sentinel UPI Shield provides a secure wrapper for high-risk transactions. 
-                 Merchant reputation and transaction velocity are checked against the national grid.
-               </p>
+            <div className="space-y-6 w-full max-w-6xl mt-4">
+                {/* Tabs */}
+                <div className="flex bg-boxbg p-1 rounded-xl border border-silver/10 self-start w-fit mx-auto">
+                    <button
+                        onClick={() => setActiveUpiTab('lookup')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeUpiTab === 'lookup' ? 'bg-white shadow-sm text-indblue' : 'text-silver hover:text-charcoal'}`}
+                    >
+                        Risk Lookup
+                    </button>
+                    <button
+                        onClick={() => setActiveUpiTab('qr')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeUpiTab === 'qr' ? 'bg-white shadow-sm text-indblue' : 'text-silver hover:text-charcoal'}`}
+                    >
+                        QR Forensic
+                    </button>
+                    <button
+                        onClick={() => setActiveUpiTab('message')}
+                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeUpiTab === 'message' ? 'bg-white shadow-sm text-indblue' : 'text-silver hover:text-charcoal'}`}
+                    >
+                        Message Scanner
+                    </button>
+                </div>
 
-               <div className="w-full bg-boxbg rounded-[2rem] p-8 border border-silver/10 mb-8">
-                  <div className="flex justify-between items-center mb-6">
-                    <span className="text-[10px] font-black text-silver uppercase tracking-widest">Transaction Status</span>
-                    <span className="px-2 py-1 bg-indgreen/10 text-indgreen rounded text-[8px] font-black tracking-widest uppercase">SECURE</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-silver/5 pb-2">
-                       <span className="text-xs font-bold text-silver uppercase tracking-widest">Recipient</span>
-                       <span className="text-sm font-black text-indblue">SENTINEL_GOV @ SBI</span>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+                    {/* Left Panel */}
+                    <div className="lg:col-span-8 space-y-6">
+                        {activeUpiTab === 'lookup' && (
+                            <div className="bg-white p-8 rounded-3xl border border-silver/10 shadow-sm relative overflow-hidden">
+                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                                    <Search size={120} />
+                                </div>
+                                <h3 className="text-xl font-bold text-indblue mb-6">Real-Time VPA Reputation</h3>
+
+                                <div className="space-y-4 relative z-10">
+                                    <div className="p-1 bg-boxbg rounded-2xl border border-silver/10 flex items-center focus-within:border-saffron/50 transition-colors">
+                                        <div className="pl-4 text-silver">
+                                            <Zap size={18} />
+                                        </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Enter VPA (e.g., citizen@upi)"
+                                            className="w-full bg-transparent p-4 text-sm font-bold text-indblue outline-none placeholder:text-silver/50"
+                                            value={upiId}
+                                            onChange={(e) => setUpiId(e.target.value)}
+                                        />
+                                        <button
+                                            onClick={handleLookup}
+                                            disabled={isLookingUp}
+                                            className="bg-indblue text-white px-6 py-3 rounded-xl m-1 text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all disabled:opacity-50"
+                                        >
+                                            {isLookingUp ? "Verifying..." : "Check"}
+                                        </button>
+                                    </div>
+
+                                    {lookupResult && (
+                                        <div className={`p-6 rounded-2xl border ${lookupResult === 'SAFE' ? 'bg-indgreen/5 border-indgreen/20' : 'bg-red-50 border-red-200'} animate-in fade-in slide-in-from-top-4 duration-500`}>
+                                            <div className="flex gap-4 items-start">
+                                                <div className={`p-3 rounded-full ${lookupResult === 'SAFE' ? 'bg-indgreen text-white' : 'bg-redalert text-white'}`}>
+                                                    {lookupResult === 'SAFE' ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}
+                                                </div>
+                                                <div>
+                                                    <h4 className={`font-bold ${lookupResult === 'SAFE' ? 'text-indgreen' : 'text-redalert'}`}>
+                                                        {lookupResult === 'SAFE' ? "VPA Verified Safe" : "High Risk Signature Detected"}
+                                                    </h4>
+                                                    <p className="text-xs text-charcoal mt-1 leading-relaxed">
+                                                        {lookupResult === 'SAFE'
+                                                            ? `ID ${upiId} has no fraudulent activity reported across Sentinel nodes.`
+                                                            : `WARNING: ${upiId} is linked to reported scam clusters.`}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        {activeUpiTab === 'qr' && (
+                            <div className="bg-white p-8 rounded-3xl border border-silver/10 shadow-sm text-center">
+                                <div className={`w-20 h-20 bg-boxbg rounded-2xl flex items-center justify-center mx-auto mb-4 border ${qrScanning ? 'border-indblue animate-pulse' : 'border-silver/5'}`}>
+                                    <QrCode className={qrScanning ? 'text-indblue animate-bounce' : 'text-saffron'} size={40} />
+                                </div>
+                                <h3 className="text-xl font-bold text-indblue mb-2">QR Forensic Analysis</h3>
+                                <p className="text-silver text-sm max-w-sm mx-auto mb-8 italic">Analyzing destination overlay before payment initiation.</p>
+
+                                {!qrScanning && !forensicResult && (
+                                    <label className="cursor-pointer bg-indblue text-white px-8 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all inline-block shadow-lg">
+                                        Upload QR Image
+                                        <input type="file" className="hidden" accept="image/*" onChange={handleQRUpload} />
+                                    </label>
+                                )}
+
+                                {qrScanning && <div className="inline-flex items-center gap-3 text-indblue text-xs font-bold uppercase tracking-widest"><Loader2 className="animate-spin" size={16} /> Processing QR...</div>}
+
+                                {forensicResult && !qrScanning && (
+                                    <div className="mt-6 text-left p-6 rounded-2xl border bg-boxbg/50">
+                                        <div className="flex items-start gap-4 mb-4">
+                                            <div className={`p-3 rounded-full ${forensicResult.is_safe ? 'bg-indgreen text-white' : 'bg-redalert text-white'}`}>
+                                                {forensicResult.is_safe ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+                                            </div>
+                                            <div className="w-full">
+                                                <h4 className={`font-bold ${forensicResult.is_safe ? 'text-indgreen' : 'text-redalert'}`}>
+                                                    {forensicResult.is_safe ? "Safe QR Destination" : "Malicious QR Detected"}
+                                                </h4>
+                                                <div className="mt-2 text-[10px] font-mono bg-white/50 p-3 rounded border border-silver/10 break-all">
+                                                    {forensicResult.payload}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button onClick={() => setForensicResult(null)} className="text-[10px] font-black text-indblue uppercase tracking-widest">Scan Alternative QR</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {activeUpiTab === 'message' && (
+                            <div className="bg-white p-8 rounded-3xl border border-silver/10 shadow-sm">
+                                <h3 className="text-xl font-bold text-indblue mb-6 flex items-center gap-2">
+                                    <MessageSquare className="text-saffron" size={20} /> Pattern Scanner
+                                </h3>
+                                <textarea
+                                    className="w-full p-4 bg-boxbg border border-silver/10 rounded-2xl text-sm text-charcoal outline-none focus:border-saffron/40 resize-none min-h-[120px]"
+                                    placeholder="Paste suspicious WhatsApp message..."
+                                    value={messageText}
+                                    onChange={(e) => setMessageText(e.target.value)}
+                                />
+                                <button
+                                    onClick={handleMessageScan}
+                                    disabled={isMessageScanning || !messageText}
+                                    className="mt-4 bg-indblue text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-charcoal transition-all disabled:opacity-50 flex items-center gap-2"
+                                >
+                                    {isMessageScanning && <Loader2 size={14} className="animate-spin" />}
+                                    {isMessageScanning ? "Scanning..." : "Analyze Patterns"}
+                                </button>
+
+                                {scanResult && (
+                                    <div className={`mt-6 p-6 rounded-2xl border ${scanResult.verdict === 'SAFE' ? 'bg-indgreen/5 border-indgreen/20' : 'bg-red-50 border-red-200'}`}>
+                                        <div className="flex items-center gap-4">
+                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white ${scanResult.verdict === 'SAFE' ? 'bg-indgreen' : 'bg-redalert'}`}>
+                                                {scanResult.verdict === 'SAFE' ? <CheckCircle2 size={24} /> : <AlertTriangle size={24} />}
+                                            </div>
+                                            <div>
+                                                <p className={`text-xs font-bold uppercase ${scanResult.verdict === 'SAFE' ? 'text-indgreen' : 'text-redalert'}`}>
+                                                    {scanResult.verdict === 'SAFE' ? 'Safe Communication' : `Fraud Probability: ${scanResult.confidence}%`}
+                                                </p>
+                                                <p className="text-[10px] text-charcoal font-bold mt-1">Pattern: {scanResult.pattern_detected}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
-                    <div className="flex justify-between items-center">
-                       <span className="text-xs font-bold text-silver uppercase tracking-widest">Risk Score</span>
-                       <span className="text-sm font-black text-indgreen">0.02 (CLEAN)</span>
+
+                    {/* Right Panel */}
+                    <div className="lg:col-span-4 space-y-6">
+                        <div className="bg-indblue p-6 rounded-3xl border border-saffron/20 shadow-xl text-white">
+                            <h4 className="font-bold text-sm mb-4 border-b border-white/10 pb-2 uppercase tracking-tighter">UPI Shield Stats</h4>
+                            <div className="space-y-4">
+                                <div className="flex justify-between items-end">
+                                    <div>
+                                        <p className="text-[9px] uppercase font-bold text-silver">VPA Checks (24h)</p>
+                                        <p className="text-2xl font-bold">{upiStats?.dashboard?.vpa_checks_24h || "1.2k"}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[9px] uppercase font-bold text-indgreen">Flags</p>
+                                        <p className="text-lg font-bold">{upiStats?.dashboard?.flags || "14"}</p>
+                                    </div>
+                                </div>
+                                <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-saffron h-full" style={{ width: `${upiStats?.dashboard?.vpa_risk_percent || 15}%` }} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-3xl border border-silver/10 shadow-sm">
+                            <h4 className="font-bold text-indblue text-xs mb-4 uppercase tracking-widest">Threat Feed</h4>
+                            <div className="space-y-3">
+                                {(upiStats?.threat_feed || [
+                                    { type: 'ID_COLLECT', risk: 'High', time: '2m ago' },
+                                    { type: 'QR_OVERLAY', risk: 'Medium', time: '15m ago' }
+                                ]).slice(0, 3).map((threat: any, i: number) => (
+                                    <div key={i} className="flex items-center justify-between p-3 bg-boxbg rounded-xl border border-silver/5">
+                                        <div>
+                                            <p className="text-[9px] font-black text-indblue uppercase">{threat.type}</p>
+                                            <p className="text-[8px] text-silver font-bold uppercase">{threat.time}</p>
+                                        </div>
+                                        <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase ${threat.risk === 'High' ? 'bg-red-100 text-redalert' : 'bg-orange-100 text-saffron'}`}>
+                                            {threat.risk}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                  </div>
-               </div>
-               
-               <button 
-                onClick={() => toast.success("Transaction Shielded: Safety Verified")}
-                className="w-full py-5 bg-indgreen text-white rounded-2xl font-black text-sm hover:shadow-xl transition-all flex items-center justify-center gap-3 active:scale-[0.98]"
-              >
-                AUTHORIZE SECURE PAY <ArrowRight size={18} />
-              </button>
+                </div>
             </div>
           )}
 
           {/* Footer */}
           <footer className="w-full text-center pb-4 mt-4 shrink-0">
-            <p className="text-[9px] font-black text-silver/40 uppercase tracking-[0.4em]">For A Secured Digital India | Sentinel Protection</p>
+            <p className="text-[9px] font-black text-silver/40 uppercase tracking-[0.4em]">Integrated Anti-Fraud Ops | Sentinel Command</p>
           </footer>
         </div>
       )}
+
+      <FeedModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        data={selectedIncident}
+      />
     </div>
 
   );
