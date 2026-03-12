@@ -98,16 +98,10 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Configure CORS for Dashboard and Simulation access
+# Configure CORS with regex to handle all Vercel and Railway subdomains
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://sentinel-1930-77sx.vercel.app",
-        "https://sentinel-1930.vercel.app",
-        "https://sentinel-1930-production.up.railway.app",
-        "http://localhost:3000",
-        "http://localhost:3001"
-    ],
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.railway\.app|http://localhost:300[0-1]",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
