@@ -2,8 +2,8 @@
     "name": "sentinel-1930-workspace",
     "private": true,
     "scripts": {
-        "build:dashboard": "cd dashboard && npm install && npm run build",
-        "build:simulation": "cd simulation-app && npm install && npm run build",
+        "build:dashboard": "npm run build -w dashboard",
+        "build:simulation": "npm run build -w simulation-app",
         "build": "npm run build:dashboard && npm run build:simulation",
         "dev:backend": "cd backend && python3 -m uvicorn main:app --reload --port 8000",
         "dev:dashboard": "cd dashboard && npm run dev -- -p 3000",
