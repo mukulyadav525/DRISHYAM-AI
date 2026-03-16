@@ -98,10 +98,10 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Configure CORS with regex to handle all Vercel and Railway subdomains
+# Configure CORS with regex to handle all Vercel, Railway, and Netlify subdomains
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.railway\.app|http://localhost:300[0-1]",
+    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.railway\.app|https://.*\.netlify\.app|http://localhost:300[0-1]",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
