@@ -106,6 +106,17 @@ async def lifespan(app: FastAPI):
                 ]
                 db.add_all(sessions)
                 db.commit()
+
+            from models.database import ScamCluster
+            if db.query(ScamCluster).count() == 0:
+                logger.info("[STARTUP] Seeding initial scam clusters map...")
+                clusters = [
+                    ScamCluster(cluster_id="CLS-991", risk_level="CRITICAL", location="Jamtara, JH", lat=24.21, lng=86.64, linked_vpas=42, honeypot_hits=156),
+                    ScamCluster(cluster_id="CLS-992", risk_level="HIGH", location="Mewat, HR", lat=28.14, lng=77.01, linked_vpas=28, honeypot_hits=89),
+                    ScamCluster(cluster_id="CLS-993", risk_level="MEDIUM", location="Noida, UP", lat=28.53, lng=77.39, linked_vpas=15, honeypot_hits=45)
+                ]
+                db.add_all(clusters)
+                db.commit()
         finally:
             db.close()
             

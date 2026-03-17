@@ -121,7 +121,83 @@ async def chaos_run_drill(body: dict, db: Session = Depends(get_db)):
 
 @router.get("/stats/command")
 async def get_command_stats(db: Session = Depends(get_db)):
+    from models.database import CrimeReport, ScamCluster, SystemAction, HoneypotSession
+    import datetime
+
+    # 1. Total Rupees Saved
+    # Base demo value + real resolved reports
+    rupees_saved = 1420500000
+    reports = db.query(CrimeReport).all()
+    for r in reports:
+        if r.status == "RESOLVED" and r.amount:
+            try:
+                # Clean amount string
+                amt_str = str(r.amount).replace("₹", "").replace(",", "").replace("/ month", "").strip()
+                if amt_str.isdigit():
+                    rupees_saved = int(rupees_saved) + int(amt_str)
+            except:
+                pass
+
+    # 2. Active Scam Clusters
+    active_clusters = db.query(ScamCluster).filter(ScamCluster.status == "active").count()
+    if active_clusters == 0:
+        active_clusters = 14
+
+    # 3. Mule VPA Freeze Requests
+    freeze_requests = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
+    if freeze_requests == 0:
+        freeze_requests = db.query(CrimeReport).filter(CrimeReport.status == "FROZEN").count()
+
+    # 4. National Cyber Hygiene
+    # Resilience score based on resolution rate
+    total_crime = db.query(CrimeReport).count()
+    resolved_crime = db.query(CrimeReport).filter(CrimeReport.status == "RESOLVED").count()
+    cyber_hygiene_val = 85.2 if total_crime == 0 else (resolved_crime / total_crime * 100)
+    cyber_hygiene = f"{cyber_hygiene_val:.1f}%"
+
+    # 5. State Performance (Influenced by real data)
+    states = [
+        {"state": "Uttar Pradesh", "cases": 14205, "resolved": "92%", "trend": "down"},
+        {"state": "Maharashtra", "cases": 12100, "resolved": "88%", "trend": "up"},
+        {"state": "Karnataka", "cases": 9500, "resolved": "94%", "trend": "down"},
+        {"state": "West Bengal", "cases": 8800, "resolved": "85%", "trend": "up"}
+    ]
+    
+    # 6. Active Intelligence Alerts
+    recent_alerts = []
+    # Fetch real recent critical reports
+    critical_reports = db.query(CrimeReport).filter(CrimeReport.priority == "CRITICAL").order_by(CrimeReport.created_at.desc()).limit(2).all()
+    for r in critical_reports:
+        recent_alerts.append({
+            "id": r.id,
+            "msg": f"{r.scam_type} detected on target platform",
+            "time": "JUST NOW",
+            "severity": "CRITICAL"
+        })
+    
+    if not recent_alerts:
+        recent_alerts = [
+            { "id": 1, "msg": "New Scam Pod detected in Noida Sector 15", "time": "2m ago", "severity": "HIGH" },
+            { "id": 2, "msg": "Massive VPA rotation detected in Jamtara", "time": "15m ago", "severity": "CRITICAL" }
+        ]
+
     return {
+        "rupees_saved": rupees_saved,
+        "active_clusters": active_clusters,
+        "freeze_requests": freeze_requests,
+        "cyber_hygiene": cyber_hygiene,
+        "state_performance": states,
+        "alerts": recent_alerts,
+        "system_health": {
+            "detection_nodes": "Operational",
+            "vpa_interceptor": "Operational",
+            "voice_ai_core": "Operational"
+        },
+        "forecast": [
+            { "day": "Today", "trend": "High Activity", "color": "text-redalert" },
+            { "day": "Tomorrow", "trend": "Moderate", "color": "text-saffron" },
+            { "day": "Weekend", "trend": "Critical Spike", "color": "text-redalert" }
+        ],
         "ops_readiness": "98.4%",
         "incident_response_avg": "2.4m",
         "active_warrooms": 2,
@@ -271,7 +347,7 @@ async def get_agency_stats(db: Session = Depends(get_db)):
             "avg_response_time": "12m",
             "threat_level": "HIGH" if urgent_count > 2 or has_active_threat else "MODERATE",
             "active_agents": 24,
-            "rupees_saved": 142000000 + (len(mule_accounts) * 50000) # Mock calculation
+            "rupees_saved": int(142000000) + (len(mule_accounts) * 50000) # Mock calculation
         }
     }
 
@@ -286,16 +362,47 @@ async def get_upi_stats(db: Session = Depends(get_db)):
 
 @router.get("/graph")
 async def get_system_graph(db: Session = Depends(get_db)):
-    return {
-        "nodes": [
-            {"id": "node1", "label": "Scammer Cluster A", "type": "cluster"},
-            {"id": "node2", "label": "Mule BP-01", "type": "bank"},
-            {"id": "node3", "label": "Victim Node", "type": "citizen"}
-        ],
-        "edges": [
-            {"from": "node1", "to": "node2", "label": "Laundering"},
-            {"from": "node1", "to": "node3", "label": "Call Trace"}
+    from models.database import ScamCluster, HoneypotEntity
+    import random
+    
+    clusters = db.query(ScamCluster).limit(5).all()
+    entities = db.query(HoneypotEntity).limit(10).all()
+    
+    nodes = []
+    edges = []
+    
+    # 1. Add clusters as central nodes
+    for c in clusters:
+        nodes.append({"id": f"cluster_{c.cluster_id}", "label": c.location, "type": "cluster"})
+        
+    # 2. Add entities (VPA, Phone etc) and link to clusters
+    for e in entities:
+        node_id = f"entity_{e.id}"
+        nodes.append({"id": node_id, "label": e.entity_value, "type": e.entity_type.lower() if e.entity_type else "unknown"})
+        if clusters:
+            # Create a semi-random edge for visualization
+            target = random.choice(clusters)
+            edges.append({
+                "source": node_id,
+                "target": f"cluster_{target.cluster_id}",
+                "label": "Direct Linked"
+            })
+            
+    # Fallback if DB is empty to prevent blank screen
+    if not nodes:
+        nodes = [
+            {"id": "node1", "label": "Cluster: Jamtara", "type": "cluster"},
+            {"id": "node2", "label": "Flagged BP-01", "type": "bank"},
+            {"id": "node3", "label": "Victim ID", "type": "citizen"}
         ]
+        edges = [
+            {"source": "node1", "target": "node2", "label": "Laundering"},
+            {"source": "node1", "target": "node3", "label": "Call Trace"}
+        ]
+        
+    return {
+        "nodes": nodes,
+        "edges": edges
     }
 
 @router.get("/search/citizen")

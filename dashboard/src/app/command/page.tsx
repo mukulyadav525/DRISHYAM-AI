@@ -172,14 +172,14 @@ export default function CommandPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {[
+                            {(data?.forecast || [
                                 { day: 'Today', trend: 'High Activity', color: 'text-redalert' },
                                 { day: 'Tomorrow', trend: 'Moderate', color: 'text-saffron' },
                                 { day: 'Weekend', trend: 'Critical Spike', color: 'text-redalert' }
-                            ].map((d, i) => (
+                            ]).map((d: any, i: number) => (
                                 <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <p className="text-[10px] uppercase font-bold text-white/40 mb-2">{d.day}</p>
-                                    <p className={`text-sm font-bold ${d.color}`}>{d.trend}</p>
+                                    <p className={`text-sm font-bold ${d.color || 'text-saffron'}`}>{d.trend}</p>
                                 </div>
                             ))}
                         </div>
