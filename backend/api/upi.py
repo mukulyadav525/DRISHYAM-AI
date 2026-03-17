@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from core.database import get_db
 from models.database import CrimeReport
+from core.audit import log_audit
 import uuid
 import datetime
 
@@ -9,11 +10,43 @@ router = APIRouter()
 
 @router.post("/verify")
 async def upi_verify(body: dict, db: Session = Depends(get_db)):
+    from models.database import HoneypotEntity
+    vpa = body.get("vpa", "").lower()
+    entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
+    
+    if entity and entity.risk_score > 0.7:
+        return {
+            "is_flagged": True,
+            "risk_level": "CRITICAL",
+            "reason": f"Mule account pattern detected. Risk Score: {entity.risk_score}",
+            "npci_block_ref": f"NPCI-{uuid.uuid4().hex[:6].upper()}"
+        }
+        
     return {
-        "is_flagged": True,
-        "risk_level": "HIGH",
-        "reason": "Mule account pattern detected",
-        "npci_block_ref": f"NPCI-{uuid.uuid4().hex[:6].upper()}"
+        "is_flagged": False,
+        "risk_level": "LOW",
+        "reason": "Clear / No history in interceptor nodes"
+    }
+
+@router.post("/impersonation/check")
+async def whatsapp_impersonation_check(body: dict, db: Session = Depends(get_db)):
+    from models.database import SuspiciousNumber
+    sender = body.get("sender_num", "")
+    entry = db.query(SuspiciousNumber).filter(SuspiciousNumber.phone_number == sender).first()
+    
+    if entry:
+        return {
+            "is_impersonator": True,
+            "legitimate_brand": body.get("target_brand", "Unknown"),
+            "confidence": entry.reputation_score,
+            "meta_report_submitted": True,
+            "category": entry.category
+        }
+        
+    return {
+        "is_impersonator": False,
+        "confidence": 0.0,
+        "meta_report_submitted": False
     }
 
 @router.post("/qr/verify")
@@ -45,11 +78,17 @@ async def upi_collect_intercept(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/freeze")
 async def upi_freeze(body: dict, db: Session = Depends(get_db)):
+    lock_id = f"LCK-{uuid.uuid4().hex[:6].upper()}"
+    vpa = body.get("vpa", "unknown")
+    
+    # [AC-M9-01] Audit Logging for Financial Freeze
+    log_audit(db, body.get("user_id", 0), "FREEZE_VPA_API", vpa, metadata={"lock_id": lock_id})
+    
     return {
         "status": "FROZEN",
-        "lock_id": f"LCK-{uuid.uuid4().hex[:6].upper()}",
+        "lock_id": lock_id,
         "value_protected": "₹1.2 Lakh",
-        "timestamp": "2024-04-01T12:00:00Z"
+        "timestamp": datetime.datetime.utcnow().isoformat()
     }
 
 @router.post("/scan-message")
@@ -103,6 +142,8 @@ async def upi_scan_qr(body: dict, db: Session = Depends(get_db)):
     )
     db.add(new_report)
     db.commit()
+    
+    log_audit(db, 0, "QR_FRAUD_DETECTED", "scammer@ybl", metadata={"case_id": case_id})
 
     return {
         "is_fraudulent": True,

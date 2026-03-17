@@ -1,8 +1,11 @@
 from fastapi import APIRouter, Depends
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
-import uuid
+from core.audit import log_audit
 import datetime
+import uuid
+from typing import Optional
 
 router = APIRouter()
 
@@ -27,13 +30,30 @@ async def generate_rbi_ombudsman(body: dict, db: Session = Depends(get_db)):
 
 @router.get("/case/status")
 async def get_case_status(incident_id: str, db: Session = Depends(get_db)):
+    from models.database import RecoveryCase
+    case = db.query(RecoveryCase).filter(RecoveryCase.incident_id == incident_id).first()
+    
+    if not case:
+        log_audit(db, 0, "CASE_LOOKUP_FAILED", incident_id) # Using 0 as system/anonymous for now
+        return {
+            "police_fir_status": "NOT_FOUND",
+            "bank_dispute_status": "NOT_FOUND",
+            "rbi_ombudsman_status": "NOT_FOUND",
+            "consumer_court_status": "NOT_FOUND",
+            "last_updated_utc": datetime.datetime.utcnow().isoformat(),
+            "next_action_required": "Check incident ID"
+        }
+        
+    log_audit(db, case.user_id, "CASE_LOOKUP", incident_id)
+        
     return {
-        "police_fir_status": "FILED",
-        "bank_dispute_status": "INVESTIGATING",
-        "rbi_ombudsman_status": "PENDING",
-        "consumer_court_status": "NOT_STARTED",
-        "last_updated_utc": datetime.datetime.utcnow().isoformat(),
-        "next_action_required": "Wait for 24 hours"
+        "police_fir_status": "FILED", # Always filed if case exists in our system
+        "bank_dispute_status": case.bank_status,
+        "rbi_ombudsman_status": case.rbi_status,
+        "consumer_court_status": case.legal_aid_status,
+        "last_updated_utc": case.updated_at.isoformat(),
+        "total_recovered": case.total_recovered,
+        "next_action_required": "Wait for bank verification" if case.bank_status == "INVESTIGATING" else "Case Resolved"
     }
 
 @router.post("/nalsa/check-eligibility")

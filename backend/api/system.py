@@ -164,16 +164,30 @@ async def get_command_stats(db: Session = Depends(get_db)):
     ]
     
     # 6. Active Intelligence Alerts
+    from models.database import IntelligenceAlert
     recent_alerts = []
-    # Fetch real recent critical reports
-    critical_reports = db.query(CrimeReport).filter(CrimeReport.priority == "CRITICAL").order_by(CrimeReport.created_at.desc()).limit(2).all()
-    for r in critical_reports:
+    
+    # Fetch real persistent alerts
+    db_alerts = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active == True).order_by(IntelligenceAlert.created_at.desc()).limit(3).all()
+    for a in db_alerts:
         recent_alerts.append({
-            "id": r.id,
-            "msg": f"{r.scam_type} detected on target platform",
-            "time": "JUST NOW",
-            "severity": "CRITICAL"
+            "id": a.id,
+            "msg": a.message,
+            "time": "JUST NOW" if (datetime.datetime.utcnow() - a.created_at).seconds < 60 else f"{(datetime.datetime.utcnow() - a.created_at).seconds // 60}m ago",
+            "severity": a.severity,
+            "location": a.location
         })
+    
+    # Fallback to critical reports if no global alerts
+    if not recent_alerts:
+        critical_reports = db.query(CrimeReport).filter(CrimeReport.priority == "CRITICAL").order_by(CrimeReport.created_at.desc()).limit(2).all()
+        for r in critical_reports:
+            recent_alerts.append({
+                "id": f"REP-{r.id}",
+                "msg": f"{r.scam_type} detected on {r.platform}",
+                "time": "JUST NOW",
+                "severity": "CRITICAL"
+            })
     
     if not recent_alerts:
         recent_alerts = [

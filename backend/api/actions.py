@@ -12,6 +12,7 @@ import os
 from scripts.gen_pro_pdf import generate_report
 from core.reporting import pdf_report_generator
 from core.graph import fraud_graph
+from core.audit import log_audit
 import datetime
 import uuid
 
@@ -117,16 +118,18 @@ async def perform_action(
             db.add(new_report)
 
         elif req.action_type.upper() == "VPA_LOOKUP" and req.target_id:
-            # Connect to real UPI blocklist
-            from api.upi import BLOCKLIST_VPAS
-            is_blocked = req.target_id.lower() in BLOCKLIST_VPAS
+            from models.database import HoneypotEntity
+            vpa = req.target_id.lower()
+            entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
+            
+            is_flagged = entity and entity.risk_score > 0.7
             detail_data = {
-                "vpa": req.target_id,
-                "is_flagged": is_blocked,
-                "risk_level": "CRITICAL" if is_blocked else "SAFE",
-                "reputation": "Known Malicious" if is_blocked else "Established / Clean"
+                "vpa": vpa,
+                "is_flagged": is_flagged,
+                "risk_level": "CRITICAL" if is_flagged else "SAFE",
+                "reputation": "Known Malicious (Honeypot Intercepted)" if is_flagged else ("Flagged" if entity else "Established / Clean")
             }
-            user_msg = f"VPA Analysis for {req.target_id} Complete. Risk: {'HIGH' if is_blocked else 'LOW'}"
+            user_msg = f"VPA Analysis for {vpa} Complete. Risk: {'HIGH' if is_flagged else 'LOW'}"
 
         elif req.action_type.upper() == "DECOMPILE_AGENT":
             # Simulated forensic attribution
@@ -153,13 +156,25 @@ async def perform_action(
                 "location": req.metadata.get("location", "Unknown Sector") if req.metadata else "Unknown Sector"
             }
         elif req.action_type.upper() == "GENERATE_RECOVERY_BUNDLE":
+            from models.database import RecoveryCase
+            inc_id = f"INC-{uuid.uuid4().hex[:6].upper()}"
+            
+            # Create persistent recovery case
+            new_case = RecoveryCase(
+                user_id=current_user.id,
+                incident_id=inc_id,
+                bank_status="INVESTIGATING",
+                total_recovered=0.0
+            )
+            db.add(new_case)
+            
             detail_data = {
-                "bundle_id": uuid.uuid4().hex[:6].upper(),
+                "bundle_id": inc_id,
                 "status": "READY",
                 "generated_at": datetime.datetime.utcnow().isoformat(),
                 "download_url": f"/api/v1/actions/download-file?filename=RECOVERY_BUNDLE.pdf&category=RESTITUTION_BUNDLE"
             }
-            user_msg = "Legal Restitution Bundle Generated based on Section 65B guidelines."
+            user_msg = f"Legal Restitution Bundle Generated (ID: {inc_id}). Tracking activated."
         elif req.action_type.upper() == "CONNECT_TICKER":
             detail_data = {
                 "ticker_items": [
@@ -188,6 +203,15 @@ async def perform_action(
         db.add(new_action)
         db.commit()
         db.refresh(new_action)
+        
+        # [AC-M9-01] Centralized Audit Logging
+        log_audit(
+            db=db,
+            user_id=current_user.id,
+            action=req.action_type.upper(),
+            resource=req.target_id,
+            metadata=req.metadata
+        )
         
         return {
             "status": "success",
@@ -243,6 +267,8 @@ async def get_download_file(
             # Just return the bank freeze as proxy for bundle for now
             pdf_bytes = pdf_report_generator.generate_dispute_letter(metadata)
             filename = "RESTITUTION_BUNDLE.pdf" # Simpler for now than ZIP
+            
+        log_audit(db, current_user.id, "DOC_GENERATION", filename, metadata={"category": category})
             
         return Response(content=pdf_bytes, media_type="application/pdf", headers={
             "Content-Disposition": f"attachment; filename={filename}"
