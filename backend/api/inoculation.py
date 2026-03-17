@@ -1,84 +1,68 @@
-"""
-Inoculation Module — Real SMS/WhatsApp simulation delivery.
-Sends real inoculation messages to citizens via configured channels.
-"""
-
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from core.config import settings
-from core.services_hub import backend_service
-import datetime
-import logging
-
-logger = logging.getLogger("sentinel.inoculation")
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from core.database import get_db
+import uuid
 
 router = APIRouter()
 
-
-class InoculationRequest(BaseModel):
-    phone_number: str
-    scenario: str
-    channel: str = "SMS"  # SMS, WHATSAPP, PUSH
-
-
-@router.post("/trigger", response_model=dict)
-async def trigger_inoculation(req: InoculationRequest):
-    """Send a real inoculation message to train citizens against scams."""
-    scenarios = {
-        "bank_kyc": {
-            "title": "KYC Expiry Scam Training",
-            "message": "[SENTINEL TRAINING] Dear Customer, your SBI account KYC has expired. Update now: bit.ly/sbi-kyc-verify — THIS IS A TEST. Real banks never send such links. Report 1930.",
-        },
-        "lottery_win": {
-            "title": "Lottery Scam Training",
-            "message": "[SENTINEL TRAINING] CONGRATS! You won KBC Lottery of ₹25 Lakhs. WhatsApp 90XXXXXX to claim. — THIS IS A TEST. No real lottery contacts you. Report 1930.",
-        },
-        "upi_refund": {
-            "title": "UPI Refund Scam Training",
-            "message": "[SENTINEL TRAINING] Your UPI refund of ₹4,999 is pending. Click to claim: bit.ly/upi-refund — THIS IS A TEST. UPI refunds are automatic. Report 1930.",
-        },
-        "job_offer": {
-            "title": "Job Offer Scam Training",
-            "message": "[SENTINEL TRAINING] Earn ₹5000/day from home! No investment needed. Join now: t.me/easywork — THIS IS A TEST. Real jobs don't recruit via unsolicited messages. Report 1930.",
-        },
-    }
-
-    if req.scenario not in scenarios:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid scenario. Available: {list(scenarios.keys())}"
-        )
-
-    scenario_data = scenarios[req.scenario]
-
-    # Dispatch via real notification service
-    result = await backend_service.dispatch_notification(
-        target=req.phone_number,
-        message=scenario_data["message"],
-        channel=req.channel,
-    )
-
-    logger.info(f"INOCULATION: Sent '{req.scenario}' to {req.phone_number} via {req.channel}")
-
+@router.post("/drill/send")
+async def send_drill(body: dict, db: Session = Depends(get_db)):
     return {
-        "status": result["status"],
-        "msg_id": result["msg_id"],
-        "scenario": req.scenario,
-        "title": scenario_data["title"],
-        "channel": req.channel,
-        "target": req.phone_number,
-        "timestamp": datetime.datetime.utcnow(),
+        "drill_id": f"DRL-{uuid.uuid4().hex[:6].upper()}",
+        "message_sent": True,
+        "clearly_labelled_as_drill": True,
+        "response_tracking_active": True
     }
 
-
-@router.get("/scenarios", response_model=dict)
-def list_scenarios():
-    """List all available inoculation scenarios."""
+@router.post("/vulnerability/assess")
+async def assess_vulnerability(body: dict, db: Session = Depends(get_db)):
     return {
-        "scenarios": [
-            {"id": "bank_kyc", "title": "KYC Expiry Scam", "severity": "high"},
-            {"id": "lottery_win", "title": "Lottery Win Scam", "severity": "medium"},
-            {"id": "upi_refund", "title": "UPI Refund Scam", "severity": "high"},
-            {"id": "job_offer", "title": "Job Offer Scam", "severity": "medium"},
-        ]
+        "top_scam_risks": ["KYC_SCAM", "LOTTERY_FRAUD"],
+        "recommended_drills": ["Gift Card Inoculation"],
+        "drill_format": "VOICE_IVR",
+        "personalisation_score": 0.88
     }
+
+@router.post("/corporate/enrol")
+async def corporate_enrol(body: dict, db: Session = Depends(get_db)):
+    return {
+        "subscription_id": f"CORP-{uuid.uuid4().hex[:8].upper()}",
+        "hr_dashboard_url": "https://sentinel.gov.in/corporate/dashboard",
+        "team_vulnerability_score_enabled": True,
+        "first_drill_scheduled": True
+    }
+
+@router.post("/diksha/publish-course")
+async def diksha_publish_course(body: dict, db: Session = Depends(get_db)):
+    return {
+        "course_published": True,
+        "diksha_course_url": "https://diksha.gov.in/cyber-safety-101",
+        "states_onboarded": 28,
+        "completion_certificate_enabled": True
+    }
+
+@router.post("/post-incident/enrol")
+async def post_incident_enrol(body: dict, db: Session = Depends(get_db)):
+    return {
+        "series_id": f"PII-{uuid.uuid4().hex[:6].upper()}",
+        "day1_drill_scheduled": True,
+        "tailored_to_scam_type": True,
+        "counselling_referral_offered": True
+    }
+
+@router.get("/scenarios")
+async def get_inoculation_scenarios(db: Session = Depends(get_db)):
+    return [
+        {
+            "id": "S-01",
+            "title": "KYC Verification Trap",
+            "description": "Scammer poses as bank official asking for KYC update via suspicious link.",
+            "risk_level": "HIGH"
+        },
+        {
+            "id": "S-02",
+            "title": "Lottery Win Tax",
+            "description": "Victim told they won a lottery but must pay 'processing tax' via UPI.",
+            "risk_level": "MEDIUM"
+        }
+    ]

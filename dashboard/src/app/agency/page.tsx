@@ -58,7 +58,7 @@ interface AgencyData {
     bank: { mule_accounts: BankMule[]; frozen_count: number; total_flagged: number };
     telecom: { has_active_threat: boolean; blocked_imei_count: number; threat_description: string };
     simulations: SimulationSession[];
-    triage: { cases_resolved: number; total_cases: number; avg_response_time: string; threat_level: string; active_agents: number };
+    triage: { cases_resolved: number; total_cases: number; avg_response_time: string; threat_level: string; active_agents: number; rupees_saved: number };
 }
 
 export default function AgencyPage() {
@@ -188,8 +188,15 @@ export default function AgencyPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => downloadSimulatedFile(`FIR_${c.id}`, 'pdf')}
-                                                className="px-4 py-2 bg-white border border-indblue/20 text-indblue text-[10px] font-black rounded-xl hover:bg-indblue hover:text-white transition-all">GENERATE FIR PACKET</button>
+                                                onClick={() => downloadSimulatedFile(`CERTIFIED_FIR_65B_${c.id}`, 'pdf')}
+                                                className="px-4 py-2 bg-indblue text-white text-[10px] font-black rounded-xl hover:bg-indblue/90 transition-all flex items-center gap-2">
+                                                <Download size={14} /> EXPORT CERTIFIED FIR (65B)
+                                            </button>
+                                            <button
+                                                onClick={() => downloadSimulatedFile(`BANK_DISPUTE_${c.id}`, 'pdf')}
+                                                className="px-4 py-2 bg-white border border-saffron/30 text-saffron text-[10px] font-black rounded-xl hover:bg-saffron/5 transition-all">
+                                                GENERATE DISPUTE LETTER
+                                            </button>
                                             <button
                                                 onClick={() => {
                                                     performAction('VIEW_CASE', c.id);
@@ -426,6 +433,15 @@ export default function AgencyPage() {
                                     <span className="text-[10px] font-bold uppercase text-white/60">Active Agents</span>
                                 </div>
                                 <span className="font-black text-lg">{triage.active_agents}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <Shield size={14} className="text-indgreen" />
+                                    <span className="text-[10px] font-bold uppercase text-white/60">Rupees Saved</span>
+                                </div>
+                                <span className="font-black text-lg text-indgreen">
+                                    ₹{(triage.rupees_saved / 10000000).toFixed(1)} Cr
+                                </span>
                             </div>
                             <div className="pt-4 border-t border-white/10">
                                 <div className="flex items-center justify-between">

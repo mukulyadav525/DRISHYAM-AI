@@ -1,0 +1,1095 @@
+SENTINEL 1930 - Extracted Checklist Items
+==========================================
+
+Phase 0 -- Founding Decisions
+-----------------------------
+Freeze project name: Sentinel 1930
+Freeze expanded name: BASIG
+Freeze mission statement
+Freeze one-line product positioning
+Freeze target users: citizens, telecoms, banks, police, govt agencies, insurers, job platforms
+Freeze v1 scope vs future scope
+Decide: startup, govt pilot, or hackathon MVP
+Define which modules are MVP / Pilot / National / Future
+Decide: citizen app free-only or freemium from day one
+Define success criteria: first 3 months
+Define success criteria: first 6 months
+Define success criteria: first 12 months
+Define non-negotiables: privacy, India-only storage, feature phone support, multilingual
+Define red lines: no illegal surveillance, no forced interception, no non-consensual data resale
+Create master project charter
+Create product vision document
+Create versioning structure for modules and releases
+Create risk register: business, legal, technical, operational
+Assign project owner / founder / product lead
+Assign technical lead
+Assign legal-policy lead
+Assign partnership lead
+Assign security lead
+Define decision-making workflow for product changes
+
+Phase 1 -- Requirements Freeze
+------------------------------
+Convert concept note into formal product requirements document
+Break 15 modules into epics
+Break each module into features
+Break each feature into user stories
+Define stakeholders for each module
+Define dependencies between modules
+Mark modules requiring external partnerships
+Mark modules that can be built standalone
+Define required languages for MVP
+Define full 22-language rollout plan
+Define device coverage requirements
+Define smartphone feature set
+Define feature phone feature set
+Define web dashboard feature set
+Define mobile app feature set
+Define OCC feature set
+Define government dashboard feature set
+Define police workflow requirements
+Define bank workflow requirements
+Define telecom workflow requirements
+Define citizen consent workflow requirements
+Define evidence packaging requirements
+Define reporting workflow requirements
+Define alerting workflow requirements
+Define scam classification taxonomy
+Define threat severity taxonomy
+Define fraud risk score definitions
+Define response SLA for each severity band
+Define evidence retention requirements
+Define transcript retention requirements
+Define call audio/video retention requirements
+Define data deletion workflow
+Define opt-in and opt-out flows
+Define caregiver / family trust circle flow
+Define senior citizen mode requirements
+Define district heatmap requirements
+Define FIR packet output format
+Define agency access matrix
+Define role-based access control matrix
+Define admin approval workflow
+Define audit log requirements
+Define analytics dashboard requirements
+Define citizen notification types
+Define tower / cell broadcast use cases
+Define scam inoculation drill requirements
+Define job portal surveillance requirements
+Define mule recruitment detection requirements
+Define post-scam recovery flow
+Define legal aid referral flow
+Define mental health referral flow
+Define B2B monetization requirements
+Define institution billing requirements
+Define KPI dashboard requirements
+
+Phase 2 -- System Decomposition
+-------------------------------
+Split system into core domains
+Create domain list: telecom detection, honeypot AI, fraud graph, payments shield, feature phone layer, dashboards, public alert engine, segment protection, privacy layer, OCC, reverse profiling, deepfake defense, inoculation engine, mule interceptor, recovery companion
+Decide microservices vs modular monolith approach
+Decide real-time vs batch components
+Identify latency-critical services
+Identify high-storage services
+Identify compliance-sensitive services
+Identify GPU-dependent services
+Identify external-integration-dependent services
+Define internal service boundaries
+Define service communication pattern
+Define event-driven components
+Define synchronous API components
+Define failure isolation boundaries
+Define tenancy model
+Define region model for India-wide deployment
+Define edge vs cloud computation split
+Define telco-edge workloads
+Define device-side workloads
+Define server-side workloads
+Define data residency architecture
+
+Phase 3 -- Repository, Engineering, and Delivery Setup
+------------------------------------------------------
+Create GitHub organization / source control workspace
+Create repositories: backend, frontend, mobile, ML, infra, docs
+Define branching strategy
+Define PR review policy
+Define commit conventions
+Define release tagging scheme
+Set up issue tracking
+Set up project boards
+Set up sprint workflow
+Set up architecture decision record template
+Set up code owners
+Set up secret management workflow
+Set up environments: local, dev, staging, prod
+Set up shared config strategy
+Set up .env handling policy
+Set up code formatting
+Set up linting
+Set up type checking
+Set up pre-commit hooks
+Set up test framework per repo
+Set up artifact storage
+Set up CI pipelines
+Set up CD pipelines
+Set up infra-as-code repository
+Set up changelog generation
+Set up dependency vulnerability scanning
+Set up license scanning
+Set up container registry
+Set up Docker base images
+Set up Kubernetes manifests / Helm charts
+Set up observability baseline
+
+Phase 4 -- Legal, Policy, and Compliance Foundations
+----------------------------------------------------
+Get legal review of full system concept
+Map all modules against Indian law
+Map lawful interception boundaries
+Define telecom consent and handoff legality
+Define citizen consent model for AI handoff
+Define explicit consent text
+Define privacy notice
+Define terms of use
+Define acceptable use policy
+Define citizen grievance redressal process
+Define law enforcement disclosure policy
+Define evidence handling SOP
+Define Section 65B evidence certification workflow
+Define DPDP compliance controls
+Define purpose limitation controls
+Define data minimization controls
+Define right-to-erasure workflow
+Define retention schedule by data type
+Define cross-agency sharing rules
+Define classified vs non-classified data classes
+Define public-interest data sharing boundaries
+Define child safety handling policy
+Define mental health referral disclaimer policy
+Define bank dispute automation legal review
+Define ombudsman complaint automation legal review
+Define consumer court filing assistance legal review
+Define job portal surveillance legal review
+Define web scanning boundaries
+Define mule recruitment monitoring legality
+Define deepfake analysis consent boundaries
+Define lawful logging requirements
+Define auditability requirements
+Define third-party vendor compliance requirements
+Define India-only hosting compliance strategy
+Plan third-party compliance audit
+Plan VAPT program
+Plan bug bounty policy
+Draft MoU templates for agencies and partners
+
+Phase 5 -- Data Design
+----------------------
+Design master data model
+Design entity model: citizens
+Design entity model: scam calls
+Design entity model: suspicious numbers
+Design entity model: voice fingerprints
+Design entity model: UPI IDs
+Design entity model: bank accounts
+Design entity model: mule recruiters
+Design entity model: job ads
+Design entity model: scam scripts
+Design entity model: districts
+Design entity model: scam events
+Design entity model: alerts
+Design entity model: agencies
+Design entity model: cases
+Design entity model: FIR packets
+Design entity model: deepfake video incidents
+Design entity model: inoculation drills
+Design entity model: recovery journeys
+Design entity model: Sentinel Score
+Define canonical scam category taxonomy
+Define canonical language codes
+Define canonical district/state IDs
+Define event schema: telecom metadata
+Define event schema: honeypot transcripts
+Define event schema: risk-scoring events
+Define event schema: graph updates
+Define event schema: alerts sent
+Define event schema: user actions
+Define audit event schema
+Define data lineage tracking
+Define schema versioning policy
+Define PII tagging framework
+Define redaction rules
+Define encryption fields
+Define searchable vs non-searchable data classes
+Define graph schema in Neo4j
+Define vector embedding schema
+Define object storage folder structure
+Define evidence package metadata schema
+
+Phase 6 -- Data Acquisition and Datasets
+----------------------------------------
+Identify sources: scam transcript data
+Identify sources: call metadata data
+Identify sources: number reputation data
+Identify sources: UPI fraud pattern data
+Identify sources: fake job ad data
+Identify sources: deepfake video datasets
+Identify sources: deepfake audio datasets
+Identify sources: Indian language scam samples
+Identify sources: WhatsApp scam message samples
+Identify sources: public fraud complaint patterns
+Identify government/public datasets for fraud
+Identify synthetic data generation needs
+Build synthetic scam transcript generation pipeline
+Build synthetic telecom metadata pipeline
+Build synthetic fraud graph pipeline
+Build synthetic mule recruitment ad dataset
+Build synthetic deepfake verification benchmark
+Build labeled scam-type dataset
+Build labeled urgency/fear/authority dataset
+Build labeled multilingual intent dataset
+Build labeled job-scam dataset
+Build labeled fake QR dataset
+Build labeled fake payment screenshot dataset
+Build labeled impersonation business account dataset
+Build labeled deepfake video sample dataset
+Build labeled deepfake audio sample dataset
+Build labeled liveness dataset
+Build labeled voice stress dataset
+Define annotation guidelines
+Set up annotation tools
+Set up QA for labels
+Set up dataset versioning
+Set up dataset access controls
+Create train / validation / test splits
+Create language-balanced evaluation set
+Create rural/urban balanced evaluation set
+Create low-resource language evaluation set
+
+Phase 7 -- Telecom Integration Foundation
+-----------------------------------------
+Define telecom integration architecture
+Define network-layer risk scoring input fields
+Define telco data ingestion API
+Define SIP handoff workflow
+Define AI takeover workflow
+Define pre-ring warning workflow
+Define risk threshold routing logic
+Define FRI score generation logic
+Define telco feedback loop from outcomes
+Define STIR/SHAKEN validation flow
+Define SIM swap anomaly detection workflow
+Define bulk dialling anomaly detection workflow
+Define CLI spoofing detection workflow
+Define high-velocity number detection workflow
+Define 2-hour sharing rule integration workflow
+Define DLT node integration requirements
+Define USSD routing requirements
+Define IVR routing requirements
+Define cell broadcast trigger logic
+Define surge-zone logic for geographic alerts
+Define telecom operator onboarding checklist
+Define API auth and key rotation for telecom partners
+Define telecom sandbox testing plan
+Define telecom failover plan
+Define telecom SLA monitoring
+Define telecom event replay and recovery mechanism
+
+Phases 8-12 -- Module Builds: Detection through Feature Phone
+-------------------------------------------------------------
+Build call metadata ingestion service
+Build risk feature extraction service
+Build fraud risk index model
+Build number reputation service
+Build fraud cluster graph lookup for live calls
+Build SIM age scoring feature
+Build call velocity scoring feature
+Build geographic anomaly scoring feature
+Build spoofing likelihood scoring feature
+Build prior complaint linkage feature
+Build behavior anomaly scoring feature
+Build FRI cache in Redis
+Build routing rule engine
+Build telco scoring API
+Build operator dashboard for flagged calls
+Build scam weather forecast model
+Build festival-date surge feature engineering
+Build ITR window surge feature engineering
+Build salary-credit surge feature engineering
+Build tower mesh alert trigger engine
+Build district-level surge alert generation rules
+Build logging and explainability for FRI scores
+Build feedback loop from confirmed scam outcomes
+Create evaluation benchmark for FRI model
+Set target precision / recall / latency thresholds
+Load test scoring system
+Build drift monitoring for fraud patterns
+Define handoff UX and backend flow
+Build one-tap "Let AI Handle" flow
+Build SIP transfer orchestration
+Build persona management system
+Create elderly uncle persona
+Create confused rural farmer persona
+Create busy executive persona
+Create college student persona
+Create housewife persona
+Define persona safety constraints
+Define persona memory model
+Build live ASR pipeline
+Build multilingual TTS pipeline
+Build dialogue orchestration engine
+Build conversation memory store
+Build interruption handling
+Build persona switching logic
+Build strategy switching logic mid-call
+Build script-guided extraction prompts
+Build entity extraction from ongoing calls
+Build scammer fatigue measurement
+Build confession trap flow with legal review
+Build adversarial anti-detection behaviors
+Build background audio feature extraction
+Build pod detector based on noise patterns
+Build voice cluster linkage
+Build WhatsApp honeypot persona flow
+Build multi-day scam conversation memory
+Build deepfake voice classifier integration
+Build psychological exploitation index scoring
+Build pre-call IVR whisper warnings
+Build time-waste optimization policy
+Build safe call termination rules
+Build human analyst escalation triggers
+Build transcript storage and indexing
+Build quality review tool for honeypot sessions
+Evaluate realism of conversations
+Evaluate language coverage and accent handling
+Evaluate latency and interruption robustness
+Set up Neo4j cluster
+Design fraud entity graph
+Create nodes for numbers, calls, UPI IDs
+Create nodes for bank accounts
+Create nodes for Telegram/WhatsApp handles
+Create nodes for scripts and devices
+Create nodes for job ads and recruiters
+Create nodes for districts and states
+Create graph relationships among entities
+Build live entity extraction pipeline
+Build multilingual NER pipeline
+Build voice fingerprint clustering linkage
+Build repeated-voice cross-number detection
+Build mule account correlation features
+Build script evolution tracker
+Build script mutation detection
+Build retraining trigger when scripts drift
+Build seasonal scam calendar engine
+Build repeat offender confidence score
+Build cross-border linkage fields
+Build graph query APIs
+Build one-click FIR packet generator
+Build graph visualization API for dashboard
+Build police export bundle
+Build homomorphic encryption plan for graph queries
+Build access policies for graph search
+Build graph health monitoring
+Build graph deduplication jobs
+Build entity resolution pipeline
+Build fraud case prioritization score
+Define NPCI integration architecture
+Define collect request risk signals
+Build flagged UPI ID lookup service
+Build mule UPI pre-transaction risk scoring
+Build QR code analysis service
+Build fake QR detection model
+Build fake payment screenshot detector
+Build impersonation account detector for business messaging
+Build suspicious link reputation engine
+Build "too-good-to-be-true" message classifier
+Build fake payment app detection rules
+Build APK threat signature workflow
+Build alert flow to citizens for suspicious payment requests
+Build bank alert generation flow
+Build mule freeze recommendation engine
+Build fintech/bank evidence push workflow
+Build WhatsApp scam message parser
+Build message classification pipeline
+Build image-based scam artifact analysis
+Build message-to-call correlation workflow
+Build evaluation pipeline for payment fraud detection
+Finalize *1930# USSD user journey
+Design USSD menu flows in key languages
+Build USSD backend service
+Build low-bandwidth report submission pipeline
+Build SMS reporting flow
+Build IVR reporting flow
+Build IVR in selected pilot languages
+Build voice menu prompts
+Build low-literacy UX for IVR
+Build SMS alert scheduler
+Build regional language message templates
+Build FM/radio alert content workflow
+Build CSC operator workflow
+Build Gram Panchayat alert workflow
+Build BharatNet priority routing coordination plan
+Build Sarpanch update distribution system
+Build cell broadcast integration for feature phone users
+Build no-internet reporting analytics
+Test on 2G / low-signal conditions
+Test on major feature phone models
+Test for non-literate user journeys
+
+Phases 13-17 -- Module Builds: Dashboard through OCC
+----------------------------------------------------
+Design role-based dashboard information architecture
+Build login and MFA for agencies
+Build district heatmap view
+Build state heatmap view
+Build fraud cluster graph view
+Build repeat offender panel
+Build live rupees-saved counter
+Build scam weather forecast panel
+Build government ROI counter
+Build predictive surge alert widget
+Build FIR generator UI
+Build case queue for police
+Build drill / training sandbox UI
+Build access for MHA
+Build access for CERT-In
+Build access for RBI
+Build access for NPCI
+Build access for banks
+Build access for state cyber police
+Build access for SEBI
+Build access for DoT
+Build scheduled daily war-room summary export
+Build downloadable intelligence reports
+Build alert acknowledgment workflow
+Build case escalation workflow
+Build map performance optimization
+Build audit trail inside dashboard
+Conduct usability testing with intended stakeholders
+Design citizen mobile app information architecture
+Design public alert feed
+Build push notification service
+Build region-specific alert rules
+Build hyper-local scam alert engine
+Build mobile call shield UX
+Build one-tap AI handoff inside app
+Build DigiLocker document verification workflow
+Build UMANG integration plan
+Build senior mode UI
+Build caregiver notification flow
+Build Aadhaar-linked opt-in alert flow
+Build family trust circle creation flow
+Build habit breaker challenge engine
+Build reward logic for gamified nudges
+Build Sentinel Score UX
+Build privacy-preserving local score computation
+Build neighborhood scam density display
+Build TV / DD ticker content export workflow
+Build app onboarding for citizens
+Build multilingual notification templates
+Build app analytics
+Build app store compliance checklist
+Build Android and iOS release pipelines
+Build Jan Dhan Guard rules
+Build Kisan Guard rules
+Build job scam interceptor rules
+Build education scam guard rules
+Build SME GST Buster workflows
+Build women safety detection layer
+Build senior-specific risk patterns
+Build college cyber patrol program workflow
+Build NRI / diaspora alert flow
+Build segment-based recommendation engine
+Build segment-specific alert templates
+Build segment-specific dashboards
+Build segment-specific metrics
+Validate segment classification logic
+Ensure segment handling does not violate privacy boundaries
+Design privacy architecture
+Design federated learning strategy
+Design anonymization pipeline
+Design differential privacy configuration
+Design data retention policies in code
+Design consent ledger
+Design encryption-at-rest and in-transit
+Design key management system
+Design immutable audit logs
+Design citizen data deletion service
+Design India-region storage enforcement
+Design field-level encryption for sensitive fields
+Build local scoring for Sentinel Score
+Build privacy-preserving analytics aggregation
+Build access logging and anomaly detection
+Build retention-based automatic deletion jobs
+Build privacy admin dashboard
+Conduct privacy impact assessment
+Conduct legal review of deployed privacy controls
+Define OCC operating model
+Define L1/L2/L3 support structure
+Define analyst runbooks
+Define escalation matrices
+Define 24/7 shift plan
+Define war room trigger conditions
+Build monitoring dashboards in Grafana
+Build PagerDuty alerting rules
+Build SLA breach alerts
+Build honeypot quality threshold alerts
+Build retraining escalation workflows
+Build state OCC access paths
+Build war room automation
+Build SMS capacity burst workflow
+Build backup provider failover
+Build emergency DD/AIR broadcast trigger workflow
+Build cell broadcast war mode workflow
+Build panchayat PA activation workflow
+Build bulk FIR submission workflow
+Build multi-region disaster recovery architecture
+Build backup and restore automation
+Build RPO/RTO validation drills
+Build chaos engineering scenarios
+Run outage simulation drills
+Run scam surge drills
+Build incident postmortem template
+
+Phases 18-22 -- Module Builds: Profiling through Recovery
+---------------------------------------------------------
+Define reverse profiling data model
+Define psychological indicators
+Build voice stress analysis pipeline
+Build shift-change detection logic
+Build scammer career graph logic
+Build aggression index
+Build urgency dependency score
+Build persuasion technique repertoire scoring
+Build background fingerprinting for call centres
+Build pod location inference heuristics
+Build skill-level classification model
+Build script source attribution model
+Build anti-AI-test detection logic
+Build prosecution readiness score
+Build economic damage report per operator
+Build profile review UI for analysts
+Build law-enforcement-only access controls
+Build Interpol export format
+Build safeguards against mislabeling innocent callers
+Build profile confidence score and review loop
+Define supported video platforms for MVP
+Define "Verify This Caller" user flow
+Build video ingestion SDK / plugin
+Build 3-second analysis workflow
+Build liveness detection model
+Build blink-frequency analysis
+Build micro-expression anomaly detection
+Build pupil response heuristics
+Build GAN artifact detector
+Build temporal consistency model
+Build audio-visual sync model
+Build background authenticity detector
+Build uniform and badge verification model
+Build classification verdict logic: REAL / SUSPECT / DEEPFAKE
+Build family alert flow for elder users
+Build evidence frame preservation workflow
+Build deepfake incident dashboard
+Build retraining pipeline for confirmed incidents
+Build device-performance fallback logic
+Build privacy controls for video processing
+Build explainability layer for verdicts
+Evaluate false positives carefully
+Validate on poor bandwidth and low-light conditions
+Define inoculation content strategy
+Define drill categories
+Build monthly drill scheduler
+Build SMS-based drill flow
+Build app-based drill flow
+Build IVR drill flow
+Build scoring engine for drills
+Build personalized feedback engine
+Build vulnerability profiling logic
+Build contextual-bandit personalization
+Build leaderboard / gamification logic
+Build certification logic
+Build post-incident drill workflow
+Build regional-language drill content
+Build school curriculum version
+Build DIKSHA-compatible content package
+Build corporate B2B training version
+Build HR dashboard for enterprises
+Build bank onboarding drill version
+Build Bharat Cyber Immunity Index calculation
+Build inoculation analytics dashboard
+Validate drill realism without causing panic
+Define mule recruitment threat taxonomy
+Define supported job portals and channels
+Build public job ad crawler where legally permitted
+Build job ad ingestion pipeline
+Build mule ad classifier
+Build multilingual ad classifier support
+Build recruiter identity extraction
+Build fake employer registry
+Build recruiter-to-network linkage graph
+Build click-time citizen warning flow
+Build browser extension or portal partnership flow
+Build bank pre-activation signal workflow
+Build mule network mapping
+Build WhatsApp group reporting workflow
+Build Telegram infiltration playbook within legal boundaries
+Build honeypot recruiter persona flow
+Build recruiter evidence packet generation
+Build recruiter prioritization score
+Build legal differentiation: mule victim vs criminal mule
+Build integration with recovery module
+Build performance dashboard for recruiter detection
+Define victim recovery journey map
+Build guided intake form for victims
+Build automated bank dispute letter generator
+Build multilingual letter templates
+Build ombudsman complaint generator
+Build consumer court guidance flow
+Build case status tracker
+Build integration fields for police case tracking
+Build bank case tracking
+Build ombudsman case tracking
+Build court case tracking
+Build NALSA eligibility checker
+Build legal-aid referral workflow
+Build mental-health referral workflow
+Build recovery progress notifications
+Build mule-victim legal shield workflow
+Build recovered-money counter
+Build cyber-insurance claim automation workflow
+Build support-group / community flow with moderation
+Build privacy and trauma-sensitive UX
+Build case document vault
+Build victim support analytics
+
+Phases 23-28 -- AI Stack, Multilingual, Frontend, Backend, Databases
+--------------------------------------------------------------------
+Select base LLMs for conversation engine
+Select ASR models for Indian languages
+Select TTS models for Indian languages
+Select NER model architecture
+Select graph ML architecture
+Select anomaly detection architecture
+Select deepfake audio architecture
+Select deepfake video architecture
+Select voice stress architecture
+Select job ad classifier architecture
+Select personalization model for inoculation
+Define training pipelines
+Define batch vs online learning approach
+Define retraining schedule per model
+Define model registry
+Define model versioning
+Define feature store
+Define offline evaluation metrics
+Define online evaluation metrics
+Define fairness checks across languages
+Define robustness checks across accents
+Define adversarial testing framework
+Define hallucination control for LLM agent
+Define safe response rules for honeypot agent
+Build human review pipeline for bad conversations
+Build red-team evaluation for model abuse
+Build inference serving layer
+Build GPU scheduling strategy
+Build fallback rules when models fail
+Build cost monitoring for inference
+Build drift detection for all major models
+Freeze language roadmap
+Build translation memory
+Build terminology glossary for fraud terms
+Build state-wise dialect priority list
+Build localized prompts for agent personas
+Build localized IVR voice packs
+Build localized SMS templates
+Build localized alert templates
+Build localized drill content
+Build localized legal complaint templates
+Build language selection logic
+Build fallback language logic
+Conduct translation QA
+Conduct accent intelligibility tests
+Conduct dialect comprehensibility tests
+Build script normalization for multilingual NLP
+Design design system
+Design typography system
+Design color system
+Design accessibility rules
+Build reusable component library
+Build auth screens
+Build citizen onboarding screens
+Build call shield screens
+Build alert feed screens
+Build trust circle screens
+Build score screens
+Build recovery screens
+Build admin screens
+Build agency dashboards
+Build district heatmap pages
+Build case detail pages
+Build graph visualization pages
+Build settings and privacy pages
+Build multilingual switcher
+Build senior mode
+Build low-bandwidth UI states
+Build error states
+Build notification center
+Build responsive web layout
+Build offline PWA behavior
+Run usability testing
+Run accessibility audit
+Set up React Native app
+Define native module requirements
+Build app navigation
+Build secure storage for tokens
+Build push notification integration
+Build call-related permissions flow
+Build "Let AI Handle" flow
+Build alert receipt and acknowledgment
+Build Sentinel Score local engine
+Build trust circle onboarding
+Build deepfake verification entry point
+Build recovery companion screens
+Build drill participation screens
+Build multilingual UI
+Build elder-friendly mode
+Build analytics instrumentation
+Build crash reporting
+Build app hardening
+Build Play Store assets
+Build App Store assets
+Complete release review checklists
+Set up FastAPI services
+Set up Node.js orchestration services
+Build API gateway
+Build auth service
+Build user profile service
+Build consent service
+Build notification service
+Build case service
+Build fraud scoring service
+Build graph service
+Build recovery service
+Build drill service
+Build admin service
+Build analytics service
+Build config service
+Build partner integration service
+Build audit log service
+Build file / evidence service
+Build report generation service
+Build WebSocket / live stream service
+Add API versioning
+Add rate limiting
+Add idempotency where needed
+Add structured logging
+Add tracing
+Add retry / failover patterns
+Add OpenAPI documentation
+Add health checks
+Add background job processing
+Set up PostgreSQL
+Set up schema migrations
+Set up Neo4j
+Set up Redis cluster
+Set up Weaviate / vector DB
+Set up object storage buckets
+Set up encryption keys
+Define backup schedules
+Define restore testing schedule
+Implement DB partitioning where needed
+Implement retention and archival policies
+Implement PII field encryption
+Implement hot/cold storage policy
+Implement query performance monitoring
+Implement graph indexing
+Implement vector similarity indexing
+Implement evidence storage checksum validation
+Implement geo/data residency checks
+
+Phases 29-32 -- Partnerships, Security, Testing, Observability
+--------------------------------------------------------------
+Prepare telecom partner pitch deck
+Prepare bank partner pitch deck
+Prepare government partner pitch deck
+Prepare NPCI partnership proposal
+Prepare RBI partnership proposal
+Prepare CERT-In proposal
+Prepare DoT proposal
+Prepare state cyber police proposal
+Prepare WhatsApp/Meta proposal
+Prepare Google India proposal
+Prepare job-portal proposal
+Prepare Prasar Bharati proposal
+Prepare NALSA proposal
+Prepare TISS/iCall/Vandrevala proposal
+Define sandbox integration plan for each partner
+Define production integration plan for each partner
+Define partner SLAs
+Define partner data contract
+Define partner failure handling
+Define partner escalation contacts
+Track status of each MoU and API access
+Define threat model
+Define attacker scenarios
+Define insider risk controls
+Implement MFA for privileged users
+Implement RBAC
+Implement ABAC if needed for agencies
+Implement device/session management
+Implement secrets vault
+Implement KMS
+Implement WAF
+Implement DDoS protection
+Implement API gateway auth hardening
+Implement token expiration/rotation
+Implement encryption everywhere
+Implement audit log signing
+Implement admin action approvals
+Implement anomaly detection on admin usage
+Implement data exfiltration controls
+Implement S3/object storage hardening
+Implement malware scanning for uploaded evidence
+Implement secure model serving
+Implement prompt injection defenses
+Implement model abuse controls
+Run secure code review
+Run infrastructure hardening review
+Run VAPT
+Run red-team exercises
+Define complete QA strategy
+Write unit tests
+Write integration tests
+Write contract tests
+Write E2E tests
+Write load tests
+Write soak tests
+Write chaos tests
+Write recovery tests
+Write failover tests
+Write localization tests
+Write accessibility tests
+Write device compatibility tests
+Write browser compatibility tests
+Write feature phone path tests
+Write USSD tests
+Write IVR tests
+Write telecom sandbox tests
+Write bank integration tests
+Write graph engine tests
+Write alert delivery tests
+Write evidence generation tests
+Write FIR packet formatting tests
+Write AI safety tests
+Write adversarial scammer tests
+Write deepfake false-positive tests
+Write mule ad classifier evaluation tests
+Write privacy regression tests
+Run pilot user acceptance testing
+Run agency UAT
+Run accessibility UAT with seniors / low-literacy users
+Set up centralized logging
+Set up metrics collection
+Set up traces
+Set up error tracking
+Set up uptime monitoring
+Set up service dashboards
+Set up ML model dashboards
+Set up data pipeline dashboards
+Set up partner integration dashboards
+Set up fraud-volume dashboards
+Set up district performance dashboards
+Set up alert delivery dashboards
+Set up inference latency dashboards
+Set up cost dashboards
+Set up product analytics for citizen app
+Set up funnel analytics for onboarding
+Set up retention analytics
+Set up drill participation analytics
+Set up recovery success analytics
+Set up fraud prevention metrics
+Set up anomaly alerts for monitoring
+Set up weekly ops review dashboard
+
+Phases 33-41 -- MVP through Post-Launch
+---------------------------------------
+Select exact MVP modules
+Freeze demo narrative
+Build MVP architecture only for selected modules
+Build sample data for demo
+Build demo-ready dashboard
+Build demo-ready honeypot call flow
+Build demo-ready graph engine
+Build demo-ready FIR packet
+Build demo-ready deepfake detection prototype
+Build demo-ready inoculation drill prototype
+Build demo-ready mule ad scan prototype
+Build investor/govt pitch deck
+Build product walkthrough video
+Build technical architecture slides
+Build demo script
+Rehearse live demo
+Prepare fallback recorded demo
+Prepare FAQ for judges / partners
+Select pilot geography
+Select pilot agencies
+Select pilot telecom partner
+Select pilot bank partners
+Select pilot language set
+Select pilot scam categories
+Configure pilot-only dashboards
+Configure pilot success metrics
+Train pilot analysts
+Train pilot police users
+Train pilot bank users
+Train field support staff
+Launch pilot communications
+Monitor pilot metrics daily
+Collect pilot feedback
+Fix issues rapidly
+Publish pilot outcome report
+Use pilot evidence to unlock more partnerships
+Define rollout waves by state
+Define language expansion waves
+Define district onboarding playbook
+Define bank onboarding playbook
+Define telecom onboarding playbook
+Define OCC staffing scale-up plan
+Define infra scale-up plan
+Define GPU capacity scale-up plan
+Define state cyber cell onboarding plan
+Define district certification rollout plan
+Define national awareness campaign plan
+Define citizen support plan at scale
+Define PR and crisis communication plan
+Define national incident escalation plan
+Define cross-border threat-sharing plan
+Finalize revenue streams for actual launch
+Decide which streams start in Year 1
+Define B2G pricing
+Define B2B pricing
+Define bank alert pricing
+Define telecom SaaS pricing
+Define insurer pricing
+Define citizen premium pricing
+Define SME plan pricing
+Define enterprise inoculation pricing
+Build billing system
+Build invoices and tax handling
+Build subscription management
+Build contract templates
+Build procurement-ready proposal templates
+Build ROI calculator for agencies
+Build ROI calculator for telecoms
+Build ROI calculator for banks
+Build sales pipeline tracking
+Build partner success/account management workflow
+Set up support channels
+Set up citizen support SOPs
+Set up government support SOPs
+Set up bank support SOPs
+Set up telecom support SOPs
+Set up escalation queues
+Set up incident classification
+Set up training manuals
+Set up onboarding manuals
+Set up analyst handbook
+Set up legal escalation handbook
+Set up recovery case handbook
+Set up multilingual support scripts
+Set up feedback capture workflow
+Set up bug triage workflow
+Set up release review meetings
+Set up weekly risk review
+Set up monthly partner review
+Write architecture documentation
+Write API documentation
+Write data model documentation
+Write telecom integration docs
+Write bank integration docs
+Write dashboard user manuals
+Write citizen app help docs
+Write IVR/USSD operational docs
+Write security runbooks
+Write privacy documentation
+Write legal evidence workflow docs
+Write disaster recovery documentation
+Write model cards for all ML models
+Write dataset documentation
+Write annotation guidelines docs
+Write partner onboarding docs
+Write FAQ for citizens
+Write FAQ for police
+Write FAQ for banks
+Write FAQ for telecoms
+Define prevented-loss methodology
+Define rupees-saved methodology
+Define recovered-amount methodology
+Define fraud reduction methodology
+Define district score methodology
+Define Sentinel Score methodology
+Define inoculation effectiveness methodology
+Define false-positive reporting methodology
+Define agency accountability metrics
+Define product KPI dashboard
+Define social impact dashboard
+Define public transparency report format
+Define annual cyber immunity report format
+Define district certification scorecard
+Define governance review board
+Define ethics advisory process
+Define model review committee
+Define public-interest audit schedule
+All critical modules pass testing
+Security review completed
+Privacy review completed
+Legal review completed
+Pilot metrics acceptable
+Monitoring live
+Backups live
+Disaster recovery tested
+On-call rota active
+Support staff trained
+Partner SLAs signed
+Public messaging approved
+Incident response ready
+Billing ready
+Documentation published
+Release candidate signed off
+Production go-live approved
+Track fraud pattern drift weekly
+Retrain models on confirmed new patterns
+Expand scam taxonomy regularly
+Expand language coverage
+Expand district coverage
+Improve false positive handling
+Improve deepfake detection accuracy
+Improve honeypot realism
+Improve recovery success rates
+Improve family trust circle adoption
+Improve drill completion rates
+Improve bank and telecom response times
+Improve partner dashboards
+Improve cost efficiency
+Improve GPU utilization
+Review legal changes regularly
+Review compliance obligations regularly
+Publish periodic impact reports
+Launch new partnerships
+Plan v4 roadmap
+
+MVP Priority Checklist -- What to Build First
+---------------------------------------------
+Module 1 basic fraud risk scoring
+Module 2 basic AI honeypot with 2-3 personas
+Module 3 basic fraud graph and FIR packet
+Module 6 basic command dashboard
+Module 7 basic citizen alert flow
+Module 12 basic deepfake demo
+Module 13 basic inoculation drill demo
+Module 14 basic mule ad classifier demo
+Core privacy, consent, logging, and security
+One telecom sandbox integration
+One bank / demo integration
+Hindi + English first
+Demo-ready end-to-end narrative

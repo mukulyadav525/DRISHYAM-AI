@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, AlertTriangle, Eye, EyeOff, Lock, User } from "lucide-react";
@@ -15,8 +15,13 @@ export default function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
 
     // Redirect if already logged in
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.replace("/");
+        }
+    }, [isAuthenticated, router]);
+
     if (isAuthenticated) {
-        router.replace("/");
         return null;
     }
 

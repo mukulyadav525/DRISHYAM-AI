@@ -1,0 +1,530 @@
+/Users/mukul/Desktop/SENTINEL-1930/verify.py:1718: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  print(f"  Started : {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
+/Users/mukul/Desktop/SENTINEL-1930/verify.py:226: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+  "swap_timestamp_utc": datetime.utcnow().isoformat(),
+
+[1m[94m
+╔══════════════════════════════════════════════════════════════════════════════════╗
+║   SENTINEL 1930  —  BASIG COMPLETE TEST SUITE v3.0                            ║
+║   73 Test Units · 15 Modules · 4 Integrations                               ║
+║   Mode: LIVE (requires server at http://localhost:8000/api/v1)
+╚══════════════════════════════════════════════════════════════════════════════════╝
+[0m
+  Started : 2026-03-17 17:03:12 UTC
+
+[93m  ▶ M1-U1  Fraud Risk Index (FRI) — inbound call scoring[0m
+    [92m✔  'fri_score' = 92[0m
+    [92m✔  'action' = 'ROUTE_TO_HONEYPOT'[0m
+    [92m✔  'number_reputation_cluster' = 'HIGH_VELOCITY_SCAMMER'[0m
+    [96mℹ  FRI = 92  →  Auto-route Honeypot[0m
+
+[93m  ▶ M1-U2  SIM Swap Fraud Detection[0m
+    [92m✔  'is_anomalous' = True[0m
+    [92m✔  'alert_latency_ms' = 450[0m
+    [92m✔  'freeze_requested' = True[0m
+    [92m✔  Alert latency 450ms (SLA = 10 000ms)[0m
+
+[93m  ▶ M1-U3  Scam Weather Forecast — 48-hour predictive model[0m
+    [92m✔  'high_risk_scam_types' = ['KYC_SCAM', 'INVESTMENT_SCAM'][0m
+    [92m✔  'predicted_spike_percent' = 24[0m
+    [92m✔  'affected_districts' = ['Mumbai', 'Pune', 'Thane'][0m
+    [92m✔  'recommended_preemptive_alerts' = ['SMS', 'WHATSAPP'][0m
+
+[93m  ▶ M1-U4  Cell Broadcast Tower Mesh Alert (no app, no internet)[0m
+    [92m✔  'broadcast_id' = 'BC-C48CA7'[0m
+    [92m✔  'towers_activated' = 42[0m
+    [92m✔  'estimated_sims_reached' = 150000[0m
+    [92m✔  'dot_log_ref' = 'DOT-4D4FD8D3'[0m
+
+[93m  ▶ M2-U1  AI Honeypot Session — full conversation lifecycle[0m
+    [92m✔  'session_id' = 'bf38b884-a142-4588-a676-cff7185e2067'[0m
+    [92m✔  'persona_active' = 'ELDERLY_UNCLE'[0m
+    [92m✔  'sip_transfer_complete' = True[0m
+    [92m✔  'scammer_notified' = False[0m
+    [92m✔  'ai_response' = 'Ji beta, main samajh gaya. Bataiye kya karna hai?'[0m
+    [92m✔  'psychological_exploitation_index' = 0.85[0m
+    [92m✔  'entities_extracted' = {'upi': 'scammer@upi', 'phone': '9876543210'}[0m
+    [96mℹ  AI reply: "Ji beta, main samajh gaya. Bataiye kya karna hai?..."[0m
+    [92m✔  'transcript_id' = 'TX-450016'[0m
+    [92m✔  'scammer_profile_id' = 'PROF-93187D'[0m
+    [92m✔  'fir_packet_ready' = True[0m
+
+[93m  ▶ M2-U2  Confession Trap (court-admissible under Evidence Act §65B)[0m
+    [92m✔  'trap_activated' = True[0m
+    [92m✔  'ai_response_trap_variant' = 'Aap sahi bol rahe hain, main abhi paise bhejta hoon.'[0m
+    [92m✔  'admission_probability_score' = 0.92[0m
+    [92m✔  'evidence_quality_rating' = 'STRONG'[0m
+    [96mℹ  Admission probability: 92%[0m
+
+[93m  ▶ M2-U3  WhatsApp Honeypot Persona (multi-day dossier building)[0m
+    [92m✔  'wa_session_id' = 'WA-4F6175'[0m
+    [92m✔  'fake_account_created' = True[0m
+    [92m✔  'first_message_sent' = True[0m
+    [92m✔  'dossier_id' = 'DOS-D0FDCF'[0m
+
+[93m  ▶ M2-U4  Scammer Fatigue Index — network throughput damage[0m
+    [92m✔  'minutes_engaged' = 45[0m
+    [92m✔  'estimated_calls_prevented' = 12[0m
+    [92m✔  'economic_damage_to_network_inr' = 15000[0m
+    [92m✔  'session_status' = 'COMPLETED'[0m
+    [96mℹ  Estimated network damage: ₹15,000[0m
+
+[93m  ▶ M2-U5  Adversarial Persona Switching (scammer testing detection)[0m
+    [92m✔  'persona_switched' = True[0m
+    [92m✔  'new_persona' = 'SKEPTICAL_YOUTH'[0m
+    [92m✔  'detection_risk_score_before' = 0.75[0m
+    [92m✔  'detection_risk_score_after' = 0.12[0m
+    [96mℹ  Switched to persona: SKEPTICAL_YOUTH[0m
+
+[93m  ▶ M3-U1  Graph NER — UPI IDs, accounts, phone numbers, Telegram handles[0m
+    [92m✔  'upi_ids' = ['scammer@okaxis'][0m
+    [92m✔  'bank_accounts' = ['32180011223344'][0m
+    [92m✔  'phone_numbers' = ['+919876543210'][0m
+    [92m✔  'telegram_handles' = ['@fraud_boss99'][0m
+    [92m✔  'urls' = ['http://bit.ly/fake'][0m
+    [92m✔  'graph_nodes_created' = 5[0m
+
+[93m  ▶ M3-U2  Voice Fingerprint Clustering — pod identification[0m
+    [92m✔  'pod_id' = 'POD-DAED52'[0m
+    [92m✔  'numbers_in_pod' = 17[0m
+    [92m✔  'confidence_score' = 0.96[0m
+    [92m✔  'new_pod_created' = False[0m
+    [96mℹ  Pod POD-DAED52 — 17 numbers linked[0m
+
+[93m  ▶ M3-U3  FIR Packet Generator (SLA = 60s, Evidence Act §65B compliant)[0m
+    [92m✔  'fir_packet_id' = 'FIR-9F83117B'[0m
+    [92m✔  'evidence_act_65b_compliant' = True[0m
+    [92m✔  'entities_included' = ['Phone', 'UPI', 'Voice'][0m
+    [92m✔  'graph_cluster_snapshot' = {'nodes': 12, 'edges': 15}[0m
+    [92m✔  'download_url' = '/api/v1/forensic/download/fir_packet.pdf'[0m
+    [92m✔  Generated in 0.0s (SLA = 60s)[0m
+
+[93m  ▶ M3-U4  Cross-Border Fraud Network Mapping[0m
+    [92m✔  'foreign_nodes_found' = 8[0m
+    [92m✔  'country_links' = ['MM', 'KH', 'PK'][0m
+    [92m✔  'interpol_referral_ready' = True[0m
+    [92m✔  'hub_confidence_scores' = {'MM': 0.88, 'KH': 0.92}[0m
+
+[93m  ▶ M3-U5  Scam Script Evolution Tracker (auto-retrain < 6h)[0m
+    [92m✔  'is_mutation' = True[0m
+    [92m✔  'similarity_to_parent' = 0.72[0m
+    [92m✔  'retrain_triggered' = True[0m
+    [92m✔  'estimated_retrain_complete_utc' = '2026-03-17T21:03:12.460828'[0m
+    [92m✔  NER retrain pipeline triggered (SLA = 6 hours)[0m
+
+[93m  ▶ M4-U1  UPI Mule Detection (pre-transaction flag via NPCI API)[0m
+    [92m✔  'is_flagged' = True[0m
+    [92m✔  'risk_level' = 'HIGH'[0m
+    [92m✔  'reason' = 'Mule account pattern detected'[0m
+    [92m✔  'npci_block_ref' = 'NPCI-52577E'[0m
+    [92m✔  Transaction blocked before money leaves victim's account.[0m
+
+[93m  ▶ M4-U2  Fake QR Code Detection[0m
+    [92m✔  'is_fake_qr' = True[0m
+    [92m✔  'decoded_vpa' = 'fraud@ybl'[0m
+    [92m✔  'vpa_risk_score' = 0.94[0m
+    [92m✔  'recommended_action' = 'BLOCK'[0m
+
+[93m  ▶ M4-U3  WhatsApp Business Impersonation Detection[0m
+    [92m✔  'is_impersonator' = True[0m
+    [92m✔  'legitimate_brand' = 'HDFC Bank'[0m
+    [92m✔  'confidence' = 0.98[0m
+    [92m✔  'meta_report_submitted' = True[0m
+
+[93m  ▶ M4-U4  Fake Payment Screenshot Detector[0m
+    [92m✔  'is_genuine' = False[0m
+    [92m✔  'utr_verified' = False[0m
+    [92m✔  'tampering_detected' = True[0m
+    [92m✔  'analysis_details' = 'Font mismatch in UTR number'[0m
+
+[93m  ▶ M4-U5  Collect Request Fraud Interceptor[0m
+    [92m✔  'is_fraudulent_collect' = True[0m
+    [92m✔  'risk_indicators' = ['Zero-value request', 'Impersonation'][0m
+    [92m✔  'block_recommended' = True[0m
+    [92m✔  'citizen_alert_sent' = True[0m
+
+[93m  ▶ M5-U1  USSD *1930# Report (feature phone, zero internet)[0m
+    [92m✔  'incident_id' = 'INC-7E0B36F2'[0m
+    [92m✔  'ussd_response' = 'Report registered. SMS sent.'[0m
+    [92m✔  'lang_detected' = 'hi'[0m
+    [92m✔  'acknowledgement_sms_queued' = True[0m
+    [92m✔  Incident created: INC-7E0B36F2[0m
+
+[93m  ▶ M5-U2  IVR Helpline — 22 Indian language voice reporting[0m
+    [92m✔  'session_id' = 'IVR-9089F9'[0m
+    [92m✔  'language_confirmed' = True[0m
+    [92m✔  'transcript_started' = True[0m
+    [96mℹ  IVR session in Hindi: confirmed=True[0m
+    [92m✔  'session_id' = 'IVR-52ED35'[0m
+    [92m✔  'language_confirmed' = True[0m
+    [92m✔  'transcript_started' = True[0m
+    [96mℹ  IVR session in Tamil: confirmed=True[0m
+    [92m✔  'session_id' = 'IVR-F4816E'[0m
+    [92m✔  'language_confirmed' = True[0m
+    [92m✔  'transcript_started' = True[0m
+    [96mℹ  IVR session in Bengali: confirmed=True[0m
+
+[93m  ▶ M5-U3  Sarpanch WhatsApp Network Broadcast[0m
+    [92m✔  'broadcast_id' = 'SAR-56393E'[0m
+    [92m✔  'sarpanchs_reached' = 842[0m
+    [92m✔  'delivery_rate_percent' = 99.2[0m
+    [92m✔  'gram_panchayat_pa_triggered' = True[0m
+
+[93m  ▶ M5-U4  BharatNet-Priority Cell Broadcast — rural surge zone alert[0m
+    [92m✔  'broadcast_id' = 'Bnet-A95AF2'[0m
+    [92m✔  'towers_activated' = 120[0m
+    [92m✔  'estimated_reach' = 500000[0m
+    [92m✔  'no_internet_required' = True[0m
+
+[93m  ▶ M6-U1  National Command Dashboard — district-level heatmap[0m
+    [92m✔  'districts_active' = 773[0m
+    [92m✔  'hotspot_districts' = ['Mumbai', 'Delhi', 'Bengaluru'][0m
+    [92m✔  'fri_max_district' = 'Mumbai'[0m
+    [92m✔  'rupees_saved_today' = 12500000[0m
+    [92m✔  'active_honeypot_sessions' = 45[0m
+
+[93m  ▶ M6-U2  War Room Trigger (FRI spike > 200% OR ₹50Cr mule movement)[0m
+    [92m✔  'warroom_active' = True[0m
+    [92m✔  'sms_capacity_scaled' = True[0m
+    [92m✔  'honeypot_instances_spawned' = 50[0m
+    [92m✔  'cell_broadcast_activated' = True[0m
+    [92m✔  'dd1_ticker_triggered' = True[0m
+    [92m✔  'air_fm_blast_triggered' = True[0m
+    [92m✔  'mha_auto_fir_bulk_submitted' = True[0m
+    [92m✔  'gram_panchayat_pa_activated' = True[0m
+
+[93m  ▶ M6-U3  Government ROI Counter[0m
+    [92m✔  'rupees_saved_this_month' = 450000000[0m
+    [92m✔  'citizens_protected' = 1240000[0m
+    [92m✔  'firs_generated' = 8470[0m
+    [92m✔  'mule_accounts_frozen' = 1242[0m
+    [92m✔  'embeddable_widget_url' = 'https://gov.in/sentinel/roi-widget'[0m
+    [96mℹ  ₹450,000,000 saved this month (MHA dashboard counter)[0m
+
+[93m  ▶ M6-U4  Scam Weather Panel — 48h advance alert for command staff[0m
+    [92m✔  'forecast_summary' = 'High risk of KYC scams in Maharashtra due to salary cycle.'[0m
+    [92m✔  'high_risk_windows' = ['2024-04-01T09:00:00Z', '2024-04-01T18:00:00Z'][0m
+    [92m✔  'recommended_predeployment_actions' = ['SMS blast in MH', 'Increase honeypot capacity'][0m
+    [92m✔  'daily_09_war_room_briefing_ready' = True[0m
+
+[93m  ▶ M7-U1  Citizen Push Alert — region-specific, pre-scam warning[0m
+    [92m✔  'alert_id' = 'ALT-937F41'[0m
+    [92m✔  'citizens_notified' = 45000[0m
+    [92m✔  'channels_dispatched' = ['PUSH', 'SMS'][0m
+    [92m✔  'delivery_rate_percent' = 98.5[0m
+
+[93m  ▶ M7-U2  Sentinel Score — personal cyber safety rating[0m
+    [92m✔  'score' = 88[0m
+    [92m✔  'decile_band' = 9[0m
+    [92m✔  'computed_locally' = True[0m
+    [92m✔  'central_storage' = False[0m
+    [92m✔  'badge' = 'GOLD_SHIELD'[0m
+    [96mℹ  Sentinel Score: 88/100  Band: 9[0m
+
+[93m  ▶ M7-U3  Family Trust Circle Notification[0m
+    [92m✔  'members_notified' = 3[0m
+    [92m✔  'notification_ids' = ['NOT-7345', 'NOT-C434', 'NOT-F2BC'][0m
+    [92m✔  'elder_call_intercepted' = True[0m
+    [92m✔  'ai_handoff_offered' = True[0m
+
+[93m  ▶ M7-U4  Scam Habit Breaker — gamified 7-day SMS series[0m
+    [92m✔  'enrolment_id' = 'HAB-F69CEC'[0m
+    [92m✔  'day1_message_scheduled' = True[0m
+    [92m✔  'gamification_score_initialised' = True[0m
+    [92m✔  'npci_reward_linked' = True[0m
+
+[93m  ▶ M7-U5  Hyper-Local Scam Density Alert (neighbourhood level)[0m
+    [92m✔  'alert_id' = 'HYP-0C7F1C'[0m
+    [92m✔  'area_label' = 'Sector 14, Gurugram'[0m
+    [92m✔  'density_map_url' = 'https://maps.sentinel.gov.in/density/gurugram-s14'[0m
+    [92m✔  'incidents_anonymised' = True[0m
+
+[93m  ▶ M8-U1  Jan Dhan Guard — fake PM scheme call detection[0m
+    [92m✔  'is_fake_scheme_call' = True[0m
+    [92m✔  'legitimate_scheme_details' = 'PM Awas Yojana never asks for OTP via phone.'[0m
+    [92m✔  'bank_api_alert_sent' = True[0m
+    [92m✔  'citizen_warning_dispatched' = True[0m
+
+[93m  ▶ M8-U2  Kisan Guard — 11 Cr farmers protected[0m
+    [92m✔  'is_impersonation' = True[0m
+    [92m✔  'official_pm_kisan_helpline' = '155261'[0m
+    [92m✔  'ivr_alert_triggered' = True[0m
+    [92m✔  'language_match' = True[0m
+
+[93m  ▶ M8-U3  Job Scam Interceptor — fake offer classifier[0m
+    [92m✔  'is_fake_job' = True[0m
+    [92m✔  'confidence' = 0.96[0m
+    [92m✔  'red_flags' = ['Vague description', 'WhatsApp contact', 'High salary'][0m
+    [92m✔  'official_job_portal_redirect' = 'https://ncs.gov.in'[0m
+
+[93m  ▶ M8-U4  Education Scam Guard — fake scholarship / admission[0m
+    [92m✔  'is_education_scam' = True[0m
+    [92m✔  'scam_type' = 'FAKE_SCHOLARSHIP'[0m
+    [92m✔  'legitimate_institution_check' = 'FAILED'[0m
+    [92m✔  'parent_alert_sent' = True[0m
+
+[93m  ▶ M8-U5  SME GST Buster (Rs.2,499/yr B2B subscription)[0m
+    [92m✔  'is_gst_scam' = True[0m
+    [92m✔  'fake_ca_details_extracted' = {'name': 'Fake CA Sharma', 'id': 'GST-123'}[0m
+    [92m✔  'mca_blacklist_submission' = True[0m
+    [92m✔  'honeypot_session_id' = 'SME-A31FC8'[0m
+
+[93m  ▶ M8-U6  Women Safety Layer — gender-pattern alert engine[0m
+    [92m✔  'is_gendered_scam' = True[0m
+    [92m✔  'scam_pattern' = 'ROMANCE_LOAN_HYBRID'[0m
+    [92m✔  'confidence' = 0.94[0m
+    [92m✔  'ngo_resource_link' = 'https://cybercrime.gov.in/women-safety'[0m
+
+[93m  ▶ M8-U7  Senior Citizen Shield — simplified UI + caregiver notification[0m
+    [92m✔  'ai_handoff_initiated' = True[0m
+    [92m✔  'caregiver_notified' = True[0m
+    [92m✔  'simplified_ui_pushed' = True[0m
+    [92m✔  'large_text_mode_enabled' = True[0m
+
+[93m  ▶ M8-U8  College Cyber Patrol (AICTE / 10,000 colleges)[0m
+    [92m✔  'accepted' = True[0m
+    [92m✔  'internship_certificate_queued' = True[0m
+    [92m✔  'open_contribution_layer_merged' = True[0m
+    [92m✔  'hackathon_eligible' = True[0m
+
+[93m  ▶ M8-U9  NRI / Diaspora Guard — international alert relay[0m
+    [92m✔  'is_family_emergency_scam' = True[0m
+    [92m✔  'alert_sent_to_nri' = True[0m
+    [92m✔  'india_contact_verified' = False[0m
+    [92m✔  'interpol_flag_if_cross_border' = True[0m
+
+[93m  ▶ M9-U1  Federated Learning — differential privacy aggregation[0m
+    [92m✔  'gradient_accepted' = True[0m
+    [92m✔  'raw_audio_uploaded' = False[0m
+    [92m✔  'differential_privacy_applied' = True[0m
+    [92m✔  'global_model_updated' = True[0m
+
+[93m  ▶ M9-U2  Homomorphic Encryption Query (police query, transcript safe)[0m
+    [92m✔  'result_encrypted' = '4b89f964913e4a47af27dff2773cea73'[0m
+    [92m✔  'raw_transcripts_accessed' = False[0m
+    [92m✔  'cluster_size_returned' = 42[0m
+    [92m✔  'dpdp_audit_logged' = True[0m
+    [92m✔  Police received cluster stats — raw transcripts never decrypted.[0m
+
+[93m  ▶ M9-U3  Post-Quantum Cryptography (Kyber-1024 / Dilithium-5)[0m
+    [92m✔  'encrypted_payload' = '5548250b90cd4b91abe59bbacc5b0b135548250b90cd4b91abe59bbacc5b0b13'[0m
+    [92m✔  'algorithm_used' = 'KYBER_1024'[0m
+    [92m✔  'signature_algorithm' = 'DILITHIUM_5'[0m
+    [92m✔  'rbi_2028_compliant' = True[0m
+
+[93m  ▶ M10-U1  OCC Analyst Queue & Escalation (Delhi + Bengaluru)[0m
+    [91m✘  HTTP 404 → http://localhost:8000/api/v1/occ/escalate | {"detail":"Not Found"}[0m
+    [2m⊘  No response — cannot assert 'ticket_id'[0m
+    [2m⊘  No response — cannot assert 'analyst_assigned'[0m
+    [2m⊘  No response — cannot assert 'script_retrain_triggered'[0m
+    [2m⊘  No response — cannot assert 'estimated_recovery_min'[0m
+
+[93m  ▶ M10-U2  Disaster Recovery Failover (RPO=0, RTO=15min)[0m
+    [92m✔  'failover_initiated' = True[0m
+    [92m✔  'rto_minutes' = 14[0m
+    [92m✔  'rpo_seconds' = 0[0m
+    [92m✔  'sla_99_99_maintained' = True[0m
+    [92m✔  RTO = 14min (SLA = 15min)[0m
+
+[93m  ▶ M10-U3  Chaos Engineering Drill (Jio outage / Mumbai floods / Delhi power)[0m
+    [92m✔  'drill_id' = 'CHA-61E4B8'[0m
+    [92m✔  'services_degraded' = ['HONEYPOT_LATENCY'][0m
+    [92m✔  'auto_failover_triggered' = True[0m
+    [92m✔  'data_loss_detected' = False[0m
+    [92m✔  'war_room_alerted' = True[0m
+
+[93m  ▶ M11-U1  Voice Stress Analysis (OpenSMILE + LSTM)[0m
+    [92m✔  'stress_score' = 12[0m
+    [92m✔  'script_reading_fatigue' = 0.05[0m
+    [92m✔  'shift_change_detected' = False[0m
+    [92m✔  'operator_consistency' = 'SAME_OPERATOR'[0m
+
+[93m  ▶ M11-U2  Scammer Career Graph Tracking (promotion mapping)[0m
+    [92m✔  'profile_id' = 'PROF-0ADA54'[0m
+    [92m✔  'career_timeline' = [{'date': '2024-01-01', 'role': 'FOOT_SOLDIER'}][0m
+    [92m✔  'hierarchy_level' = 'TEAM_LEAD'[0m
+    [92m✔  'promotion_detected' = True[0m
+    [92m✔  'total_attempts_estimated' = 1240[0m
+    [96mℹ  Career graph: TEAM_LEAD — 1240 attempts[0m
+
+[93m  ▶ M11-U3  Interpol I-24/7 Feed (prosecution readiness score ≥ 80)[0m
+    [92m✔  'interpol_case_id' = 'INT-6BCF4F'[0m
+    [92m✔  'cross_border_links_found' = True[0m
+    [92m✔  'submitted_at' = '2026-03-17T17:03:12.539673'[0m
+    [92m✔  'i24_7_ack' = True[0m
+    [92m✔  Interpol case: INT-6BCF4F[0m
+
+[93m  ▶ M11-U4  Prosecution Readiness Score per scammer profile[0m
+    [92m✔  'readiness_score' = 85[0m
+    [92m✔  'court_ready' = True[0m
+    [92m✔  'gaps' = ['Missing cross-border bank logs'][0m
+    [92m✔  'economic_damage_inr' = 450000[0m
+    [92m✔  'sentencing_recommendation' = 'Section 420 IPC + IT Act Sec 66D'[0m
+    [92m✔  Prosecution readiness: 85/100 (Court-ready)[0m
+
+[93m  ▶ M12-U1  Deepfake Video Detection (EfficientNet + Temporal Attention)[0m
+    [92m✔  'verdict' = 'REAL'[0m
+    [92m✔  'confidence' = 0.99[0m
+    [92m✔  'liveness_score' = 0.98[0m
+    [92m✔  'gan_fingerprint_detected' = False[0m
+    [92m✔  'detected_tool' = 'None'[0m
+    [96mℹ  Verdict: REAL (99% confidence)[0m
+
+[93m  ▶ M12-U2  Audio-Visual Sync Analysis (lip-sync < 100ms)[0m
+    [92m✔  'is_desynchronised' = False[0m
+    [92m✔  'offset_ms' = 2[0m
+    [92m✔  'confidence' = 0.97[0m
+    [92m✔  Lip-sync latency: 2ms (SLA = 100ms)[0m
+
+[93m  ▶ M12-U3  Uniform & Badge Authentication (CBI / State Police patterns)[0m
+    [92m✔  'uniform_match' = True[0m
+    [92m✔  'badge_authentic' = False[0m
+    [92m✔  'inconsistencies' = ['Insignia misalignment'][0m
+    [92m✔  'background_authentic' = True[0m
+    [92m✔  Fake badge/uniform detected — alert triggered.[0m
+
+[93m  ▶ M12-U4  Family Trust Circle — deepfake family member impersonation alert[0m
+    [92m✔  'members_notified' = 3[0m
+    [92m✔  'notification_ids' = ['NOT-676C', 'NOT-539B', 'NOT-FA3E'][0m
+    [92m✔  'real_family_member_contacted' = True[0m
+    [92m✔  'call_blocked' = True[0m
+
+[93m  ▶ M12-U5  Deepfake Evidence Packaging (IT Act §65B)[0m
+    [92m✔  'evidence_package_id' = 'PKG-25155C23'[0m
+    [92m✔  'sha256_hash' = '0892998d2682460aa6f152205f4ea7e0'[0m
+    [92m✔  'court_admissible' = True[0m
+    [92m✔  'immutable_log_ref' = 'LOG-6936AF'[0m
+
+[93m  ▶ M13-U1  Monthly Inoculation Drill — gamified citizen pre-exposure[0m
+    [92m✔  'drill_id' = 'DRL-1D3484'[0m
+    [92m✔  'message_sent' = True[0m
+    [92m✔  'clearly_labelled_as_drill' = True[0m
+    [92m✔  'response_tracking_active' = True[0m
+
+[93m  ▶ M13-U2  Personalised Vulnerability Assessment[0m
+    [92m✔  'top_scam_risks' = ['KYC_SCAM', 'LOTTERY_FRAUD'][0m
+    [92m✔  'recommended_drills' = ['Gift Card Inoculation'][0m
+    [92m✔  'drill_format' = 'VOICE_IVR'[0m
+    [92m✔  'personalisation_score' = 0.88[0m
+
+[93m  ▶ M13-U3  Corporate B2B — Sentinel Workplace Shield[0m
+    [92m✔  'subscription_id' = 'CORP-8FE6D0CF'[0m
+    [92m✔  'hr_dashboard_url' = 'https://sentinel.gov.in/corporate/dashboard'[0m
+    [92m✔  'team_vulnerability_score_enabled' = True[0m
+    [92m✔  'first_drill_scheduled' = True[0m
+    [96mℹ  Corporate subscription: CORP-8FE6D0CF — 500 employees[0m
+
+[93m  ▶ M13-U4  NEP / DIKSHA School Curriculum Integration (25 Cr students)[0m
+    [92m✔  'course_published' = True[0m
+    [92m✔  'diksha_course_url' = 'https://diksha.gov.in/cyber-safety-101'[0m
+    [92m✔  'states_onboarded' = 28[0m
+    [92m✔  'completion_certificate_enabled' = True[0m
+
+[93m  ▶ M13-U5  Post-Incident Inoculation Series (tailored to exact scam type)[0m
+    [92m✔  'series_id' = 'PII-AC3D8A'[0m
+    [92m✔  'day1_drill_scheduled' = True[0m
+    [92m✔  'tailored_to_scam_type' = True[0m
+    [92m✔  'counselling_referral_offered' = True[0m
+
+[93m  ▶ M14-U1  Mule Ad Classifier (Naukri / LinkedIn / Telegram)[0m
+    [92m✔  'is_mule_ad' = True[0m
+    [92m✔  'confidence' = 0.94[0m
+    [92m✔  'red_flags' = ['Vague Job Description', 'High Commission'][0m
+    [92m✔  'portal_removal_requested' = True[0m
+    [92m✔  'fake_employer_db_updated' = True[0m
+    [96mℹ  Mule ad: 94% — flags: ['Vague Job Description', 'High Commission'][0m
+
+[93m  ▶ M14-U2  Job Seeker Real-Time Alert (browser extension + portal API)[0m
+    [92m✔  'notification_sent' = True[0m
+    [92m✔  'message_preview' = 'CAUTION: This job involves handling payments for 3rd parties. This is a Mule Scam.'[0m
+    [92m✔  'safe_job_portal_redirect' = 'https://ncs.gov.in'[0m
+    [92m✔  'nalsa_legal_info_attached' = True[0m
+
+[93m  ▶ M14-U3  Telegram Channel Infiltration (AI honeypot as 'potential mule')[0m
+    [92m✔  'infiltration_session_id' = 'TEL-526F35B3'[0m
+    [92m✔  'recruiter_details_extracted' = True[0m
+    [92m✔  'scripts_captured' = 12[0m
+    [92m✔  'payment_flows_mapped' = True[0m
+    [92m✔  'meta_report_queued' = True[0m
+
+[93m  ▶ M14-U4  Recruiter Prosecution Dossier (police prioritisation package)[0m
+    [92m✔  'dossier_id' = 'DOS-3D61D495'[0m
+    [92m✔  'evidence_strength' = 'CRITICAL'[0m
+    [92m✔  'fir_auto_packet_ready' = True[0m
+    [92m✔  'police_dispatch_recommended' = True[0m
+    [92m✔  'mca_deregistration_requested' = True[0m
+
+[93m  ▶ M14-U5  NPCI Pre-Activation Alert (catch mule before first transaction)[0m
+    [92m✔  'npci_alert_id' = 'NPCI-308243'[0m
+    [92m✔  'bank_notified' = True[0m
+    [92m✔  'monitoring_enhanced' = True[0m
+    [92m✔  'freeze_triggered_if_first_txn_suspicious' = True[0m
+
+[93m  ▶ M15-U1  Automated Bank Dispute Letter Generator[0m
+    [92m✔  'letter_id' = 'DISP-FAAE5F'[0m
+    [92m✔  'letter_url' = '/api/v1/recovery/download-pdf'[0m
+    [92m✔  'legally_formatted' = True[0m
+    [92m✔  'pre_filled_with_evidence' = True[0m
+    [92m✔  'language' = 'hi'[0m
+
+[93m  ▶ M15-U2  RBI Ombudsman Complaint Auto-Generator[0m
+    [92m✔  'complaint_id' = 'RBI-AAEC38'[0m
+    [92m✔  'ombudsman_portal_url' = 'https://cms.rbi.org.in'[0m
+    [92m✔  'evidence_attached' = True[0m
+    [92m✔  'submission_status' = 'READY_FOR_SUBMISSION'[0m
+
+[93m  ▶ M15-U3  Case Status Tracker — unified multi-agency view[0m
+    [92m✔  'police_fir_status' = 'FILED'[0m
+    [92m✔  'bank_dispute_status' = 'INVESTIGATING'[0m
+    [92m✔  'rbi_ombudsman_status' = 'PENDING'[0m
+    [92m✔  'consumer_court_status' = 'NOT_STARTED'[0m
+    [92m✔  'last_updated_utc' = '2026-03-17T17:03:12.576267'[0m
+    [92m✔  'next_action_required' = 'Wait for 24 hours'[0m
+
+[93m  ▶ M15-U4  NALSA Legal Aid Bridge (income < ₹1L/yr eligibility check)[0m
+    [92m✔  'eligible_for_free_aid' = True[0m
+    [92m✔  'nearest_nalsa_centre' = 'Delhi Legal Services Authority'[0m
+    [92m✔  'referral_letter_generated' = True[0m
+    [92m✔  'appointment_booked' = True[0m
+    [92m✔  NALSA referral generated — victim connected to free legal aid.[0m
+
+[93m  ▶ M15-U5  Mental Health Support Referral (financial fraud trauma)[0m
+    [92m✔  'referral_id' = 'MH-75CE40'[0m
+    [92m✔  'partner_org' = 'NIMHANS Cyber Support'[0m
+    [92m✔  'counsellor_assigned' = True[0m
+    [92m✔  'first_session_scheduled' = '2026-03-19T17:03:12.579842'[0m
+    [92m✔  'free_of_charge' = True[0m
+    [96mℹ  Referred to NIMHANS Cyber Support — first session: 2026-03-19T17:03:12.579842[0m
+
+[93m  ▶ M15-U6  Cyber Insurance Claim Automation[0m
+    [92m✔  'claim_id' = 'INS-0DA292'[0m
+    [92m✔  'documents_generated' = ['FIR_COPY', 'DISPUTE_LETTER'][0m
+    [92m✔  'submitted_to_insurer' = True[0m
+    [92m✔  'status_tracking_active' = True[0m
+    [92m✔  'rs_recovered_counter_updated' = True[0m
+    [92m✔  Insurance claim submitted: INS-0DA292[0m
+
+[93m  ▶ INTEGRATION  Police dispatch + Bank freeze + NPCI notification[0m
+    [92m✔  'notification_id' = 'POL-B78748'[0m
+    [92m✔  'dashboard_updated' = True[0m
+    [92m✔  'officer_notified' = 'PCR-VAN-42'[0m
+    [92m✔  'freeze_request_id' = 'BNK-FRZ-98226E'[0m
+    [92m✔  'bank_acknowledged' = True[0m
+    [92m✔  'npci_notified' = True[0m
+    [96mℹ  SBI freeze request: BNK-FRZ-98226E[0m
+    [92m✔  'total_inr_frozen' = 45000.0[0m
+    [92m✔  'rupees_saved_this_incident' = 45000.0[0m
+
+[1m[94m
+────────────────────────────────────────────────────────────────────────────────
+  TEST SUMMARY
+  ─────────────────────────────────────────
+  Units run  : 73
+  Assertions : 340
+  [92mPASS  : 335[0m[1m[94m
+  [91mFAIL  : 1[0m[1m[94m
+  [2mSKIP  : 4[0m[1m[94m
+  ─────────────────────────────────────────
+  ✔  Live run against Sentinel server.
+────────────────────────────────────────────────────────────────────────────────
+[0m

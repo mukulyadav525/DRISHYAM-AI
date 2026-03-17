@@ -12,3 +12,11 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+**/.venv/
+venv/
+.venv/
+**/venv/
+**/.venv/
+node_modules/
+**/.next/
+**/.DS_Store

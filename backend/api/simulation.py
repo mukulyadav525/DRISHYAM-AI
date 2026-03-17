@@ -3,9 +3,10 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import List, Optional
 from core.database import get_db
-from core.auth import require_role
-from models.database import SimulationRequest, User
+from core.auth import require_role, create_access_token
+from models.database import SimulationRequest, User, UserRole
 import datetime
+import uuid
 
 router = APIRouter()
 
@@ -19,6 +20,7 @@ class SimulationRequestOut(BaseModel):
     status: str
     requested_at: datetime.datetime
     processed_at: Optional[datetime.datetime] = None
+    access_token: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -48,6 +50,33 @@ def get_status(phone: str, db: Session = Depends(get_db)):
     request = db.query(SimulationRequest).filter(SimulationRequest.phone_number == phone).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
+    
+    # If approved, generate a token for the user
+    if request.status == "approved":
+        # Ensure a User object exists for this simulation phone number
+        user = db.query(User).filter(User.username == phone).first()
+        if not user:
+            from core.auth import get_password_hash
+            user = User(
+                username=phone,
+                phone_number=phone,
+                hashed_password=get_password_hash(uuid.uuid4().hex),
+                role=UserRole.COMMON.value,
+                is_active=True,
+                full_name=f"Simulation User {phone[-4:]}"
+            )
+            db.add(user)
+            db.commit()
+            db.refresh(user)
+        
+        # Generate token
+        token = create_access_token(data={
+            "sub": user.username,
+            "role": user.role,
+            "mfa_verified": True # Simulation users are pre-verified
+        })
+        request.access_token = token
+        
     return request
 
 @router.get("/list", response_model=List[SimulationRequestOut])

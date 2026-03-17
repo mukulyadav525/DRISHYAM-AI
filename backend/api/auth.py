@@ -55,14 +55,34 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": user.username, "role": user.role})
+    # MFA requirement for Agency roles (T6)
+    requires_mfa = user.role in [UserRole.ADMIN, UserRole.POLICE, UserRole.BANK, UserRole.GOVERNMENT, UserRole.TELECOM]
+    
+    access_token = create_access_token(data={
+        "sub": user.username, 
+        "role": user.role,
+        "mfa_verified": not requires_mfa # Citizens pass, Agency needs step 2
+    })
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "role": user.role,
         "username": user.username,
         "full_name": user.full_name,
+        "mfa_required": requires_mfa
     }
+
+@router.post("/mfa/verify")
+def verify_mfa(otp: str, current_user: User = Depends(get_current_user)):
+    """Simulated MFA verification for Agency roles."""
+    if otp == "19301930": # Static demo OTP
+        access_token = create_access_token(data={
+            "sub": current_user.username, 
+            "role": current_user.role,
+            "mfa_verified": True
+        })
+        return {"access_token": access_token, "status": "verified"}
+    raise HTTPException(status_code=400, detail="Invalid MFA OTP")
 
 
 @router.post("/register", response_model=UserOut)
@@ -82,10 +102,11 @@ def register_user(
     if user_in.role not in valid_roles:
         raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
 
+    from core.security_utils import encrypt_pii
     new_user = User(
         username=user_in.username,
-        phone_number=user_in.phone_number,
-        email=user_in.email,
+        phone_number=encrypt_pii(user_in.phone_number),
+        email=encrypt_pii(user_in.email),
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,
         role=user_in.role,
@@ -93,11 +114,19 @@ def register_user(
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
+    
+    # Decrypt for response
+    from core.security_utils import decrypt_pii
+    new_user.phone_number = decrypt_pii(new_user.phone_number)
+    new_user.email = decrypt_pii(new_user.email)
     return new_user
 
 
 @router.get("/me", response_model=UserOut)
 def get_me(current_user: User = Depends(get_current_user)):
+    from core.security_utils import decrypt_pii
+    current_user.phone_number = decrypt_pii(current_user.phone_number)
+    current_user.email = decrypt_pii(current_user.email)
     return current_user
 
 
@@ -107,4 +136,10 @@ def list_users(
     current_user: User = Depends(require_role("admin")),
 ):
     """Admin only: list all users."""
-    return db.query(User).all()
+    from core.security_utils import decrypt_pii
+    users = db.query(User).all()
+    for u in users:
+        u.phone_number = decrypt_pii(u.phone_number)
+        u.email = decrypt_pii(u.email)
+    return users
+

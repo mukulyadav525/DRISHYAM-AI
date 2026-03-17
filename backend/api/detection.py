@@ -4,7 +4,7 @@ from sqlalchemy import func
 from typing import List, Dict
 from core.database import get_db
 from schemas.detection import CallCreate, DetectionResponse
-from models.database import CallRecord, DetectionDetail
+from models.database import CallRecord, DetectionDetail, SuspiciousNumber
 from core.scoring import calculate_fraud_risk
 import datetime
 
@@ -20,8 +20,12 @@ def detect_fraud(call_in: CallCreate, db: Session = Depends(get_db)):
         "prior_complaints": call_in.prior_complaints
     })
 
+    # Fetch reputation data if exists
+    suspicious_entry = db.query(SuspiciousNumber).filter(SuspiciousNumber.phone_number == call_in.caller_num).first()
+    reputation_score = suspicious_entry.reputation_score if suspicious_entry else 0.0
+
     # Calculate Risk Score
-    scoring_result = calculate_fraud_risk(call_in.caller_num, scoring_metadata)
+    scoring_result = calculate_fraud_risk(call_in.caller_num, scoring_metadata, reputation_score)
     
     # Create Call Record
     db_call = CallRecord(

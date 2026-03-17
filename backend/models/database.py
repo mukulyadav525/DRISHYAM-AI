@@ -26,6 +26,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     role = Column(String, nullable=False, default=UserRole.COMMON.value)
     is_active = Column(Boolean, default=True)
+    sentinel_score = Column(Integer, default=100) # [AC-M7-05] Fraud Immunity Score
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class CallRecord(Base):
@@ -155,6 +156,16 @@ class MuleAd(Base):
     metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+class HoneypotEntity(Base):
+    __tablename__ = "honeypot_entities"
+    id = Column(Integer, primary_key=True, index=True)
+    entity_type = Column(String) # "VPA", "PHONE", "ACCOUNT"
+    entity_value = Column(String, unique=True, index=True)
+    first_seen = Column(DateTime, default=datetime.datetime.utcnow)
+    last_seen = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    risk_score = Column(Float, default=0.5)
+
+
 class CrimeReport(Base):
     __tablename__ = "crime_reports"
     id = Column(Integer, primary_key=True, index=True)
@@ -188,3 +199,18 @@ class FileUpload(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", backref="uploads")
+class TrustLink(Base):
+    __tablename__ = "trust_links"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    guardian_name = Column(String)
+    guardian_phone = Column(String)
+    guardian_email = Column(String, nullable=True)
+    relation_type = Column(String) # e.g., "Son", "Daughter"
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", backref="trust_circle")
+
+# Note: For PII Encryption (AC-M9-04), use the cryptography.fernet based hybrid approach 
+# in the API layer or as a custom SQLAlchemy TypeDecorator if time permits.
+# Current implementation uses plain strings for MVP but requires ciphertexts in production.

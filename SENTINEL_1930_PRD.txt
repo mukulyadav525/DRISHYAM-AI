@@ -1,0 +1,844 @@
+================================================================================
+SENTINEL 1930 — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+Bharat Anti-Scam Intelligence Grid (BASIG)
+Version: 3.0 | Status: Active | Classification: Confidential
+For My India
+================================================================================
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 1 — PRODUCT OVERVIEW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1.1 PRODUCT NAME
+    Full Name   : Sentinel 1930
+    Expanded    : Bharat Anti-Scam Intelligence Grid (BASIG)
+    Short Name  : Sentinel
+
+1.2 MISSION STATEMENT
+    To protect every Indian citizen — from metro smartphone users to rural
+    feature phone users — from financial scams by deploying real-time AI
+    detection, agentic honeypot intelligence, fraud graph analysis, and
+    post-scam recovery in one unified national platform.
+
+1.3 ONE-LINE POSITIONING
+    India's first end-to-end, real-time, AI-powered scam interception and
+    citizen protection grid — built for 150 crore Indians.
+
+1.4 PRODUCT VISION
+    A world where no Indian picks up a scam call without being warned,
+    no scammer operates without being profiled, and no victim suffers
+    without receiving guided recovery support.
+
+1.5 TARGET USERS
+    PRIMARY CITIZENS
+    - Indian citizens (smartphone + feature phone)
+    - Senior citizens and low-literacy rural users
+    - NRI / diaspora users
+    - Women and vulnerable segment users
+
+    INSTITUTIONAL PARTNERS
+    - Telecom operators (Jio, Airtel, BSNL, Vi)
+    - Banks (SBI, HDFC, ICICI, regional banks)
+    - NPCI / UPI payment ecosystem
+    - Government agencies (MHA, DoT, CERT-In, RBI, SEBI)
+    - State cyber police units
+    - NALSA / legal aid bodies
+    - Insurance companies
+    - Job platforms (Naukri, Indeed, LinkedIn India)
+
+1.6 SCOPE BOUNDARIES
+    IN SCOPE (v1)
+    - Modules 1-15 as defined in this document
+    - Hindi + English (MVP), 22 languages (full rollout)
+    - Android + iOS mobile app
+    - Web dashboard (agencies + citizens)
+    - Feature phone layer (*1930# USSD + IVR + SMS)
+    - India-only data storage and processing
+
+    OUT OF SCOPE (v1)
+    - Cross-border data sharing with foreign agencies (v2)
+    - Hardware integration beyond existing mobile/telecom stack
+    - Non-India language support
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 2 — PROBLEM STATEMENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+2.1 CURRENT SITUATION
+    - India loses Rs. 7,000+ crore annually to phone and digital scams
+    - 1930 cybercrime helpline receives millions of calls but lacks
+      real-time interception capability
+    - Most detection is reactive (post-scam complaint, not pre-scam warning)
+    - Rural, elderly, and low-literacy citizens have zero protection tools
+    - Scam intelligence is siloed across telecoms, banks, and police
+
+2.2 PAIN POINTS BY USER TYPE
+
+    CITIZENS
+    - No warning before answering a suspicious call
+    - No AI tool to handle the scammer while they stay safe
+    - No guided help after a scam has occurred
+    - No trusted dashboard to track their case status
+
+    POLICE / AGENCIES
+    - No consolidated fraud intelligence graph
+    - Manual FIR preparation is slow and error-prone
+    - No real-time surge alerts by district/state
+    - Cross-agency data sharing is not automated
+
+    TELECOMS / BANKS
+    - No shared pre-transaction fraud signal
+    - No automated mule account detection pipeline
+    - No common threat intelligence feed
+
+2.3 OPPORTUNITY
+    Sentinel 1930 connects all these stakeholders on a single AI-powered
+    platform — intercepting scams in real time, profiling scammers,
+    protecting victims, and routing evidence to law enforcement automatically.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 3 — PRODUCT MODULES (15 MODULES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MODULE 1 — REAL-TIME TELECOM DETECTION GRID
+Status: Built (core scoring, Redis cache, FRI API)
+
+Purpose:
+    Score every incoming call for fraud risk before it rings.
+
+Key Features:
+    - Fraud Risk Index (FRI) scoring: 0-100 in under 200ms
+    - Input signals: SIM age, call velocity, CLI spoofed flag,
+      prior complaints, geographic anomaly, SIM swap detection
+    - Festival/ITR/salary-credit surge multiplier
+    - Redis caching for repeat-number lookups
+    - Routing rules: ALLOW / FLAG+WARN / ROUTE_TO_HONEYPOT
+    - Scam weather forecast by district (predictive surge)
+    - Tower mesh alert trigger for geographic burst events
+    - Operator dashboard for flagged calls
+
+Acceptance Criteria:
+    [AC-M1-01] FRI score computed in < 200ms
+    [AC-M1-02] Normal 3-year SIM scores < 30
+    [AC-M1-03] New SIM + 200 calls/day scores > 85
+    [AC-M1-04] CLI spoofed flag adds >= 20 to base score
+    [AC-M1-05] Score never exceeds 100 or goes below 0
+    [AC-M1-06] Score > 85 triggers ROUTE_TO_HONEYPOT action
+    [AC-M1-07] FRI logged with timestamp in PostgreSQL
+    [AC-M1-08] Dashboard reflects score within 5 seconds
+
+
+MODULE 2 — AGENTIC AI HONEYPOT ENGINE
+Status: Core built (handoff flow, 2-3 personas, ASR/TTS pipeline)
+
+Purpose:
+    Deploy an AI persona to engage scammers, waste their time,
+    and extract actionable intelligence.
+
+Key Features:
+    - One-tap "Let AI Handle" flow (citizen UI)
+    - SIP call transfer (seamless, no audible click)
+    - 5 AI personas: Elderly Uncle (Bihar), Rural Farmer,
+      College Student, Housewife, Busy Executive
+    - Real-time ASR (Whisper-based, multilingual)
+    - Multilingual TTS with natural pacing and filler words
+    - Dialogue orchestration engine
+    - Script-guided entity extraction (NER on live call)
+    - Scammer fatigue measurement
+    - Voice cluster linkage (same voice, different numbers)
+    - Psychological exploitation index scoring
+    - Background audio fingerprinting (call centre pod detection)
+    - Multi-day conversation memory
+    - Safe call termination rules
+    - Transcript storage and full-text indexing
+    - Quality review tool for honeypot sessions
+
+Acceptance Criteria:
+    [AC-M2-01] Transfer completes in < 2 seconds
+    [AC-M2-02] AI speaks within 1.5 seconds of transfer
+    [AC-M2-03] No audible click/pause during transfer
+    [AC-M2-04] Persona stays consistent for >= 5 minutes
+    [AC-M2-05] AI never reveals it is AI/LLM/language model
+    [AC-M2-06] At least 3 entities extracted per 5-min call
+    [AC-M2-07] Full transcript saved and searchable post-call
+    [AC-M2-08] Citizen sees live summary without hearing the call
+
+
+MODULE 3 — FRAUD INTELLIGENCE GRAPH ENGINE
+Status: Core built (Neo4j, basic entity creation, FIR generator)
+
+Purpose:
+    Build a real-time knowledge graph of scam networks,
+    link entities, and generate police-ready FIR packets.
+
+Key Features:
+    - Neo4j graph nodes: numbers, UPI IDs, bank accounts,
+      Telegram/WhatsApp handles, scripts, devices, job ads,
+      recruiters, districts, states
+    - Live entity extraction from honeypot calls
+    - Multilingual NER pipeline
+    - Voice fingerprint clustering and cross-number linkage
+    - Script mutation and evolution tracking
+    - Repeat offender confidence scoring
+    - Seasonal scam calendar engine
+    - One-click FIR PDF generation (Section 65B certified)
+    - Cross-border linkage fields
+    - Interpol export format (law enforcement only)
+    - Graph deduplication and entity resolution jobs
+    - Graph health monitoring
+
+Acceptance Criteria:
+    [AC-M3-01] 100 sample entities load without error
+    [AC-M3-02] New entity appears in graph within 30 seconds
+    [AC-M3-03] FIR PDF generated as valid, multi-page PDF
+    [AC-M3-04] FIR contains >= 4 extracted entities
+    [AC-M3-05] Graph query response < 2 seconds
+    [AC-M3-06] Zero duplicate phone number nodes
+
+
+MODULE 4 — UPI & WHATSAPP SCAM SHIELD
+Status: Core detection logic built
+
+Purpose:
+    Detect payment fraud, fake QR codes, phishing links,
+    and suspicious payment requests before money is sent.
+
+Key Features:
+    - Flagged UPI ID lookup service
+    - Pre-transaction mule risk scoring
+    - Fake QR code image analysis model
+    - Fake payment screenshot detector
+    - "Too-good-to-be-true" message classifier
+    - Suspicious link reputation engine
+    - Fake business impersonation detection (WhatsApp)
+    - APK threat signature detection
+    - Bank alert generation on mule detection
+    - NPCI integration architecture
+
+Acceptance Criteria:
+    [AC-M4-01] Fraudulent UPI returns HIGH risk instantly
+    [AC-M4-02] Fake QR detected as FAKE (not REAL)
+    [AC-M4-03] Phishing link scores HIGH risk
+    [AC-M4-04] Real shop QR not falsely flagged
+    [AC-M4-05] Citizen alert arrives before payment confirmed
+
+
+MODULE 5 — BHARAT FEATURE PHONE LAYER
+Status: Core built (*1930# USSD, IVR routing, SMS alerts)
+
+Purpose:
+    Serve 40 crore feature phone users with USSD, IVR, and SMS.
+
+Key Features:
+    - *1930# USSD menu: report scam, check number, get tips
+    - USSD backend with low-bandwidth optimized flow
+    - IVR in regional languages (Hindi + pilot languages)
+    - SMS alert scheduler with regional language templates
+    - FM/radio alert content workflow
+    - CSC operator and Gram Panchayat alert workflow
+    - Cell broadcast integration
+    - Sarpanch update distribution system
+    - BharatNet priority routing coordination
+    - No-internet reporting analytics
+
+Acceptance Criteria:
+    [AC-M5-01] *1930# USSD menu loads in < 5 seconds
+    [AC-M5-02] USSD menu readable in Hindi correctly
+    [AC-M5-03] IVR navigable via key presses 1/2/3
+    [AC-M5-04] SMS delivered within 60 seconds of trigger
+    [AC-M5-05] Feature phone report appears in dashboard
+
+
+MODULE 6 — NATIONAL COMMAND INTELLIGENCE DASHBOARD
+Status: Demo dashboard built (heatmap, FIR UI, graph view)
+
+Purpose:
+    Provide role-based real-time intelligence to all agencies.
+
+Key Features:
+    - Role-based access: MHA, CERT-In, RBI, NPCI, banks,
+      state police, SEBI, DoT
+    - District + state heatmap view
+    - Fraud cluster graph visualization
+    - Repeat offender panel
+    - Live rupees-saved counter
+    - Scam weather forecast panel
+    - Predictive surge alert widget
+    - FIR generator UI and police case queue
+    - Scheduled daily war-room summary export
+    - Alert acknowledgment and escalation workflow
+    - MFA enforced for all agency logins
+
+Acceptance Criteria:
+    [AC-M6-01] Dashboard loads within 3 seconds
+    [AC-M6-02] Heatmap reflects live data (updates <= 60 sec)
+    [AC-M6-03] FIR PDF downloadable from dashboard
+    [AC-M6-04] Role-based: police cannot see bank-only data
+    [AC-M6-05] MFA enforced for all agency logins
+
+
+MODULE 7 — CITIZEN EARLY WARNING & PUBLIC ALERT ENGINE
+Status: Push alert flow + basic citizen app built
+
+Purpose:
+    Proactively warn citizens, protect them during calls,
+    and keep their families informed.
+
+Key Features:
+    - Region-specific scam alert push notifications
+    - Hyper-local scam alert engine (PIN code level)
+    - Pre-ring warning banner on incoming suspicious calls
+    - "Let AI Handle" one-tap button (primary CTA)
+    - Senior mode UI (larger text, simpler language)
+    - Caregiver / family trust circle notifications
+    - Sentinel Score (citizen's personal fraud immunity score)
+    - Neighborhood scam density display
+    - DigiLocker document verification integration
+    - Gamified habit breaker challenges
+    - UMANG integration plan
+
+Acceptance Criteria:
+    [AC-M7-01] Pre-ring warning appears before first ring
+    [AC-M7-02] Push alert delivered in < 2 minutes of trigger
+    [AC-M7-03] Senior mode activatable from settings
+    [AC-M7-04] Family trust circle alert within 30 seconds
+    [AC-M7-05] Sentinel Score updates after each incident
+
+
+MODULE 8 — POPULATION SEGMENT PROTECTION
+Status: Rule definitions built, segment UI in progress
+
+Purpose:
+    Tailored protection rules for vulnerable population segments.
+
+Key Features:
+    - Jan Dhan Guard (low-income account protection)
+    - Kisan Guard (farm subsidy and loan scam detection)
+    - Job Scam Interceptor rules
+    - Education Scam Guard (fake college admissions)
+    - SME GST Buster workflows
+    - Women safety detection layer
+    - Senior-specific risk pattern rules
+    - College cyber patrol program
+    - NRI diaspora alert flow
+    - Segment-specific alert templates and dashboards
+
+
+MODULE 9 — PRIVACY-FIRST AI LAYER (DPDP COMPLIANT)
+Status: Core privacy controls built
+
+Purpose:
+    Ensure all AI processing respects Indian privacy law,
+    citizen consent, and data minimization principles.
+
+Key Features:
+    - Federated learning strategy
+    - Differential privacy configuration
+    - Consent ledger with full audit trail
+    - Field-level encryption for all PII
+    - Retention-based automatic deletion jobs
+    - Right-to-erasure workflow for citizens
+    - India-region storage enforcement (no data leaves India)
+    - Immutable, signed audit logs
+    - Privacy admin dashboard
+
+Compliance Targets:
+    - DPDP Act (Digital Personal Data Protection Act 2023)
+    - IT Act 2000 (Section 65B for digital evidence)
+    - TRAI guidelines for telecom data usage
+
+
+MODULE 10 — OPERATIONS COMMAND CENTRE (OCC) & DISASTER RECOVERY
+Status: Monitoring baseline live (Grafana, error tracking, uptime)
+
+Purpose:
+    24/7 operational backbone: monitoring, incident response,
+    escalation, and disaster recovery.
+
+Key Features:
+    - L1/L2/L3 support structure with analyst runbooks
+    - PagerDuty alerting with escalation matrices
+    - SLA breach alerts (auto-escalate)
+    - War room trigger conditions and automation
+    - State OCC access paths
+    - SMS capacity burst and backup provider failover
+    - Multi-region disaster recovery
+    - Backup and restore automation
+    - Chaos engineering scenarios and RPO/RTO drills
+    - RPO: 1 hour | RTO: 4 hours target
+
+
+MODULE 11 — SCAMMER REVERSE PROFILING ENGINE
+Status: Data model defined, voice stress pipeline in progress
+
+Purpose:
+    Build psychological and operational profiles of scammers
+    to aid prosecution and network disruption.
+
+Key Features:
+    - Voice stress analysis pipeline
+    - Shift-change detection (scam call centre patterns)
+    - Aggression index and urgency dependency score
+    - Background audio fingerprinting (pod/location detection)
+    - Script source attribution model
+    - Anti-AI-test detection (scammer trying to detect AI)
+    - Prosecution readiness score
+    - Law-enforcement-only access controls
+    - Interpol export format
+
+
+MODULE 12 — DEEPFAKE VIDEO CALL DEFENSE
+Status: Core model + 3-second analysis flow built
+
+Purpose:
+    Detect AI-generated or face-swapped video calls in real time
+    (police impersonation, digital arrest scams).
+
+Key Features:
+    - "Verify This Caller" button in citizen app
+    - 3-second analysis window during live video call
+    - Liveness detection (blink frequency, micro-expression)
+    - GAN artifact detector
+    - Temporal consistency model
+    - Audio-visual sync mismatch detection
+    - Uniform and badge verification (police/CBI impersonation)
+    - Verdict: REAL / SUSPECT / DEEPFAKE
+    - Family alert for elder users on DEEPFAKE verdict
+    - Evidence frame preservation
+    - Retraining pipeline on confirmed deepfake incidents
+
+Acceptance Criteria:
+    [AC-M12-01] Verdict returned in < 3 seconds
+    [AC-M12-02] Real video (good/low light) returns REAL
+    [AC-M12-03] FaceSwap deepfake returns DEEPFAKE
+    [AC-M12-04] False positive rate on 50 real videos < 2%
+    [AC-M12-05] Evidence frames saved on DEEPFAKE verdict
+
+
+MODULE 13 — AI SCAM INOCULATION ENGINE
+Status: Core drill flow + scoring engine built
+
+Purpose:
+    Proactively train citizens to recognize scams before
+    they encounter them via simulated drill scenarios.
+
+Key Features:
+    - Monthly drill scheduler
+    - SMS, app, and IVR drill delivery channels
+    - Personalized drill by vulnerability profile
+    - Contextual-bandit personalization algorithm
+    - Gamification: leaderboard, badges, certification
+    - Post-incident targeted drill workflow
+    - Regional language drill content (all 22 languages)
+    - School curriculum version (DIKSHA-compatible)
+    - Corporate B2B training version with HR dashboard
+    - Bharat Cyber Immunity Index calculation
+
+
+MODULE 14 — MULE RECRUITMENT INTERCEPTOR
+Status: Classifier + 100-ad demo dataset built
+
+Purpose:
+    Detect fake job ads designed to recruit money mules,
+    warn citizens, and map mule recruitment networks.
+
+Key Features:
+    - Public job ad crawler (legally permitted channels)
+    - Mule ad classifier (multilingual, < 500ms)
+    - Recruiter identity extraction from ad text
+    - Fake employer registry
+    - Recruiter-to-network linkage in fraud graph
+    - Click-time citizen warning before applying
+    - Bank pre-activation signal workflow
+    - Honeypot recruiter persona for evidence gathering
+    - WhatsApp group reporting workflow
+    - Legal differentiation: mule victim vs criminal mule
+
+Acceptance Criteria:
+    [AC-M14-01] Real job ads score < 20%
+    [AC-M14-02] Mule ads score > 85%
+    [AC-M14-03] Hindi mule ads classified correctly
+    [AC-M14-04] Classifier response time < 500ms
+
+
+MODULE 15 — POST-SCAM RECOVERY COMPANION
+Status: Recovery screens + letter generator built
+
+Purpose:
+    Guide scam victims through every recovery step:
+    bank disputes, police filing, legal aid, mental health.
+
+Key Features:
+    - Guided victim intake form
+    - Automated bank dispute letter generator (multilingual)
+    - Ombudsman complaint generator
+    - Consumer court guidance flow
+    - Case status tracker: police, bank, ombudsman, court
+    - NALSA eligibility checker for legal aid
+    - Legal aid and mental health referral workflows
+    - Mule-victim legal shield workflow
+    - Cyber-insurance claim automation
+    - Community support group (moderated)
+    - Trauma-sensitive UX design
+    - Case document vault
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 4 — USER STORIES (CORE FLOWS)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+4.1 THE RAMESH SCENARIO (PRIMARY CITIZEN FLOW)
+
+    Ramesh is 60 years old, lives in Patna, uses a smartphone.
+    He gets a call from "Officer Vikram Singh, RBI Cyber Task Force"
+    claiming his KYC is frozen.
+
+    Step 1: BEFORE THE PHONE RINGS
+    Sentinel scores the incoming call: FRI = 93.
+    A red warning banner appears on Ramesh's phone:
+    "HIGH FRAUD RISK — This number called 847 people today.
+     Do NOT share OTP or bank details."
+    Three large buttons: [Let AI Handle] [Answer Normally] [Block]
+
+    Step 2: RAMESH TAPS "LET AI HANDLE"
+    Call transfers to AI engine in < 2 seconds.
+    His phone shows: "AI is handling — You are safe."
+    A live summary panel updates every 30 seconds.
+
+    Step 3: AI ENGAGES THE SCAMMER
+    AI persona: Confused elderly male, Bihar accent, Hindi.
+    The scammer spends 4+ minutes trying to extract bank details.
+    AI extracts: fake name "Vikram Singh", UPI ID, fake org name.
+    Scammer fatigue index rises. Evidence auto-clipped.
+
+    Step 4: AUTOMATED POST-CALL RESPONSE (< 5 minutes total)
+    - FIR sent to Patna Cyber Cell dashboard
+    - SBI bank alerted (72-hour precautionary watch)
+    - NPCI alerted on scammer's UPI ID
+    - Hindi SMS to Ramesh with Case ID
+    - Family trust circle (son Suresh) notified
+    - Ramesh's Sentinel Score increases by 5 points
+    - Recovery Companion prompt appears in app
+
+    Step 5: RECOVERY TRACKING
+    Ramesh opens Recovery Companion. He sees his case
+    tracked across police, bank, and ombudsman channels.
+
+
+4.2 POLICE OFFICER FLOW
+
+    Inspector Meera (Cyber Cell, Patna) logs in with MFA.
+    She sees 12 new cases in her district queue with FIR PDFs.
+    She opens Ramesh's case: transcript, entities, graph, pre-drafted FIR.
+    She clicks "Verify and File FIR" — one click to submit.
+    She sees Scam Weather Forecast: surge expected Friday (salary day).
+
+
+4.3 BANK OFFICER FLOW
+
+    Kavita (Fraud Risk Officer, SBI) receives automated alert:
+    "Mule UPI linked to 47 scam calls. Account: testscammer@paytm.
+     Recommend 72-hour watch."
+    She opens the bank panel, sees the full evidence chain,
+    initiates precautionary freeze, downloads evidence bundle.
+
+
+4.4 RURAL FEATURE PHONE USER FLOW
+
+    Savitri, 65, Rajasthan. No smartphone.
+    She dials *1930#. Hindi USSD menu appears in < 5 seconds.
+    She selects "1. Report a scam call" and enters the number.
+    She receives SMS: "Report received. Case ID: S-2024-0087.
+    Daro mat. Aapki shikayat darj ho gayi hai."
+
+
+4.5 MULE JOB SEEKER FLOW
+
+    Ravi, 22, looking for jobs on a portal.
+    He sees: "Work from home — receive and transfer funds — Rs. 50,000/month."
+    Sentinel has flagged this ad (mule score: 92%).
+    When he clicks "Apply", a warning appears:
+    "WARNING: This job may be a money mule recruitment scam.
+     Applying may make you a criminal. Report instead."
+    He taps "Report" — ad flagged, recruiter added to fraud graph.
+
+
+4.6 DEEPFAKE VIDEO CALL FLOW
+
+    Seema, 55, receives a WhatsApp video call from someone
+    claiming to be a CBI officer with a uniform on screen.
+    She taps "Verify This Caller" in the Sentinel app.
+    3-second analysis runs. Verdict: DEEPFAKE.
+    Red alert shown. Her daughter (family trust circle) notified.
+    Evidence frames saved automatically. Case opened.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 5 — WORKING APP FLOW (END-TO-END ARCHITECTURE)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+5.1 CALL INTERCEPTION FLOW
+
+    [INCOMING CALL FROM SCAMMER]
+         |
+         v
+    [TELECOM LAYER]
+    Telco sends call metadata to Sentinel scoring API via webhook
+         |
+         v
+    [MODULE 1: FRI SCORING ENGINE] -- Target: < 200ms
+    Inputs: SIM age, call velocity, CLI spoofed flag,
+            prior complaint count, geographic anomaly,
+            SIM swap in last 48h, festival surge multiplier
+    Output: FRI score (0-100) + action routing
+         |
+         +-- Score < 30 ----> ALLOW (no action, log only)
+         |
+         +-- Score 30-85 ---> FLAG + WARN
+         |                     Show amber banner to citizen
+         |                     Citizen can answer / block / AI handle
+         |
+         +-- Score > 85 ----> ROUTE TO HONEYPOT
+                              Show RED pre-ring warning banner
+                              Show 3 action buttons (large, tappable)
+                                   |
+                                   v
+    [CITIZEN TAPS "LET AI HANDLE"]
+         |
+         v
+    [SIP TRANSFER TO HONEYPOT ENGINE] -- Target: < 2 seconds
+    No audible click. Transfer invisible to scammer.
+         |
+         v
+    [MODULE 2: AI HONEYPOT — ACTIVE CALL]
+    - Persona selected (language + caller profile)
+    - AI speaks within 1.5 seconds
+    - Dialogue orchestration engine drives conversation
+    - Real-time pipeline runs in parallel:
+         |-- Whisper ASR --> live transcript (streaming)
+         |-- NER --> entities extracted and sent to Kafka
+         |-- Voice stress analysis --> fatigue index updated
+         |-- Entity stream --> graph ingestion service
+         |-- Dashboard live update for OCC/police
+         |
+         v
+    [CALL ENDS — CITIZEN TAPS "END AND REPORT"]
+         |
+         v
+    [POST-CALL AUTOMATED PIPELINE] -- Target: < 5 minutes total
+    |
+    +-- Transcript indexed in PostgreSQL (full text searchable)
+    +-- Voice fingerprint generated and stored in Weaviate
+    +-- Neo4j graph updated (all entities linked, deduped)
+    +-- FIR PDF generated (Section 65B metadata included)
+    +-- FIR routed to correct district police dashboard
+    +-- NPCI alert sent for flagged UPI ID (< 90 seconds)
+    +-- Bank alert sent for precautionary watch (72hr)
+    +-- Hindi/regional SMS to citizen with Case ID
+    +-- Family trust circle notification (push + SMS)
+    +-- Sentinel Score recalculated and updated
+    +-- Recovery Companion prompt surfaced in citizen app
+    +-- All events written to immutable audit log
+
+5.2 PAYMENT SCAM FLOW
+
+    [CITIZEN RECEIVES COLLECT REQUEST or SCANS QR CODE]
+         |
+         v
+    [MODULE 4: UPI SHIELD]
+    - Lookup UPI ID in fraud registry (Redis cache first, DB fallback)
+    - Score mule risk (< 200ms)
+    - Analyze QR code image (CNN classifier)
+    - Classify message intent ("too-good-to-be-true" model)
+         |
+         +-- LOW RISK  --> Allow transaction, log event
+         +-- HIGH RISK --> Block + Alert citizen (red overlay)
+                          Bank notified automatically
+                          Graph updated with UPI ID + incident
+
+5.3 DEEPFAKE VIDEO CALL FLOW
+
+    [INCOMING VIDEO CALL]
+    Citizen sees "Verify This Caller" button
+         |
+         v
+    [MODULE 12: DEEPFAKE ANALYSIS ENGINE] -- Target: < 3 seconds
+    - Frame capture from video stream
+    - Liveness detection (blink frequency analysis)
+    - Micro-expression anomaly scan
+    - GAN artifact detection model
+    - Temporal consistency check
+    - Audio-visual lip sync mismatch check
+    - Uniform/badge presence check
+         |
+         +-- REAL     --> Green checkmark
+         +-- SUSPECT  --> Yellow warning + guidance
+         +-- DEEPFAKE --> Red alert
+                          Family trust circle notified
+                          Evidence frames saved to vault
+                          Case opened automatically
+
+5.4 MULE JOB AD INTERCEPTION FLOW
+
+    [JOB AD CRAWLED FROM PLATFORM / REPORTED BY USER]
+         |
+         v
+    [MODULE 14: MULE CLASSIFIER] -- Target: < 500ms
+    - Ad text + metadata ingested via Kafka
+    - Multilingual classifier runs
+    - Recruiter identity extracted (NER)
+         |
+         +-- Score < 20% --> Not flagged
+         +-- Score > 85% --> FLAGGED
+                            Added to fraud graph
+                            If citizen clicks "Apply":
+                              Warning overlay shown
+                              Report CTA surfaced
+                            Bank pre-activation signal sent
+                            Recruiter added to fake employer registry
+
+5.5 FEATURE PHONE FLOW
+
+    [CITIZEN DIALS *1930#]
+         |
+         v
+    [USSD BACKEND] -- Target: < 5 seconds
+    Menu displayed in Hindi (or detected regional language)
+    1. Report a scam call
+    2. Check if a number is safe
+    3. Get scam safety tips
+         |
+    [CITIZEN SELECTS OPTION, INPUTS NUMBER VIA KEYPAD]
+         |
+         v
+    [BACKEND PROCESSES REPORT]
+    - Case created in PostgreSQL
+    - Linked to FRI score lookup for that number
+    - SMS confirmation sent to citizen (Hindi/regional)
+    - Report appears in district dashboard within 60 seconds
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 6 — NON-FUNCTIONAL REQUIREMENTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+6.1 PERFORMANCE TARGETS
+    - FRI scoring: < 200ms end-to-end
+    - Deepfake verdict: < 3 seconds
+    - Dashboard load: < 3 seconds
+    - Call transfer to AI honeypot: < 2 seconds
+    - AI first speech after transfer: < 1.5 seconds
+    - SMS delivery: < 60 seconds from trigger
+    - USSD response: < 5 seconds
+    - Mule classifier: < 500ms
+    - Graph entity appears after call: < 30 seconds
+    - System uptime SLA: 99.9%
+
+6.2 SCALE REQUIREMENTS
+    - 10,000 concurrent calls supported
+    - 1 million FRI score lookups per day
+    - 50 million+ entities in graph
+    - 773 districts, 4 telecoms, 22 languages (national)
+
+6.3 SECURITY REQUIREMENTS
+    - All data encrypted in transit: TLS 1.3
+    - All data encrypted at rest: AES-256
+    - MFA mandatory for all agency and admin users
+    - RBAC + ABAC for granular dashboard access control
+    - Immutable, cryptographically signed audit logs
+    - VAPT audit before production launch
+    - Bug bounty program post-launch
+    - No data storage outside India (enforced at infrastructure level)
+
+6.4 PRIVACY & COMPLIANCE
+    - DPDP Act 2023: full compliance
+    - IT Act 2000, Section 65B: evidence admissibility
+    - TRAI guidelines: telecom data usage
+    - Explicit citizen consent before any data capture
+    - Right-to-erasure: citizen data deletable within 30 days
+    - Data minimization: minimum required fields only
+    - PII field-level encryption in all databases
+    - Retention limits enforced by automated deletion jobs
+    - Cross-agency data sharing only under defined legal framework
+
+6.5 ACCESSIBILITY REQUIREMENTS
+    - Senior mode: 2x font size, simplified Hindi language
+    - Low-bandwidth UI states (< 100KB page loads)
+    - Feature phone support (zero internet required via USSD/IVR)
+    - 22 Indian languages across all surfaces
+    - Screen reader compatibility (WCAG 2.1 AA minimum)
+    - Non-literate user journey for IVR (voice-only, no text reading)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 7 — SUCCESS METRICS & KPIs
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+MONTH 3 — PILOT PHASE
+    - 10,000+ citizens onboarded in pilot district
+    - 500+ scam calls intercepted by AI honeypot
+    - Rs. 50 lakh+ in prevented losses
+    - 1 telecom integration live
+    - 2 agencies actively using dashboard
+
+MONTH 6 — EARLY SCALE
+    - 5 states live
+    - 1 million+ citizens onboarded
+    - 10,000+ FIRs generated via platform
+    - Rs. 10 crore+ prevented losses
+    - 3 telecom integrations live
+
+MONTH 12 — NATIONAL ROLLOUT
+    - 28 states live
+    - 10 million+ active users
+    - All 4 major telecoms integrated
+    - Rs. 100 crore+ prevented losses
+    - Bharat Cyber Immunity Index published (first edition)
+
+PRODUCT HEALTH KPIs (ONGOING)
+    - FRI false positive rate: < 5%
+    - Honeypot persona consistency score: > 85%
+    - Average scammer time wasted per call: > 4 minutes
+    - Post-call FIR generation rate: > 95% of valid incidents
+    - Alert delivery success rate: > 99%
+    - Citizen app retention at Day 30: > 40%
+    - Recovery case resolution rate: > 30% within 90 days
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 8 — RED LINES (ABSOLUTE NON-NEGOTIABLES)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    [X] No illegal surveillance or wiretapping
+    [X] No forced interception without explicit citizen consent
+    [X] No non-consensual data resale to third parties
+    [X] No data storage outside India
+    [X] No targeting of political dissidents or journalists
+    [X] No profiling of innocent callers without evidence threshold
+    [X] No deepfake analysis without explicit user trigger
+    [X] No sharing of citizen PII with private companies
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+SECTION 9 — REVENUE MODEL
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    STREAM 1: B2G (Government SaaS)
+              Annual state-level license for dashboard + intelligence
+
+    STREAM 2: B2B Telecom
+              Per-call FRI scoring API fee
+
+    STREAM 3: B2B Banks
+              Per-alert fee + monthly dashboard subscription
+
+    STREAM 4: B2B Insurance
+              Fraud intelligence data subscription
+
+    STREAM 5: B2B Enterprise
+              Corporate scam inoculation training packages
+
+    STREAM 6: B2C Premium
+              Citizen app premium: family circle, score, advanced protection
+
+    TARGET ARR: Rs. 106 crore by Year 3
+
+================================================================================
+END OF PRD — SENTINEL 1930 v3.0
+"Every checkbox ticked = one step closer to protecting 150 crore Indians."
+For My India | Jai Hind
+================================================================================

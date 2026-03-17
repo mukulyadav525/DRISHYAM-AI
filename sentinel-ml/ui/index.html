@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SENTINEL-ML — Scam Classifier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="container">
+
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <path d="M14 2L3 7.5V14C3 19.525 7.86 24.74 14 26C20.14 24.74 25 19.525 25 14V7.5L14 2Z" fill="#1E3A8A" stroke="#3B82F6" stroke-width="1.2"/>
+          <path d="M10 14l2.5 2.5L18 11" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="logo-text">SENTINEL<span class="logo-ml">-ML</span></span>
+      </div>
+      <div class="header-badge">
+        <span class="pulse-dot"></span>
+        Model Online
+      </div>
+    </header>
+
+    <!-- Main Card -->
+    <main class="main-card">
+      <h1 class="title">Scam Number Classifier</h1>
+      <p class="subtitle">Enter a phone number and known signals to get an AI-powered fraud verdict.</p>
+
+      <!-- Phone Number Input -->
+      <div class="input-group">
+        <label class="label">Phone Number</label>
+        <div class="phone-input-row">
+          <input type="text" id="phone" class="input" placeholder="+91 98765 43210" autocomplete="off"/>
+          <button id="classify-btn" class="btn-primary" onclick="classifyNumber()">
+            <svg id="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            <span id="btn-text">Classify</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Advanced Signals (collapsible) -->
+      <details class="advanced-panel">
+        <summary class="advanced-toggle">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+          Advanced Signals
+        </summary>
+        <div class="signals-grid">
+          <div class="signal-item">
+            <label>Calls / 24h</label>
+            <input type="number" id="call_velocity" class="input-sm" value="0" min="0" />
+          </div>
+          <div class="signal-item">
+            <label>Reputation Score (0-1)</label>
+            <input type="number" id="rep_score" class="input-sm" value="0.0" min="0" max="1" step="0.01" />
+          </div>
+          <div class="signal-item">
+            <label>Citizen Reports</label>
+            <input type="number" id="report_count" class="input-sm" value="0" min="0" />
+          </div>
+          <div class="signal-item">
+            <label>SIM Age (days)</label>
+            <input type="number" id="sim_age_days" class="input-sm" value="365" min="1" />
+          </div>
+          <div class="signal-item">
+            <label>Honeypot Hits</label>
+            <input type="number" id="honeypot_hits" class="input-sm" value="0" min="0" />
+          </div>
+          <div class="signal-item">
+            <label>Avg Call Duration (s)</label>
+            <input type="number" id="avg_call_duration" class="input-sm" value="60" min="0" />
+          </div>
+          <div class="signal-item">
+            <label>Scam Network Degree</label>
+            <input type="number" id="scam_network_degree" class="input-sm" value="0" min="0" />
+          </div>
+          <div class="signal-item">
+            <label>Fraud VPA Linked</label>
+            <select id="is_vpa_linked" class="input-sm">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+          <div class="signal-item">
+            <label>Geographic Anomaly</label>
+            <select id="geographic_anomaly" class="input-sm">
+              <option value="0">No</option>
+              <option value="1">Yes</option>
+            </select>
+          </div>
+        </div>
+      </details>
+
+      <!-- Result Panel (hidden initially) -->
+      <div id="result-panel" class="result-panel hidden">
+        <!-- Verdict -->
+        <div class="verdict-row">
+          <div id="verdict-badge" class="verdict-badge">—</div>
+          <div class="confidence-wrapper">
+            <div class="conf-label">Confidence</div>
+            <div class="conf-bar-bg">
+              <div id="conf-bar" class="conf-bar" style="width:0%"></div>
+            </div>
+            <div id="conf-value" class="conf-value">0%</div>
+          </div>
+        </div>
+
+        <!-- Probability Breakdown -->
+        <div class="prob-row">
+          <div class="prob-item safe-prob">
+            <span class="prob-name">SAFE</span>
+            <span id="prob-safe" class="prob-val">—</span>
+          </div>
+          <div class="prob-item susp-prob">
+            <span class="prob-name">SUSPICIOUS</span>
+            <span id="prob-susp" class="prob-val">—</span>
+          </div>
+          <div class="prob-item scam-prob">
+            <span class="prob-name">SCAM</span>
+            <span id="prob-scam" class="prob-val">—</span>
+          </div>
+        </div>
+
+        <!-- Explanations -->
+        <div class="explain-section">
+          <div class="explain-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            Top Signals Driving This Verdict
+          </div>
+          <ul id="explain-list" class="explain-list"></ul>
+        </div>
+      </div>
+
+      <!-- Error Panel -->
+      <div id="error-panel" class="error-panel hidden">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <span id="error-msg">Classification failed.</span>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      SENTINEL-ML v1.0 &bull; Powered by RandomForestClassifier &bull;
+      API: <code id="api-url">http://localhost:8001</code>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

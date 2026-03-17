@@ -152,6 +152,13 @@ export default function SimulationPortal() {
             const data = await res.json();
             if (data.status === 'approved') {
               setAuthStatus('approved');
+              if (data.access_token) {
+                localStorage.setItem('sentinel_auth', JSON.stringify({
+                  token: data.access_token,
+                  username: data.phone_number,
+                  role: 'common'
+                }));
+              }
               toast.success("Security Clearance Granted");
             } else if (data.status === 'rejected') {
               setAuthStatus('login');

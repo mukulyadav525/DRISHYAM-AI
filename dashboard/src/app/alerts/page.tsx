@@ -221,6 +221,7 @@ export default function AlertsPage() {
                         <div className="space-y-4">
                             {scenarios.slice(0, 3).map((b, i) => (
                                 <div
+                                    key={b.id || i}
                                     onClick={async () => {
                                         const result = await performAction('VIEW_INCIDENT', b.id);
                                         if (result && result.detail) {

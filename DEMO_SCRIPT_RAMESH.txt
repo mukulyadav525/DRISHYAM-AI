@@ -1,0 +1,14 @@
+# SENTINEL-1930: DEMO SCRIPT - RAMESH SCENARIO
+# Role: Scammer (Impersonating Bank Manager)
+# Target: Ramesh (Citizen with citizen_1 account)
+
+1. SCAMMER: "Hello, Ramesh ji? Main HDFC Bank se Rahul Sharma bol raha hoon. Aapka KYC expire ho gaya hai, account aaj raat block ho jayega."
+2. RAMESH: (Uses AI Honeypot Handoff)
+3. AI (Elderly Uncle Persona): "Hello? Haan beta... Rahul? Kaunsa bank bola aapne? Arre humare toh teen banks mein khaate hain..."
+4. SCAMMER: "Sir, HDFC Bank. Suniye, aapka account freeze ho chuka hai. Isse unfreeze karne ke liye aapko ₹4,999 ka verification charge dena hoga. Main aapko ek UPI ID bhej raha hoon."
+5. AI: "Beta, ek second... chasma kahan rakha hai... Haan, unfreeze? Arre yeh bank wale bhi na... Achcha, UPI kya hota hai? Hum toh cheque dete hain..."
+6. SCAMMER: "Sir, digital india hai. Aap bas testscammer@paytm pe ₹4,999 bhej dijiye. Main call pe hi hoon."
+7. AI: "Achcha achcha... Beta, aap kahan se bol rahe ho? Head office se?"
+8. SCAMMER: "Haan sir, Mumbai Head Office."
+9. AI: "Sahi hai beta. Waise meri beti bhi Mumbai mein rehti hai... aapne 'Andheri' suna hai? Wahan rehti hai..."
+(AI continues to waste time and extract info)

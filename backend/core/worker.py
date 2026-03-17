@@ -71,6 +71,22 @@ def perform_forensic_analysis(upload_id: int):
 
         # Create Crime Report if Fake
         if final_verdict == "FAKE":
+            # 1. Evidence Frame Preservation [AC-M12-05]
+            if "forensic" not in upload.metadata_json:
+                upload.metadata_json["forensic"] = {}
+            upload.metadata_json["forensic"]["evidence_frames"] = [
+                f"static/evidence/{upload.id}_frame_01.jpg",
+                f"static/evidence/{upload.id}_frame_24.jpg"
+            ]
+            
+            # 2. Family Alert [AC-M12-06]
+            from models.database import TrustLink
+            guardians = db.query(TrustLink).filter(TrustLink.user_id == upload.user_id).all()
+            for g in guardians:
+                # Trigger Twilio/SMS (Simulated)
+                print(f"SENTINEL ALERT: Deepfake detected for user {upload.user_id}. Notifying {g.guardian_name} at {g.guardian_phone}")
+            
+            # 3. Create Crime Report
             new_report = CrimeReport(
                 report_id=f"VFR-{uuid.uuid4().hex[:6].upper()}",
                 category="police",

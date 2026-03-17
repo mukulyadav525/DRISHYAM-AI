@@ -10,6 +10,8 @@ import traceback
 import base64
 import os
 from scripts.gen_pro_pdf import generate_report
+from core.reporting import pdf_report_generator
+from core.graph import fraud_graph
 
 logger = logging.getLogger("sentinel.actions")
 
@@ -63,6 +65,7 @@ async def perform_action(
             "BLOCK_IMEI": f"IMEI Block Signal Broadcast for Range {req.target_id or 'Unknown'}",
             "INTERCEPT_MESSAGE": f"WhatsApp Interception Protocol Activated for {req.target_id or 'Source'}",
             "VIEW_VPA_HISTORY": f"Loading Transaction History for {req.target_id or 'VPA'}",
+            "GENERATE_OMBUDSMAN_COMPLAINT": "RBI Ombudsman Complaint Draft Generated",
         }
 
         user_msg = messages.get(req.action_type.upper(), f"Action {req.action_type} executed successfully")
@@ -146,6 +149,25 @@ async def perform_action(
                 ],
                 "location": req.metadata.get("location", "Unknown Sector") if req.metadata else "Unknown Sector"
             }
+        elif req.action_type.upper() == "GENERATE_OMBUDSMAN_COMPLAINT":
+            complaint_data = req.metadata or {
+                "case_id": req.target_id or "INC-992",
+                "bank": "HDFC Bank",
+                "amount": "₹45,000",
+                "scammer_vpa": "fraud@okaxis"
+            }
+            pdf_bytes = pdf_report_generator.generate_ombudsman_complaint(complaint_data)
+            # Store in static for simulation download
+            static_dir = os.path.join(os.getcwd(), "static")
+            os.makedirs(static_dir, exist_ok=True)
+            filename = f"OMB_COMPLAINT_{req.target_id or 'NEW'}.pdf"
+            with open(os.path.join(static_dir, filename), "wb") as f:
+                f.write(pdf_bytes)
+            
+            detail_data = {
+                "download_url": f"/api/v1/actions/download-file?filename={filename}",
+                "preview": "Complaint generated against banking entity for golden-hour breach."
+            }
         elif req.action_type.upper() == "CONNECT_TICKER":
             detail_data = {
                 "ticker_items": [
@@ -164,6 +186,12 @@ async def perform_action(
             metadata_json=req.metadata,
             status="success"
         )
+        
+        # [AC-M7-05] Increment Sentinel Score for Active Defense
+        active_defense_actions = ["SCAN_VIDEO", "GENERATE_FIR", "FREEZE_VPA", "BLOCK_IMEI", "REPORT_INCIDENT", "SCAN_MULE_FEED"]
+        if req.action_type.upper() in active_defense_actions:
+            current_user.sentinel_score = (current_user.sentinel_score or 100) + 5
+            logger.info(f"User {current_user.username} Sentinel Score increased to {current_user.sentinel_score}")
         
         db.add(new_action)
         db.commit()
@@ -259,3 +287,10 @@ async def download_simulation(
         db.rollback()
         logger.error(f"Download failed: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Report Generation Error: {str(e)}")
+
+@router.get("/graph/{entity_id}")
+async def get_entity_graph(entity_id: str):
+    """
+    [Module 3] Fetch linked fraud network for a specific entity.
+    """
+    return fraud_graph.get_network(entity_id)

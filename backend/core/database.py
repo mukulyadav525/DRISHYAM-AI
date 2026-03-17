@@ -27,6 +27,8 @@ def ensure_schema_compliance():
     db = SessionLocal()
     
     queries_pg = [
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR;",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS sentinel_score INTEGER DEFAULT 100;",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS customer_id VARCHAR;",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS handoff_timestamp TIMESTAMP;",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS metadata_json JSON;",
@@ -35,6 +37,8 @@ def ensure_schema_compliance():
     ]
     
     queries_sqlite = [
+        "ALTER TABLE users ADD COLUMN phone_number VARCHAR;",
+        "ALTER TABLE users ADD COLUMN sentinel_score INTEGER DEFAULT 100;",
         "ALTER TABLE honeypot_sessions ADD COLUMN customer_id VARCHAR;",
         "ALTER TABLE honeypot_sessions ADD COLUMN handoff_timestamp TIMESTAMP;",
         "ALTER TABLE honeypot_sessions ADD COLUMN metadata_json JSON;",

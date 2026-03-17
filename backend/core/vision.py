@@ -23,7 +23,22 @@ class GeminiVisionEngine:
 
     async def analyze_multimodal_forensic(self, file_content: bytes, mime_type: str = "image/jpeg", filename: str = "") -> Dict[str, Any]:
         """
-        Analyze a file (Image, Video, Audio, or PDF) using Gemini to detect potential deepfakes or forgeries.
+        Your high-level objectives in this forensic scan:
+        1. Identify the media type (video, image, document).
+        2. Look for GAN artifacts, frequency anomalies, or edge blurring on subjects.
+        3. Check for uniform/badge authenticity. If a subject claims to be a police officer, verify if the uniform, badge, or ID card shows signs of being AI-generated or low-fidelity (digital arrest scam).
+        4. Provide a structured forensic verdict.
+
+        Return a JSON response with:
+        - "verdict": "VERIFIED" (clean) | "FAKE" (deepfake/tampered)
+        - "confidence": 0-1 float
+        - "analysis_details": {
+            "liveness": "High/Low/Fail",
+            "sync_score": "Verified/Desynced",
+            "uniform_check": "Verified/Suspicious/None",
+            "badge_tampering": "Detected/Not-Detected",
+            "anomalies": ["list of findings"]
+        }
         """
         if not self.client:
             return self._mock_analysis(filename)

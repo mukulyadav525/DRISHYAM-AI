@@ -13,6 +13,7 @@ import {
   XCircle
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
+import { useAuth } from "@/context/AuthContext";
 import { toast } from "react-hot-toast";
 
 interface SimulationRequest {
@@ -23,15 +24,15 @@ interface SimulationRequest {
 }
 
 export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { user } = useAuth();
   const [requests, setRequests] = useState<SimulationRequest[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchRequests = async () => {
+    if (!user?.token) return;
     setIsLoading(true);
     try {
-      const authStr = localStorage.getItem('sentinel_auth');
-      const auth = authStr ? JSON.parse(authStr) : null;
-      const token = auth?.token;
+      const token = user.token;
       
       const res = await fetch(`${API_BASE}/auth/simulation/list`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -52,15 +53,14 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
   };
 
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && user?.token) {
       fetchRequests();
     }
-  }, [isOpen]);
+  }, [isOpen, user?.token]);
 
   const handleAction = async (id: number, approve: boolean) => {
     try {
-      const authStr = localStorage.getItem('sentinel_auth');
-      const token = authStr ? JSON.parse(authStr).token : null;
+      const token = user?.token;
       
       const res = await fetch(`${API_BASE}/auth/simulation/approve/${id}?approve=${approve}`, {
         method: 'POST',

@@ -1,19 +1,24 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { API_BASE } from '@/config/api';
+import { useAuth } from '@/context/AuthContext';
 
 export interface ActionMetadata {
     [key: string]: any;
 }
 
 export const useActions = () => {
+    const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
     const performAction = async (actionType: string, targetId?: string, metadata?: ActionMetadata) => {
+        const token = user?.token;
+        if (!token) {
+            toast.error("Session expired or invalid. Please login again.");
+            return null;
+        }
         setIsLoading(true);
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
-            const token = authStr ? JSON.parse(authStr).token : null;
             const res = await fetch(`${API_BASE}/actions/perform`, {
                 method: 'POST',
                 headers: {
@@ -47,8 +52,7 @@ export const useActions = () => {
     const downloadSimulatedFile = async (category: string, fileType: string = 'pdf') => {
         setIsLoading(true);
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
-            const token = authStr ? JSON.parse(authStr).token : null;
+            const token = user?.token;
             const res = await fetch(`${API_BASE}/actions/download-sim?file_type=${fileType}&category=${category}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
