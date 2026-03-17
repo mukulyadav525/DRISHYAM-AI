@@ -294,10 +294,44 @@ export default function SimulationPortal() {
 
       if (res.ok) {
         const result = await res.json();
-        setDeepfakeAiResult(result);
+        
+        if (result.status === "PENDING" && result.id) {
+          const pollInterval = setInterval(async () => {
+            try {
+              const statusRes = await fetch(`${API_BASE}/forensic/status/${result.id}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+              });
+              
+              if (statusRes.ok) {
+                const statusData = await statusRes.json();
+                if (statusData.status === "COMPLETED") {
+                  clearInterval(pollInterval);
+                  setDeepfakeAiResult(statusData);
+                  setScanProgress(100);
+                } else if (statusData.status === "FAILED") {
+                  clearInterval(pollInterval);
+                  setIsDeepfakeScanning(false);
+                  toast.error("Forensic analysis failed.");
+                } else {
+                  setScanProgress(prev => Math.min(prev + 5, 95));
+                }
+              }
+            } catch (err) {
+              console.error("Polling Error:", err);
+              clearInterval(pollInterval);
+              setIsDeepfakeScanning(false);
+            }
+          }, 3000);
+        } else {
+          setDeepfakeAiResult(result);
+          setScanProgress(100);
+        }
+      } else {
+        setIsDeepfakeScanning(false);
       }
     } catch (err) {
       console.error("Forensic API Error:", err);
+      setIsDeepfakeScanning(false);
     }
   };
 
@@ -1072,7 +1106,7 @@ export default function SimulationPortal() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-sm font-bold text-indblue">Analyzing Facial Geometry...</p>
+                                    <p className="text-sm font-bold text-indblue">Extracting Forensic Markers...</p>
                                     <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-saffron transition-all duration-300"
@@ -1117,12 +1151,12 @@ export default function SimulationPortal() {
                                 <p className="text-[10px] text-silver font-medium uppercase tracking-widest leading-relaxed">
                                     Supports .mp4, .png, .mp3, .pdf • MAX 50MB
                                 </p>
-                                <button
-                                    onClick={() => startDeepfakeScan()}
-                                    className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-deeporange transition-all"
-                                >
-                                    SIMULATE SCAN
-                                </button>
+                                    <button
+                                        onClick={() => startDeepfakeScan()}
+                                        className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-deeporange transition-all"
+                                    >
+                                        START FORENSIC SCAN
+                                    </button>
                             </div>
                         )}
                     </div>
