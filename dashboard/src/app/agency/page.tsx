@@ -440,7 +440,7 @@ export default function AgencyPage() {
                                     <span className="text-[10px] font-bold uppercase text-white/60">Rupees Saved</span>
                                 </div>
                                 <span className="font-black text-lg text-indgreen">
-                                    ₹{(triage.rupees_saved / 10000000).toFixed(1)} Cr
+                                    ₹{((triage?.rupees_saved || 0) / 10000000).toFixed(1)} Cr
                                 </span>
                             </div>
                             <div className="pt-4 border-t border-white/10">

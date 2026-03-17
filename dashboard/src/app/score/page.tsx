@@ -102,7 +102,7 @@ export default function ScorePage() {
                     </button>
                     <div className="bg-white p-3 rounded-2xl border border-silver/10 shadow-sm flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-indgreen animate-ping" />
-                        <p className="text-[10px] font-bold text-indblue uppercase">Live Score Nodes: {data?.national?.nodes?.toLocaleString() || "4,520"}</p>
+                        <p className="text-[10px] font-bold text-indblue uppercase">Live Score Nodes: {(data?.national?.nodes || 4520).toLocaleString()}</p>
                     </div>
                 </div>
             </div>
@@ -131,13 +131,9 @@ export default function ScorePage() {
                             <div className="z-10 text-center">
                                 <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-4">Regional Distribution</p>
                                 <div className="flex gap-4 items-end h-32">
-                                    {data?.national?.heatmap && Array.isArray(data.national.heatmap) ? data.national.heatmap.map((h, i) => (
+                                    {(data?.national?.heatmap && Array.isArray(data.national.heatmap) ? data.national.heatmap : [45, 62, 38, 55, 72, 48]).map((h, i) => (
                                         <div key={i} className="w-8 bg-indblue rounded-t-lg transition-all duration-700 hover:bg-saffron cursor-help" style={{ height: `${h}%` }} />
-                                    )) : (
-                                        [45, 62, 38, 55, 72, 48].map((h, i) => (
-                                            <div key={i} className="w-8 bg-indblue/20 rounded-t-lg" style={{ height: `${h}%` }} />
-                                        ))
-                                    )}
+                                    ))}
                                 </div>
                                 <div className="flex justify-between mt-2 text-[8px] font-bold text-silver uppercase">
                                     <span>North</span>

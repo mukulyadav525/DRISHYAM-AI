@@ -30,7 +30,7 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                         className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 border border-silver/20"
                     >
                         {/* Header */}
-                        <div className={`p-8 text-white relative flex items-center gap-6 ${data.score > 700 ? 'bg-indblue' : 'bg-redalert'}`}>
+                        <div className={`p-8 text-white relative flex items-center gap-6 ${(data?.score || 0) > 700 ? 'bg-indblue' : 'bg-redalert'}`}>
                             <button
                                 onClick={onClose}
                                 className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -44,14 +44,14 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
 
                             <div>
                                 <div className="flex items-center gap-3 mb-1">
-                                    <h3 className="text-2xl font-bold tracking-tight">{data.name}</h3>
+                                    <h3 className="text-2xl font-bold tracking-tight">{data?.name || "Unknown Citizen"}</h3>
                                     <span className="px-2 py-0.5 bg-white/20 rounded text-[10px] font-black uppercase tracking-widest leading-none">
-                                        ID: {data.uid}
+                                        ID: {data?.uid || "N/A"}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full animate-pulse ${data.status === 'SECURE' ? 'bg-indgreen' : 'bg-gold'}`} />
-                                    <p className="text-sm font-bold opacity-80 uppercase tracking-wider">{data.status.replace('_', ' ')}</p>
+                                    <div className={`w-2 h-2 rounded-full animate-pulse ${data?.status === 'SECURE' ? 'bg-indgreen' : 'bg-gold'}`} />
+                                    <p className="text-sm font-bold opacity-80 uppercase tracking-wider">{(data?.status || 'UNKNOWN').replace('_', ' ')}</p>
                                 </div>
                             </div>
                         </div>
@@ -61,15 +61,15 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                             <div className="grid grid-cols-3 gap-6">
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">
                                     <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">Sentinel Score</p>
-                                    <p className={`text-3xl font-black ${data.score > 700 ? 'text-indgreen' : 'text-redalert'}`}>{data.score}</p>
+                                    <p className={`text-3xl font-black ${(data?.score || 0) > 700 ? 'text-indgreen' : 'text-redalert'}`}>{data?.score || 0}</p>
                                 </div>
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">
                                     <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">Threats Blocked</p>
-                                    <p className="text-3xl font-black text-indblue">{data.details.threats_blocked}</p>
+                                    <p className="text-3xl font-black text-indblue">{data?.details?.threats_blocked || 0}</p>
                                 </div>
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">
                                     <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">Total Calls</p>
-                                    <p className="text-3xl font-black text-indblue">{data.details.total_calls}</p>
+                                    <p className="text-3xl font-black text-indblue">{data?.details?.total_calls || 0}</p>
                                 </div>
                             </div>
 
@@ -98,7 +98,7 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                             <div className="pt-6 border-t border-silver/10 flex justify-between items-center">
                                 <div className="flex items-center gap-2 text-silver">
                                     <History size={14} />
-                                    <span className="text-[10px] font-bold uppercase tracking-wider">Last Activity: {new Date(data.details.last_active).toLocaleString()}</span>
+                                    <span className="text-[10px] font-bold uppercase tracking-wider">Last Activity: {data?.details?.last_active ? new Date(data.details.last_active).toLocaleString() : 'N/A'}</span>
                                 </div>
                                 <button className="px-8 py-3 bg-indblue text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-charcoal transition-all shadow-xl shadow-indblue/20">
                                     DOWNLOAD AUDIT LOG

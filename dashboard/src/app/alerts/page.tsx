@@ -41,7 +41,8 @@ export default function AlertsPage() {
             try {
                 const res = await fetch(`${API_BASE}/system/alerts/coverage?region=${targetRegion}`);
                 if (res.ok) {
-                    setCoverage(await res.json());
+                    const json = await res.json();
+                    setCoverage(json || { citizens: 0, districts: 0, delivery: 0 });
                 }
             } catch (error) {
                 console.error("Error fetching coverage:", error);
@@ -56,7 +57,7 @@ export default function AlertsPage() {
                 const res = await fetch(`${API_BASE}/inoculation/scenarios`);
                 if (res.ok) {
                     const data = await res.json();
-                    setScenarios(data.scenarios);
+                    setScenarios(data?.scenarios || []);
                 }
             } catch (error) {
                 console.error("Error fetching scenarios:", error);
@@ -184,12 +185,12 @@ export default function AlertsPage() {
                     <div className="bg-white rounded-2xl border border-silver/10 p-6">
                         <h4 className="font-bold text-indblue mb-6">{t("audience_coverage")}</h4>
                         <div className="space-y-6">
-                            <div className="flex items-center gap-4">
+                                 <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-xl bg-indblue/5 flex items-center justify-center text-indblue">
                                     <Users size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-indblue">{coverage.citizens.toLocaleString()} Citizens</p>
+                                    <p className="text-sm font-bold text-indblue">{(coverage?.citizens || 0).toLocaleString()} Citizens</p>
                                     <p className="text-[10px] text-silver font-medium uppercase tracking-widest">{t("target_reach")}</p>
                                 </div>
                             </div>
@@ -198,7 +199,7 @@ export default function AlertsPage() {
                                     <MapPin size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-indblue">{coverage.districts} Districts</p>
+                                    <p className="text-sm font-bold text-indblue">{coverage?.districts || 0} Districts</p>
                                     <p className="text-[10px] text-silver font-medium uppercase tracking-widest">{t("geo_spread")}</p>
                                 </div>
                             </div>
@@ -206,10 +207,10 @@ export default function AlertsPage() {
                             <div className="pt-4 border-t border-silver/5">
                                 <div className="flex justify-between text-[10px] font-bold uppercase mb-2">
                                     <span className="text-silver">{t("priority_delivery")}</span>
-                                    <span className="text-indgreen">{coverage.delivery}%</span>
+                                    <span className="text-indgreen">{coverage?.delivery || 0}%</span>
                                 </div>
                                 <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
-                                    <div className="h-full bg-indgreen transition-all duration-1000" style={{ width: `${coverage.delivery}%` }} />
+                                    <div className="h-full bg-indgreen transition-all duration-1000" style={{ width: `${coverage?.delivery || 0}%` }} />
                                 </div>
                             </div>
                         </div>

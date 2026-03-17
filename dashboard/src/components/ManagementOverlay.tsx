@@ -39,7 +39,8 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
       });
       
       if (res.ok) {
-        setRequests(await res.json());
+        const data = await res.json();
+        setRequests(Array.isArray(data) ? data : []);
       } else {
         const errText = await res.text();
         console.error("Dashboard list error:", res.status, errText);
@@ -122,7 +123,7 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
                       <div className="flex items-center gap-2 mt-1">
                         <Clock size={12} className="text-silver" />
                         <span className="text-[10px] font-medium text-silver">
-                          {new Date(req.requested_at).toLocaleString()}
+                          {req.requested_at ? new Date(req.requested_at).toLocaleString() : 'N/A'}
                         </span>
                         <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ml-2 ${
                           req.status === 'pending' ? 'bg-saffron/10 text-saffron' :

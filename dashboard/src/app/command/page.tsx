@@ -134,10 +134,10 @@ export default function CommandPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-silver/5">
-                                    {statePerformance.map((s: any, i: number) => (
+                                    {(Array.isArray(statePerformance) ? statePerformance : []).map((s: any, i: number) => (
                                         <tr key={i} className="group hover:bg-boxbg/50 transition-colors">
-                                            <td className="py-4 font-bold text-indblue text-sm">{s.state}</td>
-                                            <td className="py-4 text-xs font-bold text-charcoal">{s.cases.toLocaleString()}</td>
+                                            <td className="py-4 font-bold text-indblue text-sm">{s.state || 'N/A'}</td>
+                                            <td className="py-4 text-xs font-bold text-charcoal">{(s.cases || 0).toLocaleString()}</td>
                                             <td className="py-4">
                                                 <div className="flex items-center gap-2">
                                                     <span className="text-xs font-bold text-indblue">{s.resolved}</span>
@@ -194,7 +194,7 @@ export default function CommandPage() {
                             <h4 className="font-bold text-sm uppercase">Active Intelligence Alerts</h4>
                         </div>
                         <div className="space-y-4">
-                            {alerts.map((a: any) => (
+                            {(Array.isArray(alerts) ? alerts : []).map((a: any) => (
                                 <div key={a.id} className="p-3 bg-redalert/5 border border-redalert/10 rounded-xl">
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-[8px] font-black px-2 py-0.5 rounded ${a.severity === 'CRITICAL' ? 'bg-redalert text-white' : 'bg-saffron text-white'}`}>

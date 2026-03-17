@@ -195,44 +195,44 @@ export default function OverviewPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <StatCard
           label={t("total_scams_blocked")}
-          value={data?.stats.scams_blocked || "0"}
+          value={data?.stats?.scams_blocked || "0"}
           subValue={t("across_states")}
           icon={ShieldCheck}
           color="indblue"
-          trend={data?.stats.scams_blocked !== "0" ? { value: "12%", positive: true } : undefined}
+          trend={data?.stats?.scams_blocked && data?.stats?.scams_blocked !== "0" ? { value: "12%", positive: true } : undefined}
           quickActions={true}
           onAction={(type) => handleStatAction(type, t("total_scams_blocked"))}
           onClickCard={() => openDetailModal("scams")}
         />
         <StatCard
           label={t("citizens_protected")}
-          value={data?.stats.citizens_protected || "0"}
+          value={data?.stats?.citizens_protected || "0"}
           subValue={t("active_grid_participants")}
           icon={Users}
           color="indgreen"
-          trend={data?.stats.citizens_protected !== "0" ? { value: "8%", positive: true } : undefined}
+          trend={data?.stats?.citizens_protected && data?.stats?.citizens_protected !== "0" ? { value: "8%", positive: true } : undefined}
           quickActions={true}
           onAction={(type) => handleStatAction(type, t("citizens_protected"))}
           onClickCard={() => openDetailModal("citizens")}
         />
         <StatCard
           label={t("estimated_savings")}
-          value={data?.stats.estimated_savings || "0"}
+          value={data?.stats?.estimated_savings || "0"}
           subValue={t("financial_loss_prevented")}
           icon={IndianRupee}
           color="gold"
-          trend={data?.stats.estimated_savings !== "0" ? { value: "15%", positive: true } : undefined}
+          trend={data?.stats?.estimated_savings && data?.stats?.estimated_savings !== "0" ? { value: "15%", positive: true } : undefined}
           quickActions={true}
           onAction={(type) => handleStatAction(type, t("estimated_savings"))}
           onClickCard={() => openDetailModal("savings")}
         />
         <StatCard
           label={t("active_threats")}
-          value={data?.stats.active_threats.toString() || "0"}
+          value={data?.stats?.active_threats?.toString() || "0"}
           subValue={t("high_intensity_surges")}
           icon={AlertTriangle}
           color="redalert"
-          trend={data?.stats.active_threats ? { value: "4%", positive: false } : undefined}
+          trend={data?.stats?.active_threats ? { value: "4%", positive: false } : undefined}
           quickActions={true}
           onAction={(type) => handleStatAction(type, t("active_threats"))}
           onClickCard={() => openDetailModal("threats")}
@@ -280,7 +280,7 @@ export default function OverviewPage() {
             <div className="w-2 h-2 rounded-full bg-redalert animate-pulse" />
           </h4>
           <div className="space-y-6">
-            {data?.live_feed.map((item) => (
+            {(data?.live_feed || []).map((item) => (
               <div
                 key={item.id}
                 onClick={async () => {

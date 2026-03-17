@@ -103,8 +103,8 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                                         <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1">{m.label}</p>
                                         <div className="flex items-baseline justify-between">
                                             <p className="text-xl font-bold text-indblue">{m.value}</p>
-                                            <span className={`text-[10px] font-black ${m.trend.startsWith('+') || m.trend === 'MAX' || m.trend === 'SURGE' || m.trend === 'LIVE' || m.trend === 'SECURE' ? 'text-indgreen' : 'text-silver'}`}>
-                                                {m.trend}
+                                            <span className={`text-[10px] font-black ${m.trend?.startsWith('+') || m.trend === 'MAX' || m.trend === 'SURGE' || m.trend === 'LIVE' || m.trend === 'SECURE' ? 'text-indgreen' : 'text-silver'}`}>
+                                                {m.trend || 'N/A'}
                                             </span>
                                         </div>
                                     </div>

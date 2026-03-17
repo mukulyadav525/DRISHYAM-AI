@@ -53,7 +53,7 @@ export default function DetectionGrid() {
 
                 if (callsRes.ok) {
                     const callsData = await callsRes.json();
-                    setCalls(callsData);
+                    setCalls(Array.isArray(callsData) ? callsData : []);
                 }
 
                 if (statsRes.ok) {
@@ -72,8 +72,8 @@ export default function DetectionGrid() {
         return () => clearInterval(interval);
     }, []);
 
-    const filteredCalls = calls.filter(call => {
-        const matchesSearch = call.number.includes(searchQuery) || call.location.toLowerCase().includes(searchQuery.toLowerCase());
+    const filteredCalls = (calls || []).filter(call => {
+        const matchesSearch = call.number?.includes(searchQuery) || call.location?.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesRisk = filterRisk === 'ALL' || call.status === 'Scam';
         return matchesSearch && matchesRisk;
     });
@@ -161,7 +161,7 @@ export default function DetectionGrid() {
                                                     style={{ width: `${call.score}%` }}
                                                 />
                                             </div>
-                                            <span className="text-[10px] font-mono font-bold">{Number(call.score).toFixed(0)}%</span>
+                                            <span className="text-[10px] font-mono font-bold">{Number(call.score || 0).toFixed(0)}%</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -222,14 +222,14 @@ export default function DetectionGrid() {
                 <div className="bg-white p-6 rounded-2xl border border-silver/10">
                     <h4 className="font-bold text-indblue mb-4">{t("top_risk_vectors")}</h4>
                     <div className="space-y-4">
-                        {stats?.risk_vectors.map((v) => (
+                        {(stats?.risk_vectors || []).map((v) => (
                             <div key={v.name} className="flex flex-col gap-1.5">
                                 <div className="flex justify-between text-[10px] font-bold uppercase">
                                     <span className="text-charcoal">{v.name}</span>
-                                    <span className="text-silver">{v.value}%</span>
+                                    <span className="text-silver">{v.value || 0}%</span>
                                 </div>
                                 <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
-                                    <div className="h-full bg-saffron" style={{ width: `${v.value}%` }} />
+                                    <div className="h-full bg-saffron" style={{ width: `${v.value || 0}%` }} />
                                 </div>
                             </div>
                         ))}

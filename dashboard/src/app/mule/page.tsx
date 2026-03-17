@@ -198,19 +198,17 @@ export default function MulePage() {
                             Threat Patterns
                         </h4>
                         <div className="space-y-6">
-                            {data?.patterns && Array.isArray(data.patterns) ? data.patterns.map(p => (
+                            {(data?.patterns || []).map(p => (
                                 <div key={p.label}>
                                     <div className="flex justify-between text-[11px] font-bold text-silver mb-2">
                                         <span>{p.label}</span>
-                                        <span>{p.value}%</span>
+                                        <span>{p.value || 0}%</span>
                                     </div>
                                     <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
-                                        <div className={`h-full ${p.value > 80 ? 'bg-redalert' : p.value > 70 ? 'bg-saffron' : 'bg-gold'}`} style={{ width: `${p.value}%` }} />
+                                        <div className={`h-full ${(p.value || 0) > 80 ? 'bg-redalert' : (p.value || 0) > 70 ? 'bg-saffron' : 'bg-gold'}`} style={{ width: `${p.value || 0}%` }} />
                                     </div>
                                 </div>
-                            )) : (
-                                <p className="text-[10px] text-silver italic">No patterns analyzed yet.</p>
-                            )}
+                            ))}
                         </div>
                     </div>
 

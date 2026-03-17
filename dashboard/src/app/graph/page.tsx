@@ -115,9 +115,9 @@ export default function FraudGraphPage() {
                     <div className="flex-1 bg-boxbg/30 relative">
                         {/* Dynamic Nodes from Backend (Simple simulation with SVG) */}
                         <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 600">
-                            {data?.edges.map((edge, i) => {
-                                const sourceIdx = data.nodes.findIndex(n => n.id === edge.source);
-                                const targetIdx = data.nodes.findIndex(n => n.id === edge.target);
+                            {(data?.edges || []).map((edge, i) => {
+                                const sourceIdx = (data?.nodes || []).findIndex(n => n.id === edge.source);
+                                const targetIdx = (data?.nodes || []).findIndex(n => n.id === edge.target);
                                 if (sourceIdx === -1 || targetIdx === -1) return null;
 
                                 const x1 = 100 + (sourceIdx % 4) * 150;
@@ -130,14 +130,14 @@ export default function FraudGraphPage() {
                                 );
                             })}
 
-                            {data?.nodes.map((node, i) => {
+                            {(data?.nodes || []).map((node, i) => {
                                 const x = 100 + (i % 4) * 150;
                                 const y = 100 + Math.floor(i / 4) * 100;
                                 const color = node.type === "number" ? "#1E293B" : "#F97316";
                                 return (
                                     <g key={node.id}>
                                         <circle cx={x} cy={y} r="6" fill={color} />
-                                        <text x={x + 10} y={y + 4} fontSize="8" fontWeight="bold" fill="#64748B">{node.label.slice(-4)}</text>
+                                        <text x={x + 10} y={y + 4} fontSize="8" fontWeight="bold" fill="#64748B">{node.label?.slice(-4) || '...'}</text>
                                     </g>
                                 );
                             })}
@@ -149,7 +149,7 @@ export default function FraudGraphPage() {
                                     <Share2 className="text-saffron" size={24} />
                                 </div>
                                 <p className="text-xs font-bold text-indblue">{t("graph_active")}</p>
-                                <p className="text-[10px] text-silver mt-1">{data?.nodes.length} entities tracked</p>
+                                <p className="text-[10px] text-silver mt-1">{(data?.nodes || []).length} entities tracked</p>
                             </div>
                         </div>
                     </div>
@@ -176,7 +176,7 @@ export default function FraudGraphPage() {
                         <div className="p-4 bg-boxbg rounded-xl border border-silver/10">
                             <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1 text-center">{t("current_target")}</p>
                             <p className="text-lg font-mono font-bold text-indblue text-center tracking-tighter">
-                                {data?.nodes.find(n => n.type === "number")?.label || "+91 XXXXX XXXXX"}
+                                {data?.nodes?.find(n => n.type === "number")?.label || "+91 XXXXX XXXXX"}
                             </p>
                         </div>
 
