@@ -117,6 +117,27 @@ async def lifespan(app: FastAPI):
                 ]
                 db.add_all(clusters)
                 db.commit()
+
+            from models.database import BankNodeRule
+            if db.query(BankNodeRule).count() == 0:
+                logger.info("[STARTUP] Seeding initial fraud mitigation rules...")
+                rules = [
+                    BankNodeRule(bank_name="HDFC Bank", rule_type="AMOUNT_THRESHOLD", threshold=100000.0, action="FLAG"),
+                    BankNodeRule(bank_name="SBI", rule_type="VELOCITY", threshold=5.0, action="FREEZE"),
+                    BankNodeRule(bank_name="ALL", rule_type="PII_ACCESS", threshold=1.0, action="AUDIT")
+                ]
+                db.add_all(rules)
+                db.commit()
+
+            from models.database import IntelligenceAlert
+            if db.query(IntelligenceAlert).count() == 0:
+                logger.info("[STARTUP] Seeding initial intelligence alerts...")
+                alerts = [
+                    IntelligenceAlert(severity="HIGH", message="New Scam Pod detected in Noida Sector 15", category="SCAM_POD", location="Noida"),
+                    IntelligenceAlert(severity="CRITICAL", message="Massive VPA rotation detected in Jamtara", category="VPA_ROTATION", location="Jamtara")
+                ]
+                db.add_all(alerts)
+                db.commit()
         finally:
             db.close()
             

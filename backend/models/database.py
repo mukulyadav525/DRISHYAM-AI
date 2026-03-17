@@ -210,6 +210,59 @@ class TrustLink(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User", backref="trust_circle")
+    
+class BankNodeRule(Base):
+    __tablename__ = "bank_node_rules"
+    id = Column(Integer, primary_key=True, index=True)
+    bank_name = Column(String, index=True)
+    rule_type = Column(String) # e.g., "AMOUNT_THRESHOLD", "VELOCITY"
+    threshold = Column(Float)
+    action = Column(String) # e.g., "FREEZE", "FLAG"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class SystemAuditLog(Base):
+    __tablename__ = "system_audit_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    action = Column(String, index=True) # e.g., "ACCESS_PII", "LOGIN", "EXPORT_GRAPH"
+    resource = Column(String) # e.g., "CrimeReport-501", "FraudGraph"
+    ip_address = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    metadata_json = Column(JSON, nullable=True)
+
+class NotificationLog(Base):
+    __tablename__ = "notification_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    recipient = Column(String, index=True)
+    channel = Column(String) # "SMS", "WHATSAPP", "EMAIL"
+    template_id = Column(String)
+    status = Column(String) # "SENT", "DELIVERED", "FAILED"
+    sent_at = Column(DateTime, default=datetime.datetime.utcnow)
+    metadata_json = Column(JSON, nullable=True)
+
+class RecoveryCase(Base) :
+    __tablename__ = "recovery_cases"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    incident_id = Column(String, unique=True, index=True)
+    bank_status = Column(String, default="PENDING") # PENDING, INVESTIGATING, FROZEN, RECOVERED
+    rbi_status = Column(String, default="NOT_STARTED")
+    insurance_status = Column(String, default="NOT_STARTED")
+    legal_aid_status = Column(String, default="NOT_STARTED")
+    total_recovered = Column(Float, default=0.0)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class IntelligenceAlert(Base):
+    __tablename__ = "intelligence_alerts"
+    id = Column(Integer, primary_key=True, index=True)
+    severity = Column(String) # CRITICAL, HIGH, MEDIUM
+    message = Column(String)
+    location = Column(String, nullable=True)
+    category = Column(String) # e.g., "VPA_ROTATION", "SCAM_POD"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Note: For PII Encryption (AC-M9-04), use the cryptography.fernet based hybrid approach 
 # in the API layer or as a custom SQLAlchemy TypeDecorator if time permits.
