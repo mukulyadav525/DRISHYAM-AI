@@ -6,6 +6,7 @@ from core.database import get_db
 from core.vision import vision_engine
 from sqlalchemy.orm import Session
 from models.database import User, SystemAction
+from typing import List, Optional, Dict, Any
 from schemas.forensic import ForensicRequest, ForensicResponse
 import datetime
 import json
@@ -109,9 +110,9 @@ async def analyze_deepfake(
 
         return ForensicResponse(
             verdict=data.get("verdict", "VERIFIED"),
-            confidence=data.get("confidence", 0.99),
-            probability=data.get("probability", 0.95),
-            false_positive_rate=data.get("false_positive_rate", 0.01),
+            confidence=float(data.get("confidence", 0.99)),
+            probability=float(data.get("probability", 0.95)),
+            false_positive_rate=float(data.get("false_positive_rate", 0.01)),
             analysis_details=data.get("analysis_details", {}),
             timestamp=datetime.datetime.utcnow()
         )
@@ -121,8 +122,8 @@ async def analyze_deepfake(
         print(f"Sarvam Forensic Error: {e}")
         return ForensicResponse(
             verdict="DEEPFAKE" if random.random() > 0.6 else "VERIFIED",
-            confidence=round(random.uniform(0.85, 0.99), 2),
-            probability=round(random.uniform(0.70, 0.90), 2),
+            confidence=float(round(random.uniform(0.85, 0.99), 2)),
+            probability=float(round(random.uniform(0.70, 0.90), 2)),
             false_positive_rate=0.02,
             analysis_details={
                 "blink_frequency": "Abnormal",
@@ -133,96 +134,151 @@ async def analyze_deepfake(
             timestamp=datetime.datetime.utcnow()
         )
 
-@router.post("/deepfake/upload", response_model=ForensicResponse)
+@router.post("/deepfake/upload", response_model=Dict[str, Any])
 async def upload_and_analyze_deepfake(
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    Perform deepfake forensic analysis on an uploaded file (Image, Video, Audio, or PDF).
+    Perform deepfake forensic analysis on an uploaded file asynchronously.
     """
+    import os
+    import uuid
+    from core.worker import perform_forensic_analysis
+    from models.database import FileUpload
+
     try:
+        # 1. Save File Physically
+        upload_dir = "static/uploads"
+        os.makedirs(upload_dir, exist_ok=True)
+        file_ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4().hex}{file_ext}"
+        file_path = os.path.join(upload_dir, unique_filename)
+        
         content = await file.read()
-        
-        # We process the content via the Multimodal Vision Engine
-        ai_data = await vision_engine.analyze_multimodal_forensic(content, mime_type=file.content_type, filename=file.filename)
-        
-        # Log the action
-        new_action = SystemAction(
+        with open(file_path, "wb") as f:
+            f.write(content)
+            
+        # 2. Register Upload in DB
+        new_upload = FileUpload(
             user_id=current_user.id,
-            action_type="FORENSIC_UPLOAD_SCAN",
-            target_id=f"UPLOAD_{file.filename}",
-            metadata_json={
-                "verdict": ai_data.get("verdict"),
-                "confidence": ai_data.get("confidence"),
-                "probability": ai_data.get("probability"),
-                "false_positive": ai_data.get("false_positive_rate"),
-                "details": ai_data.get("analysis_details")
-            }
+            filename=file.filename,
+            file_path=file_path,
+            mime_type=file.content_type,
+            status="PENDING"
         )
-        db.add(new_action)
-
-        if ai_data.get("verdict") == "DEEPFAKE":
-            from models.database import CrimeReport
-            import uuid
-            new_report = CrimeReport(
-                report_id=f"VFR-{uuid.uuid4().hex[:6].upper()}",
-                category="police",
-                scam_type="Visual Media deepfake",
-                platform=f"Uploaded: {file.filename}",
-                priority="HIGH",
-                metadata_json={
-                    "confidence": ai_data.get("confidence"),
-                    "details": ai_data.get("analysis_details")
-                }
-            )
-            db.add(new_report)
-
+        db.add(new_upload)
         db.commit()
+        db.refresh(new_upload)
 
-        return ForensicResponse(
-            verdict=ai_data.get("verdict", "VERIFIED"),
-            confidence=ai_data.get("confidence", 0.99),
-            probability=ai_data.get("probability", 0.90),
-            false_positive_rate=ai_data.get("false_positive_rate", 0.02),
-            analysis_details=ai_data.get("analysis_details", {}),
-            timestamp=datetime.datetime.utcnow()
-        )
+        # 3. Trigger Async Task
+        perform_forensic_analysis.delay(new_upload.id)
 
-    except Exception as e:
-        print(f"Vision Upload Error: {e}")
-        # Fallback to simulation
-        import random
-        return ForensicResponse(
-            verdict="DEEPFAKE" if random.random() > 0.6 else "VERIFIED",
-            confidence=round(random.uniform(0.85, 0.99), 2),
-            probability=round(random.uniform(0.65, 0.85), 2),
-            false_positive_rate=0.05,
-            analysis_details={
-                "blink_frequency": "N/A (Processing Error)",
-                "temporal_consistency": "N/A",
-                "lip_sync_match": "N/A",
-                "visual_artifacts": f"System error during {file.content_type} ingestion"
-            },
-            timestamp=datetime.datetime.utcnow()
-        )
+        return {
+            "id": new_upload.id,
+            "filename": file.filename,
+            "status": "PENDING",
+            "message": "Analysis started in background"
+        }
 
     except Exception as e:
-        print(f"Vision Upload Error: {e}")
-        # Fallback to simulation
-        import random
-        return ForensicResponse(
-            verdict="DEEPFAKE" if random.random() > 0.6 else "VERIFIED",
-            confidence=round(random.uniform(0.85, 0.99), 2),
-            analysis_details={
-                "blink_frequency": "N/A (Upload Failed)",
-                "temporal_consistency": "N/A",
-                "lip_sync_match": "N/A",
-                "visual_artifacts": "Processing error, relying on deterministic scan"
-            },
-            timestamp=datetime.datetime.utcnow()
-        )
+        print(f"Deepfake Async Upload Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/report/{upload_id}")
+async def download_report(
+    upload_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate and download the PDF trust report for a specific upload.
+    """
+    from models.database import FileUpload
+    from core.reporting import pdf_report_generator
+    from fastapi.responses import Response
+
+    upload = db.query(FileUpload).filter(FileUpload.id == upload_id).first()
+    if not upload:
+        raise HTTPException(status_code=404, detail="Upload not found")
+    
+    # Check ownership
+    if upload.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized access to report")
+
+    # Construct data for generator
+    report_data = {
+        "filename": upload.filename,
+        "verdict": upload.verdict,
+        "confidence": upload.confidence_score,
+        "risk_level": upload.risk_level,
+        "anomalies": upload.metadata_json.get("forensic", {}).get("anomalies", []),
+        "analysis_details": upload.metadata_json.get("ai", {}).get("analysis_details", {})
+    }
+
+    pdf_bytes = pdf_report_generator.generate_trust_report(report_data)
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f"attachment; filename=Forensic_Report_{upload_id}.pdf"
+        }
+    )
+
+@router.get("/history", response_model=list[dict])
+async def get_forensic_history(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Retrieve current user's forensic history.
+    """
+    from models.database import FileUpload
+    uploads = db.query(FileUpload).filter(FileUpload.user_id == current_user.id).order_by(FileUpload.created_at.desc()).all()
+    
+    return [
+        {
+            "id": u.id,
+            "filename": u.filename,
+            "verdict": u.verdict,
+            "risk": u.risk_level,
+            "timestamp": u.created_at,
+            "mime_type": u.mime_type
+        }
+        for u in uploads
+    ]
+
+@router.get("/status/{upload_id}")
+async def get_scan_status(
+    upload_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Check the status and result of a forensic scan.
+    """
+    from models.database import FileUpload
+
+    upload = db.query(FileUpload).filter(FileUpload.id == upload_id).first()
+    if not upload:
+        raise HTTPException(status_code=404, detail="Scan not found")
+    
+    # Check ownership
+    if upload.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Unauthorized access to scan results")
+
+    return {
+        "id": upload.id,
+        "filename": upload.filename,
+        "status": upload.status,
+        "verdict": upload.verdict,
+        "confidence": upload.confidence_score,
+        "risk_level": upload.risk_level,
+        "anomalies": upload.metadata_json.get("forensic", {}).get("anomalies", []) if upload.metadata_json else [],
+        "analysis_details": upload.metadata_json.get("ai", {}).get("analysis_details", {}) if upload.metadata_json else {}
+    }
 
 @router.post("/image/analyze")
 async def analyze_image(

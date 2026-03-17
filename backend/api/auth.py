@@ -28,6 +28,7 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
+    phone_number: Optional[str] = None
     role: str = UserRole.COMMON.value
     full_name: Optional[str] = None
     email: Optional[str] = None
@@ -36,6 +37,7 @@ class UserCreate(BaseModel):
 class UserOut(BaseModel):
     id: int
     username: str
+    phone_number: Optional[str] = None
     email: Optional[str] = None
     full_name: Optional[str] = None
     role: str
@@ -82,6 +84,7 @@ def register_user(
 
     new_user = User(
         username=user_in.username,
+        phone_number=user_in.phone_number,
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         full_name=user_in.full_name,

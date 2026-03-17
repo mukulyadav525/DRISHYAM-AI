@@ -23,8 +23,11 @@ interface DeepfakeStats {
 }
 
 interface ForensicResult {
-    verdict: 'DEEPFAKE' | 'VERIFIED';
+    id?: number;
+    verdict: 'REAL' | 'SUSPICIOUS' | 'FAKE';
     confidence: number;
+    risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
+    anomalies: string[];
     analysis_details: {
         blink_frequency: string;
         temporal_consistency: string;
@@ -37,7 +40,7 @@ export default function DeepfakePage() {
     const { performAction } = useActions();
     const [isScanning, setIsScanning] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [verdict, setVerdict] = useState<null | 'VERIFIED' | 'DEEPFAKE'>(null);
+    const [verdict, setVerdict] = useState<null | 'REAL' | 'SUSPICIOUS' | 'FAKE' | 'VERIFIED' | 'DEEPFAKE'>(null);
     const [data, setData] = useState<DeepfakeStats | null>(null);
     const [aiResult, setAiResult] = useState<ForensicResult | null>(null);
     const [selectedIncident, setSelectedIncident] = useState<any>(null);
@@ -58,7 +61,6 @@ export default function DeepfakePage() {
         setVerdict(null);
         setAiResult(null);
 
-        // Log the initiation
         performAction('SCAN_VIDEO', 'FORENSIC_PIPELINE');
 
         try {
@@ -78,7 +80,6 @@ export default function DeepfakePage() {
                     body: formData
                 });
             } else {
-                // Fallback to simulated scan if triggered without a file
                 res = await fetch(`${API_BASE}/forensic/deepfake/analyze`, {
                     method: 'POST',
                     headers: {
@@ -91,10 +92,77 @@ export default function DeepfakePage() {
 
             if (res.ok) {
                 const result = await res.json();
-                setAiResult(result);
+                
+                if (result.status === "PENDING" && result.id) {
+                    // Poll for completion
+                    const pollInterval = setInterval(async () => {
+                        try {
+                            const statusRes = await fetch(`${API_BASE}/forensic/status/${result.id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            
+                            if (statusRes.ok) {
+                                const statusData = await statusRes.json();
+                                if (statusData.status === "COMPLETED") {
+                                    clearInterval(pollInterval);
+                                    setAiResult(statusData);
+                                    setProgress(100);
+                                    // Final UI feedback will be handled by useEffect
+                                } else if (statusData.status === "FAILED") {
+                                    clearInterval(pollInterval);
+                                    setIsScanning(false);
+                                    alert("Analysis failed. Please try again.");
+                                } else {
+                                    // Increment progress slightly while waiting
+                                    setProgress(prev => Math.min(prev + 2, 98));
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Polling Error:", err);
+                            clearInterval(pollInterval);
+                            setIsScanning(false);
+                        }
+                    }, 3000);
+                } else {
+                    setAiResult(result);
+                    setProgress(100);
+                }
+            } else {
+                setIsScanning(false);
             }
         } catch (err) {
             console.error("Forensic API Error:", err);
+            setIsScanning(false);
+        }
+    };
+
+    const handleDownloadReport = async () => {
+        if (!aiResult?.id) return;
+        
+        try {
+            const authStr = localStorage.getItem('sentinel_auth');
+            const token = authStr ? JSON.parse(authStr).token : null;
+            
+            const res = await fetch(`${API_BASE}/forensic/report/${aiResult.id}`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            
+            if (res.ok) {
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Forensic_Report_${aiResult.id}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            }
+        } catch (err) {
+            console.error("Download Error:", err);
         }
     };
 
@@ -124,18 +192,29 @@ export default function DeepfakePage() {
         } else if (progress >= 100) {
             setTimeout(() => {
                 setIsScanning(false);
-                setVerdict(aiResult?.verdict || 'DEEPFAKE');
+                setVerdict(aiResult?.verdict || 'FAKE');
             }, 500);
         }
-    }, [isScanning, progress]);
+    }, [isScanning, progress, aiResult]);
+
+    const getVerdictColor = (v: string) => {
+        if (v === 'REAL' || v === 'VERIFIED') return 'bg-indgreen/10 text-indgreen';
+        if (v === 'SUSPICIOUS') return 'bg-gold/10 text-gold';
+        return 'bg-redalert/10 text-redalert';
+    };
+
+    const getVerdictTextColor = (v: string) => {
+        if (v === 'REAL' || v === 'VERIFIED') return 'text-indgreen';
+        if (v === 'SUSPICIOUS') return 'text-gold';
+        return 'text-redalert';
+    };
 
     return (
         <div className="space-y-8">
-            {/* Header */}
             <div className="flex justify-between items-end">
                 <div>
                     <h2 className="text-3xl font-bold text-indblue tracking-tight">Deepfake Defense</h2>
-                    <p className="text-silver mt-1">Liveness detection and visual forensic analysis for video calls.</p>
+                    <p className="text-silver mt-1">Multi-layer forensic analysis for Images, Videos, Audio, and PDFs.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -150,7 +229,6 @@ export default function DeepfakePage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Analysis Interface */}
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-white rounded-2xl border border-silver/10 p-8 shadow-sm h-[500px] flex flex-col items-center justify-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-boxbg/30" />
@@ -168,7 +246,7 @@ export default function DeepfakePage() {
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-sm font-bold text-indblue">Analyzing Facial Geometry...</p>
+                                    <p className="text-sm font-bold text-indblue">Extracting Forensic Markers...</p>
                                     <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-saffron transition-all duration-300"
@@ -178,22 +256,50 @@ export default function DeepfakePage() {
                                 </div>
                             </div>
                         ) : verdict ? (
-                            <div className="z-10 text-center space-y-6">
-                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg ${verdict === 'DEEPFAKE' ? 'bg-redalert/10 text-redalert' : 'bg-indgreen/10 text-indgreen'}`}>
-                                    {verdict === 'DEEPFAKE' ? <ShieldAlert size={48} /> : <ShieldCheck size={48} />}
+                            <div className="z-10 text-center space-y-6 w-full px-8">
+                                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg ${getVerdictColor(verdict)}`}>
+                                    {verdict === 'FAKE' || verdict === 'DEEPFAKE' ? <ShieldAlert size={40} /> : <ShieldCheck size={40} />}
                                 </div>
                                 <div>
-                                    <h3 className={`text-2xl font-bold ${verdict === 'DEEPFAKE' ? 'text-redalert' : 'text-indgreen'}`}>
-                                        {verdict === 'DEEPFAKE' ? 'Deepfake Detected' : 'Verified Identity'}
+                                    <h3 className={`text-3xl font-bold ${getVerdictTextColor(verdict)}`}>
+                                        {verdict}
                                     </h3>
-                                    <p className="text-silver mt-2">Forensic analysis complete.</p>
+                                    <p className="text-silver mt-2 text-sm uppercase tracking-widest font-bold">
+                                        Risk Level: <span className={aiResult?.risk_level === 'HIGH' ? 'text-redalert' : 'text-indgreen'}>{aiResult?.risk_level || 'LOW'}</span>
+                                    </p>
                                 </div>
-                                <button
-                                    onClick={() => { setVerdict(null); performAction('RESET_SCAN'); }}
-                                    className="px-4 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-wider hover:text-indblue"
-                                >
-                                    Reset Scan
-                                </button>
+                                
+                                {aiResult?.anomalies && aiResult.anomalies.length > 0 && (
+                                    <div className="bg-boxbg/50 p-4 rounded-xl border border-silver/10 max-w-md mx-auto">
+                                        <p className="text-[10px] font-bold text-silver uppercase mb-2">Detected Anomalies</p>
+                                        <ul className="text-left space-y-1">
+                                            {aiResult.anomalies.map((a, i) => (
+                                                <li key={i} className="text-xs text-indblue flex items-center gap-2">
+                                                    <span className="w-1.5 h-1.5 bg-saffron rounded-full" />
+                                                    {a}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-4 justify-center">
+                                    <button
+                                        onClick={() => { setVerdict(null); performAction('RESET_SCAN'); }}
+                                        className="px-6 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-wider hover:text-indblue transition-all"
+                                    >
+                                        New Scan
+                                    </button>
+                                    {aiResult?.id && (
+                                        <button
+                                            onClick={handleDownloadReport}
+                                            className="px-6 py-2 bg-indblue text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indblue/80 transition-all flex items-center gap-2"
+                                        >
+                                            <Upload size={14} className="rotate-180" />
+                                            Download Report
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div

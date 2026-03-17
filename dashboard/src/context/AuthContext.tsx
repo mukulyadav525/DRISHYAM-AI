@@ -23,12 +23,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 // ─── Role → Page Access Matrix ─────────────────────────────────────────
 export const ROLE_ACCESS: Record<string, string[]> = {
     admin: [
-        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake",
+        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
         "/mule", "/inoculation", "/upi", "/score", "/profiling", "/command",
         "/agency", "/launch", "/shield", "/bharat", "/recovery", "/settings",
     ],
     police: [
-        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake",
+        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
         "/mule", "/inoculation", "/score", "/profiling", "/command",
         "/agency", "/shield", "/bharat", "/recovery",
     ],
@@ -37,14 +37,14 @@ export const ROLE_ACCESS: Record<string, string[]> = {
         "/score", "/agency", "/bharat", "/recovery",
     ],
     government: [
-        "/", "/detection", "/graph", "/alerts", "/deepfake", "/inoculation",
+        "/", "/detection", "/graph", "/alerts", "/deepfake", "/history", "/inoculation",
         "/upi", "/score", "/command", "/agency", "/launch", "/shield", "/bharat",
     ],
     telecom: [
         "/", "/detection", "/alerts", "/inoculation", "/agency", "/shield", "/bharat",
     ],
     court: [
-        "/", "/graph", "/deepfake", "/mule", "/score", "/profiling",
+        "/", "/graph", "/deepfake", "/history", "/mule", "/score", "/profiling",
         "/agency", "/bharat", "/recovery",
     ],
     common: [

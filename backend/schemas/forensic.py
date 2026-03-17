@@ -8,9 +8,11 @@ class ForensicRequest(BaseModel):
     metadata: Optional[Dict[str, Any]] = None
 
 class ForensicResponse(BaseModel):
-    verdict: str  # DEEPFAKE | VERIFIED
+    verdict: str  # REAL | SUSPICIOUS | FAKE
     confidence: float
-    probability: float # Probability of correctness
+    probability: float 
     false_positive_rate: float
+    risk_level: str # LOW | MEDIUM | HIGH
+    anomalies: list[str]
     analysis_details: Dict[str, Any]
     timestamp: datetime

@@ -43,6 +43,7 @@ export default function Sidebar() {
         { name: t("graph"), icon: Share2, href: "/graph" },
         { name: t("alerts"), icon: Bell, href: "/alerts" },
         { name: t("deepfake"), icon: Scan, href: "/deepfake" },
+        { name: t("history"), icon: RotateCcw, href: "/history" },
         { name: t("mule"), icon: Briefcase, href: "/mule" },
         { name: t("inoculation"), icon: Zap, href: "/inoculation" },
         { name: t("upi_shield"), icon: ShieldCheck, href: "/upi" },

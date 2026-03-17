@@ -20,6 +20,7 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
+    phone_number = Column(String, unique=True, index=True, nullable=True)
     email = Column(String, unique=True, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
@@ -167,3 +168,23 @@ class CrimeReport(Base):
     reporter_num = Column(String, nullable=True)
     metadata_json = Column(JSON, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class FileUpload(Base):
+    __tablename__ = "file_uploads"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    filename = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    mime_type = Column(String, nullable=False)
+    status = Column(String, default="PENDING") # PENDING, PROCESSING, COMPLETED, FAILED
+    
+    # Analysis Results
+    verdict = Column(String)  # 'REAL', 'SUSPICIOUS', 'FAKE'
+    confidence_score = Column(Float)
+    risk_level = Column(String) # 'LOW', 'MEDIUM', 'HIGH'
+    
+    metadata_json = Column(JSON) # Detailed analysis results
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    user = relationship("User", backref="uploads")

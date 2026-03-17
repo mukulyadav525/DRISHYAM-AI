@@ -30,3 +30,10 @@ typing_extensions==4.15.0
 urllib3==2.6.3
 uvicorn==0.41.0
 websockets==16.0
+reportlab==4.3.0
+sqlalchemy==2.0.38
+python-jose[cryptography]==3.4.0
+passlib[bcrypt]==1.7.4
+python-dotenv==1.0.1
+celery==5.4.0
+redis==5.2.1
