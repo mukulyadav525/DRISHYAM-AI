@@ -59,7 +59,7 @@ export default function HoneypotPage() {
                 if (sessionsRes.ok) setSessions(await sessionsRes.json());
                 if (personasRes.ok) {
                     const data = await personasRes.json();
-                    setPersonas(data.personas);
+                    setPersonas(data?.personas || []);
                 }
                 if (statsRes.ok) setStats(await statsRes.json());
             } catch (error) {
@@ -118,7 +118,7 @@ export default function HoneypotPage() {
                         </div>
 
                         <div className="divide-y divide-boxbg">
-                            {sessions.map((session) => (
+                            {(sessions || []).map((session) => (
                                 <div key={session.id} className="p-6 hover:bg-boxbg/10 transition-colors">
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex gap-4">
@@ -135,7 +135,7 @@ export default function HoneypotPage() {
                                         </div>
                                         <div className="text-right">
                                             <p className="text-lg font-mono font-bold text-charcoal tracking-tighter">
-                                                {new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                {session.created_at ? new Date(session.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                                             </p>
                                             <p className="text-[10px] text-silver font-bold uppercase tracking-widest">{session.status}</p>
                                         </div>
@@ -177,7 +177,7 @@ export default function HoneypotPage() {
                             {t("persona_library")}
                         </h4>
                         <div className="space-y-4">
-                            {personas.map((p) => (
+                            {(personas || []).map((p) => (
                                 <div key={p.name} className={`p-4 rounded-xl border transition-all border-silver/10 bg-white hover:border-indblue/30`}>
                                     <div className="flex justify-between items-start mb-2">
                                         <p className="font-bold text-sm text-indblue">{p.name}</p>

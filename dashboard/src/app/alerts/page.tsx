@@ -111,8 +111,8 @@ export default function AlertsPage() {
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-bold text-silver uppercase tracking-widest">{t("alert_category")}</label>
                                     <select className="w-full p-3 bg-boxbg border border-silver/10 rounded-xl text-sm font-semibold text-indblue outline-none focus:border-saffron/40">
-                                        {scenarios.map(s => (
-                                            <option key={s.id} value={s.id}>{s.title} ({s.severity.toUpperCase()})</option>
+                                        {(scenarios || []).map(s => (
+                                            <option key={s.id} value={s.id}>{s.title} ({s?.severity?.toUpperCase() || 'N/A'})</option>
                                         ))}
                                     </select>
                                 </div>
@@ -219,7 +219,7 @@ export default function AlertsPage() {
                     <div className="bg-white rounded-2xl border border-silver/10 p-6">
                         <h4 className="font-bold text-indblue mb-6">{t("recent_records")}</h4>
                         <div className="space-y-4">
-                            {scenarios.slice(0, 3).map((b, i) => (
+                            {(scenarios || []).slice(0, 3).map((b, i) => (
                                 <div
                                     key={b.id || i}
                                     onClick={async () => {

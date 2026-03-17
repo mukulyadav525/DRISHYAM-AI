@@ -74,7 +74,7 @@ export default function FeedModal({ isOpen, onClose, data }: FeedModalProps) {
                                             <FileSearch size={14} className="text-saffron" /> Forensic Evidence Pipeline
                                         </h4>
                                         <ul className="space-y-2">
-                                            {(data.evidence || [
+                                            {(data?.evidence || [
                                                 "Network: Analysis of packet headers suggests location spoofing.",
                                                 "Forensics: Voice signature matches known fraud patterns.",
                                                 "Registry: Target VPA has been flagged by multiple financial nodes."

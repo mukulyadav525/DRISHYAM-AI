@@ -40,7 +40,8 @@ export default function HistoryPage() {
                 });
                 
                 if (res.ok) {
-                    setHistory(await res.json());
+                    const data = await res.json();
+                    setHistory(Array.isArray(data) ? data : []);
                 }
             } catch (err) {
                 console.error("Fetch History Error:", err);
@@ -77,8 +78,8 @@ export default function HistoryPage() {
         }
     };
 
-    const filteredHistory = history.filter(item => 
-        item.filename.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredHistory = (history || []).filter(item => 
+        item.filename?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const getVerdictStyle = (v: string) => {
