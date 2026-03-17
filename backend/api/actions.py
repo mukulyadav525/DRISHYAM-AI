@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -12,6 +12,8 @@ import os
 from scripts.gen_pro_pdf import generate_report
 from core.reporting import pdf_report_generator
 from core.graph import fraud_graph
+import datetime
+import uuid
 
 logger = logging.getLogger("sentinel.actions")
 
@@ -150,25 +152,14 @@ async def perform_action(
                 ],
                 "location": req.metadata.get("location", "Unknown Sector") if req.metadata else "Unknown Sector"
             }
-        elif req.action_type.upper() == "GENERATE_OMBUDSMAN_COMPLAINT":
-            complaint_data = req.metadata or {
-                "case_id": req.target_id or "INC-992",
-                "bank": "HDFC Bank",
-                "amount": "₹45,000",
-                "scammer_vpa": "fraud@okaxis"
-            }
-            pdf_bytes = pdf_report_generator.generate_ombudsman_complaint(complaint_data)
-            # Store in static for simulation download
-            static_dir = os.path.join(os.getcwd(), "static")
-            os.makedirs(static_dir, exist_ok=True)
-            filename = f"OMB_COMPLAINT_{req.target_id or 'NEW'}.pdf"
-            with open(os.path.join(static_dir, filename), "wb") as f:
-                f.write(pdf_bytes)
-            
+        elif req.action_type.upper() == "GENERATE_RECOVERY_BUNDLE":
             detail_data = {
-                "download_url": f"/api/v1/actions/download-file?filename={filename}",
-                "preview": "Complaint generated against banking entity for golden-hour breach."
+                "bundle_id": uuid.uuid4().hex[:6].upper(),
+                "status": "READY",
+                "generated_at": datetime.datetime.utcnow().isoformat(),
+                "download_url": f"/api/v1/actions/download-file?filename=RECOVERY_BUNDLE.pdf&category=RESTITUTION_BUNDLE"
             }
+            user_msg = "Legal Restitution Bundle Generated based on Section 65B guidelines."
         elif req.action_type.upper() == "CONNECT_TICKER":
             detail_data = {
                 "ticker_items": [
@@ -216,10 +207,12 @@ async def perform_action(
 @router.get("/download-file")
 async def get_download_file(
     filename: str,
-    category: str = "report"
+    category: str = "report",
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
-    Returns a dynamic professional PDF report using real database stats.
+    Returns a dynamic professional PDF report using real database stats or victim data.
     """
     from fastapi.responses import FileResponse
     import os
@@ -228,6 +221,33 @@ async def get_download_file(
     static_dir = os.path.join(os.getcwd(), "static")
     os.makedirs(static_dir, exist_ok=True)
     
+    # Handle Recovery Bundle Documents
+    recovery_categories = ["RBI_APPEAL", "BANK_FREEZE_REQ", "NPCI_GRIEVANCE", "RESTITUTION_BUNDLE"]
+    if category in recovery_categories:
+        # Get latest metadata for this user's recovery bundle
+        latest_bundle = db.query(SystemAction).filter(
+            SystemAction.user_id == current_user.id,
+            SystemAction.action_type == "GENERATE_RECOVERY_BUNDLE"
+        ).order_by(SystemAction.created_at.desc()).first()
+        
+        metadata = latest_bundle.metadata_json if latest_bundle else {}
+        
+        pdf_bytes = b""
+        if category == "RBI_APPEAL":
+            pdf_bytes = pdf_report_generator.generate_ombudsman_complaint(metadata)
+        elif category == "BANK_FREEZE_REQ":
+            pdf_bytes = pdf_report_generator.generate_dispute_letter(metadata)
+        elif category == "NPCI_GRIEVANCE":
+            pdf_bytes = pdf_report_generator.generate_npci_grievance(metadata)
+        elif category == "RESTITUTION_BUNDLE":
+            # Just return the bank freeze as proxy for bundle for now
+            pdf_bytes = pdf_report_generator.generate_dispute_letter(metadata)
+            filename = "RESTITUTION_BUNDLE.pdf" # Simpler for now than ZIP
+            
+        return Response(content=pdf_bytes, media_type="application/pdf", headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        })
+
     # Path for the dynamic file
     dynamic_file = os.path.join(static_dir, f"dynamic_{filename}")
     

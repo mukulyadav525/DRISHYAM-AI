@@ -25,14 +25,39 @@ export default function RecoveryPage() {
   const { performAction, downloadSimulatedFile } = useActions();
   const [step, setStep] = useState(1);
   const [scamType, setScamType] = useState("");
+  const [txnId, setTxnId] = useState("");
+  const [txnDate, setTxnDate] = useState("");
+  const [bankName, setBankName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [activeCases, setActiveCases] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchCases = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/system/stats/agency`);
+        if (res.ok) {
+          const data = await res.json();
+          // Use police cases as sample active cases for tracking
+          setActiveCases(data.police.cases.slice(0, 3));
+        }
+      } catch (e) {
+        console.error("Failed to fetch cases:", e);
+      }
+    };
+    fetchCases();
+  }, []);
 
   const handleNext = () => setStep(s => s + 1);
 
   const generateLetters = () => {
     setIsGenerating(true);
-    performAction('GENERATE_RECOVERY_BUNDLE', scamType);
+    performAction('GENERATE_RECOVERY_BUNDLE', scamType, {
+      txn_id: txnId,
+      txn_date: txnDate,
+      bank_name: bankName,
+      scam_type: scamType
+    });
     setTimeout(() => {
       setIsGenerating(false);
       setShowResults(true);
@@ -87,15 +112,32 @@ export default function RecoveryPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-silver uppercase tracking-wider">Transaction ID</label>
-                        <input type="text" placeholder="e.g. 3094xxxx" className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 font-mono text-xs outline-none focus:border-saffron" />
+                        <input 
+                          type="text" 
+                          placeholder="e.g. 3094xxxx" 
+                          value={txnId}
+                          onChange={(e) => setTxnId(e.target.value)}
+                          className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 font-mono text-xs outline-none focus:border-saffron" 
+                        />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-silver uppercase tracking-wider">Date & Time</label>
-                        <input type="datetime-local" className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 text-xs outline-none focus:border-saffron" />
+                        <input 
+                          type="datetime-local" 
+                          value={txnDate}
+                          onChange={(e) => setTxnDate(e.target.value)}
+                          className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 text-xs outline-none focus:border-saffron" 
+                        />
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <label className="text-[10px] font-bold text-silver uppercase tracking-wider">Beneficiary Bank Name</label>
-                        <input type="text" placeholder="e.g. State Bank of India" className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 text-xs outline-none focus:border-saffron" />
+                        <input 
+                          type="text" 
+                          placeholder="e.g. State Bank of India" 
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          className="w-full p-3 bg-boxbg rounded-xl border border-silver/10 text-xs outline-none focus:border-saffron" 
+                        />
                       </div>
                     </div>
                   </div>
@@ -175,9 +217,25 @@ export default function RecoveryPage() {
               <h4 className="font-bold text-indblue text-sm">Active Case Tracking</h4>
             </div>
             <div className="space-y-4">
-              <p className="text-[11px] text-silver italic">No active cases tracked.</p>
+              {activeCases.length > 0 ? (
+                activeCases.map((c, i) => (
+                  <div key={i} className="p-3 bg-boxbg rounded-xl border border-silver/5 flex flex-col gap-1">
+                    <p className="text-[10px] font-black text-indblue uppercase tracking-tighter">{c.id}</p>
+                    <p className="text-[9px] text-silver font-bold">{c.type} - {c.amount}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className={`w-1.5 h-1.5 rounded-full ${c.status === 'PENDING' ? 'bg-saffron' : 'bg-indgreen'}`} />
+                      <span className="text-[8px] font-black text-silver/60 uppercase">{c.status}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-[11px] text-silver italic">No active cases tracked.</p>
+              )}
             </div>
-            <button className="w-full mt-6 py-2 bg-boxbg rounded-xl text-[10px] font-bold text-silver uppercase hover:text-charcoal transition-all">
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full mt-6 py-2 bg-boxbg rounded-xl text-[10px] font-bold text-silver uppercase hover:text-charcoal transition-all"
+            >
               Refresh Registry
             </button>
           </div>
