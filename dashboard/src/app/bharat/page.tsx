@@ -78,14 +78,33 @@ export default function BharatPage() {
         }
     ];
 
-    const handleUssdSubmit = () => {
+    const handleUssdSubmit = async () => {
         if (ussdStep < ussdFlow.length - 1) {
-            setUssdHistory([...ussdHistory, `> ${ussdInput}`]);
-            setUssdStep(ussdStep + 1);
-            setUssdInput("");
-            if (ussdStep + 1 === ussdFlow.length - 1) {
-                performAction('USE_USSD', 'REPORT_SUCCESS');
+            const nextStep = ussdStep + 1;
+            setUssdHistory([...ussdHistory, `> ${ussdInput || '1'}`]);
+            
+            // If it's the final processing step, send to backend
+            if (nextStep === ussdFlow.length - 1) {
+                try {
+                    const authStr = localStorage.getItem('sentinel_auth');
+                    const token = authStr ? JSON.parse(authStr).token : null;
+                    
+                    const res = await fetch(`${API_BASE}/bharat/ussd/report?phone_number=919988776655&scam_type=${ussdInput || 'General'}&lang=en`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    
+                    if (res.ok) {
+                        const resData = await res.json();
+                        toast.success(`USSD Report Logged: ${resData.case_id}`);
+                    }
+                } catch (err) {
+                    console.error("USSD Backend Error:", err);
+                }
             }
+            
+            setUssdStep(nextStep);
+            setUssdInput("");
         } else {
             resetUssd();
         }
@@ -272,11 +291,20 @@ export default function BharatPage() {
                             ))}
                         </div>
 
-                        <div className="mt-8 p-6 bg-black/20 rounded-2xl border border-white/5 font-mono text-[10px] space-y-2">
+                        <div className="mt-8 p-6 bg-black/20 rounded-2xl border border-white/5 font-mono text-[10px] space-y-2 relative group">
+                            <button 
+                                onClick={() => {
+                                    toast.success("Initializing Regional Voice Stream...");
+                                    performAction('INIT_VOICE_BRIDGE', selectedRegion || 'universal');
+                                }}
+                                className="absolute right-4 top-4 p-2 bg-saffron text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                            >
+                                <Zap size={12} />
+                            </button>
                             <p className="text-indgreen">// Real-time Audio Stream Logic</p>
-                            <p className="opacity-60">Citizen ID: --</p>
-                            <p className="opacity-60">Status: <span className="text-silver">WAITING FOR AUDIO STREAM...</span></p>
-                            <p className="opacity-60">Detected Entity: <span className="text-silver">NONE</span></p>
+                            <p className="opacity-60">Citizen ID: <span className={selectedRegion ? 'text-white' : ''}>{selectedRegion ? `BH-${selectedRegion.toUpperCase()}-09` : '--'}</span></p>
+                            <p className="opacity-60">Status: <span className="text-silver animate-pulse">{isBroadcasting ? 'ACTIVE INTERCEPT...' : 'WAITING FOR AUDIO STREAM...'}</span></p>
+                            <p className="opacity-60">Detected Entity: <span className="text-silver">{isBroadcasting ? 'UPI_TRAP_INDICATOR' : 'NONE'}</span></p>
                         </div>
                     </div>
                 </div>

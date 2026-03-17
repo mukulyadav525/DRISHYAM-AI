@@ -57,6 +57,7 @@ async def perform_action(
             "OPTIMIZE_STRATEGIES": "AI Strategy Optimization Complete",
             "LAUNCH_PROBE": "Sentinel Agentic Probe Dispatched",
             "BROADCAST_EMERGENCY": "Emergency Broadcast Dispatched to Target Region",
+            "DEPLOY_BHARAT_ALERT": "National Strategic Alert successfully deployed to cellular nodes",
             "VIEW_ALERT_HISTORY": "Accessing Historical Broadcast Logs",
             "SAVE_ALERT_DRAFT": "Alert Draft Saved to Sentinel Vault",
             "PREVIEW_SEND_ALERT": "Alert Preview Generated. Awaiting Final Confirmation",

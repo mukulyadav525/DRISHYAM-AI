@@ -64,9 +64,11 @@ async def get_roi(period: str = "MONTH", agency: str = "MHA", db: Session = Depe
         "embeddable_widget_url": "https://gov.in/sentinel/roi-widget"
     }
 
+from typing import Optional
+
 @router.get("/scam-weather/panel")
 @router.post("/scam-weather/panel")
-async def get_scam_weather_panel(body: dict = None, db: Session = Depends(get_db)):
+async def get_scam_weather_panel(body: Optional[dict] = None, db: Session = Depends(get_db)):
     return {
         "forecast_summary": "High risk of KYC scams in Maharashtra due to salary cycle.",
         "high_risk_windows": ["2024-04-01T09:00:00Z", "2024-04-01T18:00:00Z"],
@@ -176,16 +178,75 @@ async def get_bharat_stats(db: Session = Depends(get_db)):
         "states_covered": 28,
         "central_registry_sync": "SYNC_OK",
         "ndr_compliance": "100%",
-        "interstate_cases_solved": 840
+        "interstate_cases_solved": 840,
+        "regions": [
+            {"id": "north", "name": "North India (Haryana/Punjab)", "towers": 1240, "reach": "8.2M"},
+            {"id": "east", "name": "East India (Bihar/WB)", "towers": 2150, "reach": "12.4M"},
+            {"id": "west", "name": "West India (Rajasthan/Gujarat)", "towers": 1890, "reach": "10.1M"},
+            {"id": "south", "name": "South India (Karnataka/TN)", "towers": 2450, "reach": "15.2M"}
+        ]
     }
 
 @router.get("/stats/agency")
 async def get_agency_stats(db: Session = Depends(get_db)):
+    from models.database import CrimeReport, HoneypotSession
+    
+    # Fetch real crime reports (Police view)
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(10).all()
+    police_cases = []
+    urgent_count = 0
+    for r in reports:
+        police_cases.append({
+            "id": r.report_id,
+            "amount": r.amount or "N/A",
+            "type": r.scam_type,
+            "platform": r.platform,
+            "status": r.status,
+            "priority": r.priority
+        })
+        if r.priority in ["CRITICAL", "HIGH"]:
+            urgent_count += 1
+
+    # Fetch active simulations (Monitor view)
+    sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(5).all()
+    simulations = []
+    for s in sessions:
+        simulations.append({
+            "id": s.session_id,
+            "caller": s.caller_num,
+            "status": s.status,
+            "persona": s.persona,
+            "time": "JUST NOW" if (datetime.datetime.utcnow() - s.created_at).seconds < 60 else f"{(datetime.datetime.utcnow() - s.created_at).seconds // 60}m ago",
+            "messages_count": 5 # Simulated count
+        })
+
     return {
-        "active_officers": 4200,
-        "prosecution_readiness": "68%",
-        "court_admissible_evidence_generated": 124,
-        "avg_triage_time": "12m"
+        "police": {
+            "cases": police_cases,
+            "urgent_count": urgent_count
+        },
+        "bank": {
+            "mule_accounts": [
+                {"vpa": "fraud.target@okhdfc", "holder": "Unknown", "bank": "HDFC", "action": "FLAGGED"},
+                {"vpa": "test.mule@oksbi", "holder": "Dummy", "bank": "SBI", "action": "FLAGGED"}
+            ],
+            "frozen_count": 14,
+            "total_flagged": 42
+        },
+        "telecom": {
+            "has_active_threat": True,
+            "blocked_imei_count": 124,
+            "threat_description": "Mass-robocall wave detected from Mewat cluster."
+        },
+        "simulations": simulations,
+        "triage": {
+            "cases_resolved": 842,
+            "total_cases": 1240,
+            "avg_response_time": "12m",
+            "threat_level": "HIGH" if urgent_count > 2 else "MODERATE",
+            "active_agents": 24,
+            "rupees_saved": 142000000
+        }
     }
 
 @router.get("/stats/upi")

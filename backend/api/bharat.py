@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
+from models.database import CrimeReport
 import uuid
 import logging
 import datetime
@@ -54,10 +55,28 @@ def get_ussd_menu(lang: str = "hi"):
     return {"text": f"{content['greeting']}\n{content['menu']}"}
 
 @router.post("/ussd/report", response_model=dict)
-def report_scam_ussd(phone_number: str, lang: str = "hi"):
+def report_scam_ussd(phone_number: str, scam_type: str = "General", lang: str = "hi", db: Session = Depends(get_db)):
     """T6 requirement: Report scam via USSD and receive SMS."""
     case_id = f"USS-{uuid.uuid4().hex[:6].upper()}"
     content = MENU_LANGUAGES.get(lang, MENU_LANGUAGES["hi"])
+    
+    # Save the report to the database so it shows up on the Agency Portal
+    new_report = CrimeReport(
+        report_id=case_id,
+        category="police",
+        scam_type=f"USSD: {scam_type}",
+        platform="GSM_NETWORK",
+        priority="MEDIUM",
+        reporter_num=phone_number,
+        status="PENDING",
+        metadata_json={
+            "channel": "USSD",
+            "language": lang,
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+    )
+    db.add(new_report)
+    db.commit()
     
     # Simulate SMS delivery (T6 requirement)
     logger.info(f"SMS SENT: {phone_number} | {content['report_success'].format(case_id=case_id)}")
