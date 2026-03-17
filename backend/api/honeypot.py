@@ -1,24 +1,62 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
+from models.database import HoneypotSession, HoneypotMessage
 import uuid
+import datetime
 from typing import Optional
 
 router = APIRouter()
 
 @router.post("/session/start")
+@router.post("/sessions")
 async def start_honeypot_session(body: dict, db: Session = Depends(get_db)):
+    session_id = body.get("session_id", f"H-{uuid.uuid4().hex[:6].upper()}")
+    persona = body.get("persona", "ELDERLY_UNCLE")
+    caller_num = body.get("caller_num", "UNKNOWN")
+    customer_id = body.get("customer_id")
+    
+    # Create session in DB
+    new_session = HoneypotSession(
+        session_id=session_id,
+        caller_num=caller_num,
+        customer_id=customer_id,
+        persona=persona,
+        status="active",
+        created_at=datetime.datetime.utcnow()
+    )
+    db.add(new_session)
+    db.commit()
+    
     return {
-        "session_id": body.get("session_id", str(uuid.uuid4())),
-        "persona_active": body.get("persona", "ELDERLY_UNCLE"),
+        "session_id": session_id,
+        "persona_active": persona,
         "sip_transfer_complete": True,
         "scammer_notified": False
     }
 
 @router.post("/turn")
 async def honeypot_turn(body: dict, db: Session = Depends(get_db)):
+    session_id = body.get("session_id")
+    user_message = body.get("message", "")
+    
+    # Simple Mock AI Response
+    ai_response = "Ji beta, main samajh gaya. Bataiye kya karna hai?"
+    if "account" in user_message.lower() or "bank" in user_message.lower():
+        ai_response = "Theek hai beta, main abhi apni bank details check karke batata hoon."
+    
+    # Log messages if session exists
+    if session_id:
+        session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
+        if session:
+            # Log user message
+            db.add(HoneypotMessage(session_id=session.id, role="user", content=user_message))
+            # Log AI response
+            db.add(HoneypotMessage(session_id=session.id, role="assistant", content=ai_response))
+            db.commit()
+            
     return {
-        "ai_response": "Ji beta, main samajh gaya. Bataiye kya karna hai?",
+        "ai_response": ai_response,
         "psychological_exploitation_index": 0.85,
         "entities_extracted": {"upi": "scammer@upi", "phone": "9876543210"}
     }

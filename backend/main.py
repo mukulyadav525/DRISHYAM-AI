@@ -84,6 +84,28 @@ async def lifespan(app: FastAPI):
                 logger.info("[STARTUP] Default admin user created (admin / password123)")
             else:
                 logger.info("[STARTUP] Admin user already exists.")
+            
+            # Seed Agency Portal data if empty
+            from models.database import CrimeReport, HoneypotSession
+            if db.query(CrimeReport).count() == 0:
+                logger.info("[STARTUP] Seeding initial crime reports for Agency Portal...")
+                reports = [
+                    CrimeReport(report_id="REQ-8821", category="police", scam_type="KYC_EXTORTION", amount="₹45,000", platform="WhatsApp", priority="CRITICAL", status="PENDING"),
+                    CrimeReport(report_id="REQ-8822", category="police", scam_type="PART_TIME_JOB", amount="₹1.2L", platform="Telegram", priority="HIGH", status="RESOLVED"),
+                    CrimeReport(report_id="REQ-8823", category="bank", scam_type="UPI_COLLECT", amount="₹5,000", platform="GPay", priority="MEDIUM", status="PENDING", metadata_json={"vpa": "scammer.node@oksbi"}),
+                    CrimeReport(report_id="REQ-8824", category="telecom", scam_type="MASS_ROBOCALL", amount="N/A", platform="GSM_TOWER_72", priority="CRITICAL", status="PENDING")
+                ]
+                db.add_all(reports)
+                db.commit()
+            
+            if db.query(HoneypotSession).count() == 0:
+                logger.info("[STARTUP] Seeding initial honeypot sessions...")
+                sessions = [
+                    HoneypotSession(session_id="H-99881", caller_num="+91-9821-XXX", persona="ELDERLY_UNCLE", status="active"),
+                    HoneypotSession(session_id="H-99882", caller_num="+91-7722-XXX", persona="HELPLESS_GRANDMA", status="active")
+                ]
+                db.add_all(sessions)
+                db.commit()
         finally:
             db.close()
             

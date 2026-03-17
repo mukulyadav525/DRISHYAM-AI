@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from core.database import get_db
+from models.database import CrimeReport
 import uuid
+import datetime
 
 router = APIRouter()
 
@@ -52,20 +54,62 @@ async def upi_freeze(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/scan-message")
 async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
+    is_scam = True
+    case_id = f"MSG-{uuid.uuid4().hex[:6].upper()}"
+    
+    # Log to CrimeReport
+    new_report = CrimeReport(
+        report_id=case_id,
+        category="bank",
+        scam_type="UPI_COLLECT_FRAUD",
+        platform="SMS/WHATSAPP",
+        priority="HIGH",
+        reporter_num=body.get("phone_number"),
+        status="PENDING",
+        metadata_json={
+            "channel": "UPIShield",
+            "content": body.get("message", ""),
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+    )
+    db.add(new_report)
+    db.commit()
+
     return {
-        "is_scam": True,
+        "is_scam": is_scam,
         "confidence": 0.98,
         "reason": "Deceptive intent: Urgent request for money with suspicious VPA",
-        "scam_type": "UPI_COLLECT_FRAUD"
+        "scam_type": "UPI_COLLECT_FRAUD",
+        "case_id": case_id
     }
 
 @router.post("/scan-qr")
 async def upi_scan_qr(body: dict, db: Session = Depends(get_db)):
+    case_id = f"QRF-{uuid.uuid4().hex[:6].upper()}"
+    
+    # Log to CrimeReport
+    new_report = CrimeReport(
+        report_id=case_id,
+        category="bank",
+        scam_type="MALICIOUS_QR_OVERLAY",
+        platform="UPI_PAY",
+        priority="CRITICAL",
+        status="PENDING",
+        metadata_json={
+            "channel": "UPIShield",
+            "vpa": "scammer@ybl",
+            "timestamp": datetime.datetime.utcnow().isoformat()
+        }
+    )
+    db.add(new_report)
+    db.commit()
+
     return {
         "is_fraudulent": True,
         "vpa": "scammer@ybl",
         "risk_score": 0.99,
-        "warning": "QR Signature mismatch. Malicious overlay detected."
+        "warning": "QR Signature mismatch. Malicious overlay detected.",
+        "case_id": case_id
     }
 
 @router.get("/stats")
