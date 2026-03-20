@@ -155,10 +155,16 @@ class SarvamHoneypot:
             data = response.json()
             ai_text = data["choices"][0]["message"]["content"]
             
-            # ─── STRIP THINKING BLOCKS ───
+            # ─── STRIP THINKING BLOCKS (Exhaustive) ───
             import re
-            ai_text = re.sub(r'<think>.*?</think>', '', ai_text, flags=re.DOTALL).strip()
+            # Removes both closed <think>...</think> and unclosed <think>... blocks
+            ai_text = re.sub(r'<think>.*?(?:</think>|$)', '', ai_text, flags=re.DOTALL).strip()
             
+            # If after stripping thinking the response is empty, provide a fallback
+            if not ai_text:
+                logger.warning("AI: Stripped all content as thinking block. Using fallback.")
+                return "Namaste. Haan beta, ek minute ruko..."
+                
             logger.info(f"AI: Generated response (Sarvam-M)")
             return ai_text
 

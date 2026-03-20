@@ -434,7 +434,10 @@ class TwilioEngine:
             logger.info(f"TWILIO SMS: Sent to {to_number} (SID: {msg.sid})")
             return True
         except Exception as e:
-            logger.error(f"TWILIO SMS: Failed to send to {to_number}: {e}")
+            logger.error(f"TWILIO SMS FAILURE: To={to_number}, Error={str(e)}")
+            # Log specific Twilio error if available
+            if hasattr(e, 'code'):
+                logger.error(f"TWILIO ERROR CODE: {e.code}")
             return False
 
 
