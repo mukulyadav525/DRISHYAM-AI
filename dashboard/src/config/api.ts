@@ -1,5 +1,5 @@
-// Production Railway URL as default fallback
-const PRODUCTION_API_URL = "https://drishyam-1930-production.up.railway.app/api/v1";
+// Updated production backend URL after rebranding
+const PRODUCTION_API_URL = "https://drishyam-ai-production.up.railway.app/api/v1";
 
 let API_BASE_RAW = (process.env.NEXT_PUBLIC_API_BASE || PRODUCTION_API_URL).trim();
 
