@@ -219,6 +219,52 @@ async def twilio_incoming(
 
 
 # ------------------------------------------------------------------
+# INCOMING SMS HANDLER
+# ------------------------------------------------------------------
+
+@router.post("/incoming-sms")
+async def twilio_incoming_sms(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Twilio webhook hit when someone sends an SMS to our Twilio number.
+    AI generates a response and sends it back via Twilio.
+    """
+    form_data = await request.form()
+    from_number = form_data.get("From", "unknown")
+    message_body = form_data.get("Body", "")
+
+    logger.info(f"TWILIO SMS INCOMING: From {from_number}: {message_body}")
+
+    try:
+        from core.ai import honeypot_ai
+        from core.twilio_engine import twilio_engine
+
+        # AI processes the message
+        # We use a default/adaptive persona for inbound texts
+        ai_response = await honeypot_ai.generate_response("Elderly Uncle", [], message_body)
+        
+        # Send AI response back via Twilio
+        twilio_engine.send_sms(from_number, ai_response)
+
+        # Log the interaction in the DB
+        action = SystemAction(
+            action_type="TWILIO_INCOMING_SMS",
+            target_id=from_number,
+            metadata_json={"received": message_body, "responded": ai_response},
+            status="success",
+        )
+        db.add(action)
+        db.commit()
+
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"TWILIO SMS INCOMING: Failed: {e}")
+        return {"status": "error", "detail": str(e)}
+
+
+# ------------------------------------------------------------------
 # CALL HANDOFF (Activate AI during an active call)
 # ------------------------------------------------------------------
 
