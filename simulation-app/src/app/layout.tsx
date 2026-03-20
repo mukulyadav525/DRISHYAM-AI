@@ -8,8 +8,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Sentinel 1930 | Simulation Portal",
-  description: "Advanced AI Honeypot & Scam Interception Portal",
+  title: "DRISHYAM AI | Simulation Portal",
+  description: "DRISHYAM AI — Advanced AI Honeypot & Scam Interception Portal",
 };
 
 export default function RootLayout({

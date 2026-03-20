@@ -15,8 +15,8 @@ if (typeof window !== 'undefined') {
     const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     
     if (API_BASE.includes("localhost") && !isLocalhost) {
-        console.error("[SENTINEL] CRITICAL: Frontend is at", window.location.hostname, "but API_BASE is localhost. This will FAIL.");
-        console.warn("[SENTINEL] Attempting to use production fallback...");
+        console.error("[DRISHYAM] CRITICAL: Frontend is at", window.location.hostname, "but API_BASE is localhost. This will FAIL.");
+        console.warn("[DRISHYAM] Attempting to use production fallback...");
     }
-    console.log("[SENTINEL] API Gateway initialized at:", API_BASE);
+    console.log("[DRISHYAM] API Gateway initialized at:", API_BASE);
 }

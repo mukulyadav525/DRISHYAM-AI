@@ -60,7 +60,7 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                         <div className="p-8 space-y-8">
                             <div className="grid grid-cols-3 gap-6">
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">
-                                    <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">Sentinel Score</p>
+                                    <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">DRISHYAM Score</p>
                                     <p className={`text-3xl font-black ${(data?.score || 0) > 700 ? 'text-indgreen' : 'text-redalert'}`}>{data?.score || 0}</p>
                                 </div>
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">

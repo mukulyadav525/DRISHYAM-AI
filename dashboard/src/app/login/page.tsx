@@ -48,7 +48,7 @@ export default function LoginPage() {
         >
             {/* Diagnostic Tag */}
             <div className="absolute top-4 left-4 z-50 px-2 py-1 bg-saffron text-[10px] font-bold text-white rounded opacity-50">
-                SENTINEL_LOGIN_V1.1
+                DRISHYAM_LOGIN_V1.1
             </div>
             {/* Animated background elements */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -79,7 +79,7 @@ export default function LoginPage() {
                         </div>
                     </div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">
-                        <span className="text-saffron">SENTINEL</span> 1930
+                        <span className="text-saffron">DRISHYAM</span><sub className="text-indblue text-base font-bold ml-0.5">AI</sub>
                     </h1>
                     <p className="text-sm text-white/40 mt-2 uppercase tracking-[0.25em] font-semibold">
                         Bharat Anti-Scam Intelligence Grid

@@ -1,6 +1,6 @@
-# Sentinel 1930 | Unified Fraud Defense Ecosystem 🛡️🇮🇳
+# DRISHYAM AI | Unified Fraud Defense Ecosystem 🛡️🇮🇳
 
-Welcome to the Sentinel 1930 project. This repository contains the complete "National Level" fraud interception and surveillance system, now architected as a multi-application ecosystem for maximum realism and operational efficiency.
+Welcome to the DRISHYAM AI project. This repository contains the complete "National Level" fraud interception and surveillance system, now architected as a multi-application ecosystem for maximum realism and operational efficiency.
 
 ---
 

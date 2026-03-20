@@ -1,5 +1,5 @@
 /**
- * SENTINEL-ML: Classifier UI — JavaScript
+ * DRISHYAM-ML: Classifier UI — JavaScript
  * Communicates with the FastAPI server running on port 8001.
  */
 

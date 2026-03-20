@@ -15,7 +15,7 @@ if (typeof window !== 'undefined') {
     const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     
     if (API_BASE.includes("localhost") && !isLocalhost) {
-        console.error("[SENTINEL-SIM] CRITICAL: Frontend is at", window.location.hostname, "but API_BASE is localhost. This will FAIL.");
+        console.error("[DRISHYAM-SIM] CRITICAL: Frontend is at", window.location.hostname, "but API_BASE is localhost. This will FAIL.");
     }
-    console.log("[SENTINEL-SIM] API Gateway initialized at:", API_BASE);
+    console.log("[DRISHYAM-SIM] API Gateway initialized at:", API_BASE);
 }

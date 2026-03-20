@@ -1,6 +1,6 @@
-# SENTINEL-ML
+# DRISHYAM-ML
 
-**AI-powered scam call classifier, built as a standalone module for SENTINEL-1930.**
+**AI-powered scam call classifier, built as a standalone module for DRISHYAM AI.**
 
 ## Setup
 
@@ -69,7 +69,7 @@ curl -X POST http://localhost:8001/classify \
 
 ---
 
-## Future Integration with SENTINEL-1930
+## Future Integration with DRISHYAM AI
 
 1. Add `ml_verdict VARCHAR(20)` column to `call_records` in Supabase
 2. In Dashboard's `detection/page.tsx`, add a call to `http://localhost:8001/classify` per row

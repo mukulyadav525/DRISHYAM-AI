@@ -1,4 +1,4 @@
--- SENTINEL-1930: Advanced Intelligence & Auditing Schema (Module 7/8/9)
+-- DRISHYAM AI: Advanced Intelligence & Auditing Schema (Module 7/8/9)
 -- Add these tables to your Supabase/Postgres instance to enable full tactical history.
 
 -- 1. Public Alert History

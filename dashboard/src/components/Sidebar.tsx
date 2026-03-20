@@ -63,7 +63,7 @@ export default function Sidebar() {
         <div className="w-64 bg-indblue text-white h-screen fixed left-0 top-0 flex flex-col border-r border-saffron/20 overflow-y-auto z-50">
             <div className="p-6">
                 <h1 className="text-xl font-bold tracking-tighter flex items-center gap-2">
-                    <span className="text-saffron">SENTINEL</span> 1930
+                    <span className="text-saffron">DRISHYAM</span><sub className="text-indblue text-xs font-bold ml-0.5">AI</sub>
                 </h1>
                 <p className="text-[10px] text-silver mt-1 uppercase tracking-widest font-semibold">
                     BASIG Operational Grid

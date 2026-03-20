@@ -1,7 +1,7 @@
--- Sentinel 1930 / BASIG
+-- DRISHYAM AI / BASIG
 -- Supabase / PostgreSQL Schema Setup
 
--- 1. Users table with RBAC and Sentinel Score
+-- 1. Users table with RBAC and DRISHYAM Score
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(255) UNIQUE NOT NULL,

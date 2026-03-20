@@ -6,8 +6,8 @@ import LayoutShell from "@/components/LayoutShell";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Sentinel 1930 | National Command Dashboard",
-  description: "Bharat Anti-Scam Intelligence Grid (BASIG) Master Operational Interface",
+  title: "DRISHYAM AI | National Command Dashboard",
+  description: "DRISHYAM AI — Bharat Anti-Scam Intelligence Grid (BASIG) Master Operational Interface",
 };
 
 export default function RootLayout({

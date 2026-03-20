@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# SENTINEL 1930 - Automated Startup Script
+# DRISHYAM AI - Automated Startup Script
 # Purpose: Install dependencies and start all services concurrently.
 
-echo "🛡️ Starting SENTINEL 1930 - National Intelligence Grid..."
+echo "🛡️ Starting DRISHYAM AI - National Intelligence Grid..."
 
 # 1. Check for Node.js and Python
 if ! command -v node &> /dev/null; then

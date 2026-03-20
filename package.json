@@ -1,5 +1,5 @@
 {
-    "name": "sentinel-1930-workspace",
+    "name": "drishyam-ai-workspace",
     "private": true,
     "scripts": {
         "build:dashboard": "npm run build -w dashboard",

@@ -96,7 +96,7 @@ export default function SimulationPortal() {
   const [ussdHistory, setUssdHistory] = useState<string[]>([]);
   const [ussdInput, setUssdInput] = useState("");
   const ussdFlow = [
-    { title: "SENTINEL USSD NODE", content: "1. Report Cyber Crime\n2. Verify UPI ID\n3. Emergency Broadcast\n4. Digital Saathi" },
+    { title: "DRISHYAM AI USSD NODE", content: "1. Report Cyber Crime\n2. Verify UPI ID\n3. Emergency Broadcast\n4. Digital Saathi" },
     { title: "REPORT SCAM", content: "Select Scam Category:\n1. KYC/Bank Fraud\n2. Jobs/Investment\n3. Sextortion\n4. Other" },
     { title: "PROCESSING...", content: "Sending report to National Command Center..." },
     { title: "SUCCESS", content: "Case Logged Successfully.\nA Digital FIR (65B) will be sent via SMS shortly." }
@@ -239,7 +239,7 @@ export default function SimulationPortal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          persona: selectedPersona?.id || "Sentinel AI",
+          persona: selectedPersona?.id || "DRISHYAM AI",
           customer_id: customerId
         })
       });
@@ -260,7 +260,7 @@ export default function SimulationPortal() {
       }
     } catch (e) {
       console.error("Failed to initiate monitoring session:", e);
-      toast.error("Could not reach Sentinel Command. Check network.");
+      toast.error("Could not reach DRISHYAM Command. Check network.");
       setCallState("idle");
     }
   };
@@ -741,7 +741,7 @@ export default function SimulationPortal() {
             <div className="h-full bg-saffron animate-[pulse_2s_infinite]" style={{width: '60%'}} />
           </div>
           <p className="text-[10px] text-silver font-bold uppercase tracking-widest mt-6">
-            Connecting to <span className="text-indblue">Sentinel HQ...</span>
+            Connecting to <span className="text-indblue">DRISHYAM<sub className="text-xs">AI</sub> HQ...</span>
           </p>
         </div>
       )}
@@ -838,9 +838,9 @@ export default function SimulationPortal() {
               <ShieldCheck size={12} /> Active Node: {activeFeature === 'chat' ? 'Voice_INT' : activeFeature === 'deepfake' ? 'Visual_DF' : 'Fin_Sec'}
             </div>
             <h2 className="text-3xl font-extrabold text-indblue tracking-tight">
-              {activeFeature === 'chat' && "Sentinel Voice/Video Trace"}
-              {activeFeature === 'deepfake' && "Sentinel Deepfake Defense"}
-              {activeFeature === 'upi' && "Sentinel UPI Armor"}
+              {activeFeature === 'chat' && "DRISHYAM Voice/Video Trace"}
+              {activeFeature === 'deepfake' && "DRISHYAM Deepfake Defense"}
+              {activeFeature === 'upi' && "DRISHYAM UPI Armor"}
             </h2>
           </div>
 
@@ -981,7 +981,7 @@ export default function SimulationPortal() {
                             <div className="flex items-center gap-1.5 mb-1.5">
                               <div className={`w-1 h-1 rounded-full ${msg.role === "scammer" ? "bg-saffron" : "bg-indgreen"}`} />
                               <span className="text-[7px] font-black uppercase tracking-widest text-white/50">
-                                {msg.role === "scammer" ? "SCAMMER_INPUT" : "SENTINEL_AI"}
+                                {msg.role === "scammer" ? "SCAMMER_INPUT" : "DRISHYAM_AI"}
                               </span>
                             </div>
                             <p className="tracking-tight">{msg.text}</p>
@@ -1135,7 +1135,7 @@ export default function SimulationPortal() {
               {[
                 { icon: Lock, title: "TRAP_GRID", desc: "Live surveillance of scammer audio patterns via ML nodes." },
                 { icon: Volume2, title: "BULBUL_v2", desc: "Real-time TTS engine with 99.2% human-parity in Indian dialects." },
-                { icon: Brain, title: "SENTINEL_AI", desc: "Forensic extraction system designed to waste attacker time." }
+                { icon: Brain, title: "DRISHYAM_AI", desc: "Forensic extraction system designed to waste attacker time." }
               ].map((item, i) => (
                 <div key={i} className="group p-6 bg-white rounded-[2rem] border border-silver/10 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
                   <div className="w-10 h-10 rounded-xl bg-boxbg flex items-center justify-center text-indblue mb-4 group-hover:bg-saffron group-hover:text-white transition-colors">
@@ -1365,7 +1365,7 @@ export default function SimulationPortal() {
                                                     </h4>
                                                     <p className="text-xs text-charcoal mt-1 leading-relaxed">
                                                         {lookupResult === 'SAFE'
-                                                            ? `ID ${upiId} has no fraudulent activity reported across Sentinel nodes.`
+                                                            ? `ID ${upiId} has no fraudulent activity reported across DRISHYAM nodes.`
                                                             : `WARNING: ${upiId} is linked to reported scam clusters.`}
                                                     </p>
                                                 </div>
@@ -1586,7 +1586,7 @@ export default function SimulationPortal() {
 
           {/* Footer */}
           <footer className="w-full text-center pb-4 mt-4 shrink-0">
-            <p className="text-[9px] font-black text-silver/40 uppercase tracking-[0.4em]">Integrated Anti-Fraud Ops | Sentinel Command</p>
+            <p className="text-[9px] font-black text-silver/40 uppercase tracking-[0.4em]">Integrated Anti-Fraud Ops | DRISHYAM Command</p>
           </footer>
         </div>
       )}

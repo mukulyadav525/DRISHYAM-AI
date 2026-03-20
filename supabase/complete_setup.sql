@@ -1,5 +1,5 @@
 -- ============================================================
--- SENTINEL 1930 — MASTER CONSOLIDATED SCHEMA & SEED
+-- DRISHYAM AI — MASTER CONSOLIDATED SCHEMA & SEED
 -- Version: 4.0 (Final Comprehensive)
 -- Description: One-stop SQL script for Supabase Database Setup.
 -- Includes: Schema, RBAC, RLS Policies, and Demo Data.
