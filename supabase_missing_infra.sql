@@ -1,121 +1,90 @@
 -- ============================================================
--- DRISHYAM AI — MISSING INFRASTRUCTURE SETUP
--- Version: 1.0 (Post-Consolidation)
+-- DRISHYAM AI — COMPLETE INFRASTRUCTURE SETUP
+-- Version: 2.0 (Unified Core + Features)
 -- Description: Run this script in your Supabase SQL Editor to add
---              missing tables required for Forensics, Recovery, and UPI Shield.
+--              ALL tables required for the application.
 -- ============================================================
 
 BEGIN;
 
--- 1. Forensics & Deepfake Uploads
-CREATE TABLE IF NOT EXISTS file_uploads (
+-- 1. Core Users Table Extensions (If not exists)
+-- Assuming a basic 'users' table exists, adding essential columns
+ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number TEXT UNIQUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'common';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT TRUE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS drishyam_score INTEGER DEFAULT 100;
+
+-- 2. Call Monitoring & Detection
+CREATE TABLE IF NOT EXISTS call_records (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    filename TEXT NOT NULL,
-    file_path TEXT NOT NULL,
-    mime_type TEXT NOT NULL,
-    status TEXT DEFAULT 'PENDING', -- PENDING, PROCESSING, COMPLETED, FAILED
-    verdict TEXT, -- 'REAL', 'SUSPICIOUS', 'FAKE'
-    confidence_score FLOAT,
-    risk_level TEXT, -- 'LOW', 'MEDIUM', 'HIGH'
+    caller_num TEXT,
+    receiver_num TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    duration INTEGER,
+    call_type TEXT, -- 'incoming', 'outgoing'
     metadata_json JSONB,
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    fraud_risk_score FLOAT,
+    verdict TEXT -- 'safe', 'suspicious', 'scam'
 );
 
--- 2. Trust Circle / Links
-CREATE TABLE IF NOT EXISTS trust_links (
+CREATE TABLE IF NOT EXISTS detection_details (
     id SERIAL PRIMARY KEY,
-    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-    guardian_name TEXT,
-    guardian_phone TEXT,
-    guardian_email TEXT,
-    relation_type TEXT, -- e.g., "Son", "Daughter"
-    created_at TIMESTAMPTZ DEFAULT NOW()
+    call_id INTEGER REFERENCES call_records(id) ON DELETE CASCADE,
+    feature_name TEXT,
+    feature_value FLOAT,
+    impact_score FLOAT
 );
 
--- 3. Recovery Cases & Restoration
-CREATE TABLE IF NOT EXISTS recovery_cases (
+CREATE TABLE IF NOT EXISTS suspicious_numbers (
     id SERIAL PRIMARY KEY,
+    phone_number TEXT UNIQUE NOT NULL,
+    reputation_score FLOAT DEFAULT 0.0,
+    category TEXT, -- 'banking_scam', 'job_scam', etc.
+    last_seen TIMESTAMPTZ DEFAULT NOW(),
+    report_count INTEGER DEFAULT 0
+);
+
+-- 3. Honeypot System
+CREATE TABLE IF NOT EXISTS honeypot_sessions (
+    id SERIAL PRIMARY KEY,
+    session_id TEXT UNIQUE NOT NULL,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    incident_id TEXT UNIQUE NOT NULL,
-    bank_status TEXT DEFAULT 'PENDING', -- PENDING, INVESTIGATING, FROZEN, RECOVERED
-    rbi_status TEXT DEFAULT 'NOT_STARTED',
-    insurance_status TEXT DEFAULT 'NOT_STARTED',
-    legal_aid_status TEXT DEFAULT 'NOT_STARTED',
-    total_recovered FLOAT DEFAULT 0.0,
+    caller_num TEXT,
+    customer_id TEXT,
+    persona TEXT,
+    status TEXT DEFAULT 'active', -- active, completed
+    direction TEXT DEFAULT 'outgoing',
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW()
+    metadata_json JSONB,
+    recording_analysis_json JSONB
 );
 
--- 4. Recovery Restitution Bundles
-CREATE TABLE IF NOT EXISTS recovery_bundles (
+CREATE TABLE IF NOT EXISTS honeypot_messages (
     id SERIAL PRIMARY KEY,
-    citizen_id TEXT,
+    session_id INTEGER REFERENCES honeypot_sessions(id) ON DELETE CASCADE,
+    role TEXT, -- user, assistant
+    content TEXT,
+    audio_url TEXT,
+    timestamp TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. Reporting & Multi-Agency Dissemination
+CREATE TABLE IF NOT EXISTS crime_reports (
+    id SERIAL PRIMARY KEY,
+    report_id TEXT UNIQUE NOT NULL,
+    category TEXT, -- police, bank, telecom
     scam_type TEXT,
-    bundle_id TEXT UNIQUE,
-    file_urls JSONB, -- Links to generated PDF templates
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 5. Public Alert Console
-CREATE TABLE IF NOT EXISTS public_alerts (
-    id SERIAL PRIMARY KEY,
-    sender_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    category TEXT, -- e.g., 'UPI Collect Trap', 'Job Fraud'
-    target_region TEXT, -- e.g., 'delhi', 'national'
-    message_text TEXT NOT NULL,
-    status TEXT DEFAULT 'dispatched', -- 'draft', 'dispatched', 'failed'
-    citizen_reach INTEGER DEFAULT 0,
-    delivery_rate FLOAT DEFAULT 0.0,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 6. UPI Shield / Message Interception Logs
-CREATE TABLE IF NOT EXISTS message_interceptions (
-    id SERIAL PRIMARY KEY,
-    sender_info TEXT, -- Phone number or VPA
-    original_text TEXT,
-    risk_score FLOAT DEFAULT 0.0,
-    verdict TEXT, -- 'SAFE', 'SUSPICIOUS', 'SCAM'
-    detected_entities JSONB, -- { 'vpas': [], 'links': [], 'amounts': [] }
+    amount TEXT,
+    platform TEXT,
+    priority TEXT, -- CRITICAL, HIGH, MEDIUM
+    status TEXT DEFAULT 'PENDING',
+    reporter_num TEXT,
     metadata_json JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 7. Number Reputation Audit Trail
-CREATE TABLE IF NOT EXISTS reputation_audit (
-    id SERIAL PRIMARY KEY,
-    phone_number TEXT NOT NULL,
-    old_score FLOAT,
-    new_score FLOAT,
-    change_reason TEXT, -- e.g., 'Honeypot Extraction', 'Citizen Report'
-    source_type TEXT, -- 'AI', 'MANUAL', 'AUTOMATED'
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 8. Bharat Layer / USSD Logs
-CREATE TABLE IF NOT EXISTS ussd_logs (
-    id SERIAL PRIMARY KEY,
-    phone_number TEXT,
-    ussd_code TEXT,
-    action_taken TEXT,
-    region TEXT,
-    status TEXT DEFAULT 'success',
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 9. Intelligence Alerts
-CREATE TABLE IF NOT EXISTS intelligence_alerts (
-    id SERIAL PRIMARY KEY,
-    severity TEXT, -- CRITICAL, HIGH, MEDIUM
-    message TEXT,
-    location TEXT,
-    category TEXT, -- e.g., "VPA_ROTATION", "SCAM_POD"
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- 10. Honeypot Entity Intel
+-- 5. Intelligence & Blacklisting
 CREATE TABLE IF NOT EXISTS honeypot_entities (
     id SERIAL PRIMARY KEY,
     entity_type TEXT, -- "VPA", "PHONE", "ACCOUNT"
@@ -125,45 +94,70 @@ CREATE TABLE IF NOT EXISTS honeypot_entities (
     risk_score FLOAT DEFAULT 0.5
 );
 
--- 11. Bank Node Rules (Mule Detection)
-CREATE TABLE IF NOT EXISTS bank_node_rules (
+CREATE TABLE IF NOT EXISTS intelligence_alerts (
     id SERIAL PRIMARY KEY,
-    bank_name TEXT NOT NULL,
-    rule_type TEXT, -- e.g., "AMOUNT_THRESHOLD", "VELOCITY"
-    threshold FLOAT,
-    action TEXT, -- e.g., "FREEZE", "FLAG"
+    severity TEXT,
+    message TEXT,
+    location TEXT,
+    category TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- 12. System Audit Logs
+-- 6. Forensic Artifacts
+CREATE TABLE IF NOT EXISTS file_uploads (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    filename TEXT NOT NULL,
+    file_path TEXT NOT NULL,
+    mime_type TEXT NOT NULL,
+    status TEXT DEFAULT 'PENDING',
+    verdict TEXT,
+    confidence_score FLOAT,
+    risk_level TEXT,
+    metadata_json JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Recovery & System Logs
+CREATE TABLE IF NOT EXISTS recovery_cases (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    incident_id TEXT UNIQUE NOT NULL,
+    bank_status TEXT DEFAULT 'PENDING',
+    rbi_status TEXT DEFAULT 'NOT_STARTED',
+    insurance_status TEXT DEFAULT 'NOT_STARTED',
+    legal_aid_status TEXT DEFAULT 'NOT_STARTED',
+    total_recovered FLOAT DEFAULT 0.0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS system_audit_logs (
     id SERIAL PRIMARY KEY,
     user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
-    action TEXT NOT NULL, -- e.g., "ACCESS_PII", "LOGIN", "EXPORT_GRAPH"
-    resource TEXT, -- e.g., "CrimeReport-501", "FraudGraph"
+    action TEXT NOT NULL,
+    resource TEXT,
     ip_address TEXT,
     timestamp TIMESTAMPTZ DEFAULT NOW(),
     metadata_json JSONB
 );
 
--- 13. Notification Dispatch Logs
 CREATE TABLE IF NOT EXISTS notification_logs (
     id SERIAL PRIMARY KEY,
     recipient TEXT NOT NULL,
-    channel TEXT, -- "SMS", "WHATSAPP", "EMAIL"
+    channel TEXT,
     template_id TEXT,
-    status TEXT, -- "SENT", "DELIVERED", "FAILED"
+    status TEXT,
     sent_at TIMESTAMPTZ DEFAULT NOW(),
     metadata_json JSONB
 );
 
 -- ============================================================
--- STORAGE BUCKET CONFIGURATION (Informational)
+-- STORAGE BUCKETS (Create these in Supabase Dashboard)
 -- ============================================================
--- You MUST create the following buckets in the Supabase Dashboard:
--- 1. 'calls'     (Public: No, Policy: Authenticated users can read/write)
--- 2. 'forensics' (Public: No, Policy: Authenticated users can write, Admins can read)
--- 3. 'reports'   (Public: No, Policy: Authenticated user can read their own reports)
+-- 1. 'calls'     - Recordings of intercepted scam calls.
+-- 2. 'forensics' - Uploaded images/videos for deepfake analysis.
+-- 3. 'reports'   - Generated FIR PDF exports.
 
 COMMIT;
