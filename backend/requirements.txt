@@ -17,8 +17,8 @@ bcrypt==4.0.1
 passlib[bcrypt]
 pillow==12.1.1
 psycopg2-binary
-pyasn1==0.6.2
-pyasn1_modules==0.4.2
+pyasn1==0.4.8
+pyasn1_modules==0.2.8
 pycparser==3.0
 pydantic==2.12.5
 pydantic-settings

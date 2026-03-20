@@ -13,8 +13,8 @@ httpcore==1.0.9
 httpx==0.28.1
 idna==3.11
 pillow==12.1.1
-pyasn1==0.6.2
-pyasn1_modules==0.4.2
+pyasn1==0.4.8
+pyasn1_modules==0.2.8
 pycparser==3.0
 pydantic==2.12.5
 pydantic_core==2.41.5
