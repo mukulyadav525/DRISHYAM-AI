@@ -172,7 +172,10 @@ async def speech_to_text(request: STTRequest):
 
 @router.get("/personas")
 async def list_personas(db: Session = Depends(get_db)):
+    start_time = datetime.datetime.now()
     personas = db.query(HoneypotPersona).all()
+    duration = (datetime.datetime.now() - start_time).total_seconds()
+    logger.info(f"[PERF] Personas DB query took {duration:.4f}s")
     if not personas:
         return {"personas": [{"name": "DRISHYAM AI", "language": "en", "speaker": "Female", "pace": 1.0}]}
     return {"personas": [{"name": p.name, "language": p.language, "speaker": p.speaker, "pace": p.pace} for p in personas]}
