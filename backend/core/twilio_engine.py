@@ -14,6 +14,7 @@ from typing import Dict, Any, Optional
 
 from twilio.rest import Client as TwilioClient
 from twilio.twiml.voice_response import VoiceResponse, Connect
+import urllib.parse
 
 from core.config import settings
 from core.voice_engine import voice_engine
@@ -65,9 +66,12 @@ class TwilioEngine:
 
         # Generate a unique stream ID to track this call
         stream_id = session_id or str(uuid.uuid4())
+        
+        # Properly encode query parameters
+        encoded_persona = urllib.parse.quote(persona)
 
         # Webhook URL Twilio will call when the recipient picks up
-        webhook_url = f"{self.webhook_base_url}/api/v1/twilio/webhook?stream_id={stream_id}&persona={persona}"
+        webhook_url = f"{self.webhook_base_url}/api/v1/twilio/webhook?stream_id={stream_id}&persona={encoded_persona}"
         status_url = f"{self.webhook_base_url}/api/v1/twilio/call-status?stream_id={stream_id}"
 
         try:
