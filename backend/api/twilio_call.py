@@ -59,14 +59,24 @@ class SendSMSRequest(BaseModel):
 @router.post("/call")
 async def initiate_call(
     req: InitiateCallRequest,
-    current_user: User = Depends(get_current_user),
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """
     Initiate an outbound AI-powered phone call.
     The DRISHYAM AI persona will talk to the recipient in real-time.
-    Requires valid Twilio credentials in environment variables.
+    Authentication is optional to support the Simulation App demo.
     """
+    # Try to get user if token exists, but don't fail if missing
+    current_user = None
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        try:
+            from core.auth import get_current_user
+            token = auth_header.split(" ")[1]
+            current_user = await get_current_user(token, db)
+        except:
+            pass
     if not twilio_engine.client:
         raise HTTPException(
             status_code=503,
@@ -86,8 +96,9 @@ async def initiate_call(
         db.add(db_session)
 
         # Log the action
+        user_id = current_user.id if current_user else None
         action = SystemAction(
-            user_id=current_user.id,
+            user_id=user_id,
             action_type="TWILIO_OUTBOUND_CALL",
             target_id=req.to_number,
             metadata_json={
@@ -106,7 +117,8 @@ async def initiate_call(
             session_id=session_id,
         )
 
-        logger.info(f"TWILIO API: Call initiated by {current_user.username} to {req.to_number}")
+        user_display = current_user.username if current_user else "Anonymous Simulation"
+        logger.info(f"TWILIO API: Call initiated by {user_display} to {req.to_number}")
 
         return {
             "status": "success",

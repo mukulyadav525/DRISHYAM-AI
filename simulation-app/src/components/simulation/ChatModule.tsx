@@ -49,6 +49,8 @@ export default function ChatModule({
   const [analysis, setAnalysis] = useState<any>(null);
   const [sessionData, setSessionData] = useState<{ id: string; caller: string; location: string } | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [testPhoneNumber, setTestPhoneNumber] = useState("");
+  const [isTestCallLoading, setIsTestCallLoading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -110,6 +112,39 @@ export default function ChatModule({
       toast.error("Could not reach DRISHYAM Command. Check network.");
       setCallState("idle");
     }
+  };
+
+  const handleTestCall = async () => {
+    if (!testPhoneNumber) {
+      toast.error("Please enter a phone number first.");
+      return;
+    }
+    setIsTestCallLoading(true);
+    try {
+      // We assume the user is logged in and token is in localStorage
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE}/twilio/call`, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          to_number: testPhoneNumber,
+          persona: selectedPersona?.id || "Elderly Uncle"
+        })
+      });
+      if (res.ok) {
+        toast.success("DRISHYAM AI is dialing your phone now!");
+      } else {
+        const data = await res.json();
+        toast.error(`Call Failed: ${data.detail || "Check console"}`);
+      }
+    } catch (e) {
+      console.error("Test call error:", e);
+      toast.error("Network error. Ensure backend is running.");
+    }
+    setIsTestCallLoading(false);
   };
 
   const handOffToAI = () => {
@@ -276,12 +311,33 @@ export default function ChatModule({
                 <p className="text-xl font-black text-indblue">Shield Ready</p>
                 <p className="text-[9px] text-silver font-bold uppercase tracking-widest leading-relaxed">Secure Line Established<br />AI Core Synchronized</p>
               </div>
-              <div className="flex flex-col gap-4 w-full max-w-[180px]">
+              <div className="flex flex-col gap-3 w-full max-w-[200px]">
+                <div className="space-y-2 mb-2">
+                  <p className="text-[8px] text-silver font-black uppercase tracking-widest text-center">Test on your real phone</p>
+                  <input 
+                    type="text" 
+                    placeholder="+91XXXXXXXXXX" 
+                    value={testPhoneNumber}
+                    onChange={(e) => setTestPhoneNumber(e.target.value)}
+                    className="w-full bg-boxbg border border-silver/10 rounded-xl px-4 py-2 text-[11px] font-bold text-indblue focus:outline-none focus:ring-2 focus:ring-indblue/10 transition-all"
+                  />
+                  <button 
+                    onClick={handleTestCall}
+                    disabled={isTestCallLoading}
+                    className="w-full py-2.5 bg-saffron/10 text-saffron border border-saffron/20 rounded-xl text-[10px] font-black hover:bg-saffron hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isTestCallLoading ? <Loader2 size={12} className="animate-spin" /> : <Phone size={12} />}
+                    {isTestCallLoading ? "DIALING..." : "CALL MY PHONE"}
+                  </button>
+                </div>
+
+                <div className="h-[1px] bg-silver/5 w-full mb-1" />
+
                 <div className="flex bg-boxbg p-1 rounded-full border border-silver/10">
                   <button onClick={() => setIsVoiceMode(false)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold ${!isVoiceMode ? "bg-indblue text-white shadow-md" : "text-silver"}`}><MessageSquare size={10} /> TEXT</button>
                   <button onClick={() => setIsVoiceMode(true)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold ${isVoiceMode ? "bg-saffron text-white shadow-md" : "text-silver"}`}><Volume2 size={10} /> VOICE</button>
                 </div>
-                <button onClick={startCall} className="w-full py-3.5 bg-indblue text-white rounded-xl text-xs font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg">START TRAP <Zap size={14} className="text-saffron fill-saffron" /></button>
+                <button onClick={startCall} className="w-full py-3.5 bg-indblue text-white rounded-xl text-xs font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg">SIMULATE HERE <Zap size={14} className="text-saffron fill-saffron" /></button>
               </div>
             </div>
           )}
