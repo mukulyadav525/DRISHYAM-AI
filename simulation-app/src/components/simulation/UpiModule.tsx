@@ -25,7 +25,7 @@ export default function UpiModule({
   const [activeUpiTab, setActiveUpiTab] = useState<'lookup' | 'qr' | 'message'>('lookup');
   const [upiId, setUpiId] = useState("");
   const [isLookingUp, setIsLookingUp] = useState(false);
-  const [lookupResult, setLookupResult] = useState<null | 'SAFE' | 'RISK'>(null);
+  const [lookupResult, setLookupResult] = useState<any>(null);
   const [messageText, setMessageText] = useState("");
   const [isMessageScanning, setIsMessageScanning] = useState(false);
   const [scanResult, setScanResult] = useState<any>(null);
@@ -36,7 +36,7 @@ export default function UpiModule({
   useEffect(() => {
     const fetchUPIStats = async () => {
       try {
-        const res = await fetch(`${API_BASE}/system/stats/upi`);
+        const res = await fetch(`${API_BASE}/upi/stats`);
         if (res.ok) setUpiStats(await res.json());
       } catch (e) {
         console.error("UPI Stats fetch failed:", e);
@@ -45,16 +45,48 @@ export default function UpiModule({
     fetchUPIStats();
   }, []);
 
-  const handleLookup = () => {
+  const handleLookup = async () => {
     if (!upiId) return;
     setIsLookingUp(true);
     setLookupResult(null);
     performAction('VPA_LOOKUP', upiId);
 
-    setTimeout(() => {
+    try {
+      const res = await fetch(`${API_BASE}/upi/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vpa: upiId })
+      });
+      if (res.ok) {
+        setLookupResult(await res.json());
+      }
+    } catch (e) {
+      console.error("Lookup failed:", e);
+      toast.error("NPCI Gateway Timeout");
+    } finally {
       setIsLookingUp(false);
-      setLookupResult(upiId.toLowerCase().includes('win') || upiId.toLowerCase().includes('prize') ? 'RISK' : 'SAFE');
-    }, 1500);
+    }
+  };
+
+  const handleHardBlock = async () => {
+    if (!upiId) return;
+    const confirm = window.confirm("NPCI DIRECTIVE: Are you sure you want to enforce a network-wide block on this VPA?");
+    if (!confirm) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/upi/npci/direct-block`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ vpa: upiId, reason: "Manual Forensic Identification" })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast.success(`NPCI Block Enforced: ${data.npci_ref}`);
+        handleLookup(); // Refresh status
+      }
+    } catch (e) {
+      toast.error("Block operation failed");
+    }
   };
 
   const handleMessageScan = async () => {
@@ -141,12 +173,33 @@ export default function UpiModule({
                   <button onClick={handleLookup} disabled={isLookingUp} className="bg-indblue text-white px-6 py-3 rounded-xl m-1 text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all disabled:opacity-50">{isLookingUp ? "Verifying..." : "Check"}</button>
                 </div>
                 {lookupResult && (
-                  <div className={`p-6 rounded-2xl border ${lookupResult === 'SAFE' ? 'bg-indgreen/5 border-indgreen/20' : 'bg-red-50 border-red-200'} animate-in fade-in slide-in-from-top-4 duration-500`}>
+                  <div className={`p-6 rounded-2xl border ${lookupResult.is_flagged ? 'bg-red-50 border-red-200' : 'bg-indgreen/5 border-indgreen/20'} animate-in fade-in slide-in-from-top-4 duration-500`}>
                     <div className="flex gap-4 items-start">
-                      <div className={`p-3 rounded-full ${lookupResult === 'SAFE' ? 'bg-indgreen text-white' : 'bg-redalert text-white'}`}>{lookupResult === 'SAFE' ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}</div>
-                      <div>
-                        <h4 className={`font-bold ${lookupResult === 'SAFE' ? 'text-indgreen' : 'text-redalert'}`}>{lookupResult === 'SAFE' ? "VPA Verified Safe" : "High Risk Signature Detected"}</h4>
-                        <p className="text-xs text-charcoal mt-1 leading-relaxed">{lookupResult === 'SAFE' ? `ID ${upiId} has no fraudulent activity reported across DRISHYAM nodes.` : `WARNING: ${upiId} is linked to reported scam clusters.`}</p>
+                      <div className={`p-3 rounded-full ${lookupResult.is_flagged ? 'bg-redalert text-white' : 'bg-indgreen text-white'}`}>{lookupResult.is_flagged ? <ShieldAlert size={24} /> : <ShieldCheck size={24} />}</div>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className={`font-bold ${lookupResult.is_flagged ? 'text-redalert' : 'text-indgreen'}`}>{lookupResult.is_flagged ? "High Risk Signature Detected" : "VPA Verified Safe"}</h4>
+                          <span className={`text-[10px] px-2 py-0.5 rounded font-black uppercase ${lookupResult.npci_status === 'ACTIVE' ? 'bg-indgreen/20 text-indgreen' : 'bg-red-200 text-redalert'}`}>NPCI: {lookupResult.npci_status}</span>
+                        </div>
+                        <p className="text-xs text-charcoal mt-1 leading-relaxed font-bold uppercase">{lookupResult.bank_name || "Unknown Bank"}</p>
+                        <p className="text-[10px] text-silver mt-2 leading-relaxed">{lookupResult.reason}</p>
+                        
+                        {lookupResult.is_flagged && (
+                          <div className="mt-4 flex gap-2">
+                            <button 
+                              onClick={handleHardBlock}
+                              className="bg-redalert text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-charcoal transition-all shadow-md"
+                            >
+                              Enforce NPCI Hard Block
+                            </button>
+                            <button 
+                              onClick={() => toast.success("NPCI Dispute Grievance Generated")}
+                              className="bg-white border border-silver/20 text-charcoal px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-boxbg transition-all"
+                            >
+                              Generate Grievance
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

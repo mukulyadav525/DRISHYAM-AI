@@ -30,25 +30,54 @@ async def upi_verify(body: dict, db: Session = Depends(get_db)):
     # 2. Check Blacklist (Honeypot Entities)
     entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
     
-    if entity:
-        # Update last seen
-        entity.last_seen = datetime.datetime.utcnow()
-        db.commit()
+    # 3. NPCI Gateway Verification (Simulated Integration)
+    from core.npci_gateway import npci_gateway
+    npci_status = await npci_gateway.verify_vpa(db, vpa)
+
+    if entity or npci_status.get("status_code") != "00":
+        # Update last seen if entity exists
+        if entity:
+            entity.last_seen = datetime.datetime.utcnow()
+            db.commit()
         
         return {
             "vpa": vpa,
             "is_flagged": True,
-            "risk_level": "CRITICAL" if entity.risk_score > 0.8 else "HIGH",
-            "reason": f"Linked to scam cluster via AI Interceptor. Score: {entity.risk_score}",
-            "npci_block_ref": f"NPCI-{str(uuid.uuid4().hex)[:6].upper()}"
+            "risk_level": "CRITICAL" if (entity and entity.risk_score > 0.8) or npci_status.get("status_code") == "92" else "HIGH",
+            "reason": npci_status.get("message") if npci_status.get("status_code") != "00" else f"Linked to scam cluster via AI Interceptor. Score: {entity.risk_score if entity else 0.8}",
+            "npci_block_ref": npci_status.get("npci_ref"),
+            "npci_status": npci_status.get("status"),
+            "bank_name": npci_status.get("bank_name")
         }
         
     return {
         "vpa": vpa,
         "is_flagged": False,
         "risk_level": "LOW",
-        "reason": "Clear / No suspicious history in DRISHYAM nodes"
+        "reason": "Clear / No suspicious history in DRISHYAM nodes",
+        "npci_status": "ACTIVE",
+        "bank_name": npci_status.get("bank_name")
     }
+
+@router.post("/npci/direct-block")
+async def upi_npci_direct_block(body: dict, db: Session = Depends(get_db)):
+    """
+    Law Enforcement / Admin tool to send a hard-block signal directly to NPCI.
+    """
+    from core.npci_gateway import npci_gateway
+    vpa = body.get("vpa", "")
+    reason = body.get("reason", "Law Enforcement Directive")
+    case_id = body.get("case_id", f"DRY-{str(uuid.uuid4().hex)[:6].upper()}")
+    
+    if not vpa:
+        return {"status": "ERROR", "message": "VPA is required"}
+        
+    result = await npci_gateway.execute_hard_block(db, vpa, reason, case_id)
+    
+    # Audit Log
+    log_audit(db, 0, "NPCI_HARD_BLOCK", vpa, metadata={"case_id": case_id, "npci_ref": result.get("npci_ref")})
+    
+    return result
 
 @router.post("/impersonation/check")
 async def whatsapp_impersonation_check(body: dict, db: Session = Depends(get_db)):

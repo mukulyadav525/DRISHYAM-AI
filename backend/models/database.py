@@ -268,6 +268,17 @@ class IntelligenceAlert(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
+class NPCILog(Base):
+    __tablename__ = "npci_logs"
+    id = Column(Integer, primary_key=True, index=True)
+    vpa = Column(String, index=True)
+    action = Column(String) # VERIFY, BLOCK, DISPUTE
+    status_code = Column(String) # NPCI Response Codes (00, 91, etc.)
+    message = Column(String, nullable=True)
+    reference_id = Column(String, unique=True, index=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
 # Note: For PII Encryption (AC-M9-04), use the cryptography.fernet based hybrid approach 
 # in the API layer or as a custom SQLAlchemy TypeDecorator if time permits.
 # Current implementation uses plain strings for MVP but requires ciphertexts in production.

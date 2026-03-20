@@ -162,6 +162,18 @@ CREATE TABLE IF NOT EXISTS notification_logs (
     metadata_json JSONB
 );
 
+-- Table for NPCI Gateway Logs [AC-M15]
+CREATE TABLE IF NOT EXISTS npci_logs (
+    id SERIAL PRIMARY KEY,
+    vpa TEXT NOT NULL,
+    action TEXT NOT NULL,
+    status_code TEXT NOT NULL,
+    message TEXT,
+    reference_id TEXT UNIQUE NOT NULL,
+    metadata_json JSONB DEFAULT '{}'::jsonb,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- ============================================================
 -- STORAGE BUCKETS (Create these in Supabase Dashboard)
 -- ============================================================
