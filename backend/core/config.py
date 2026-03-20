@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     
     # Environment Mode: 'dev' or 'prod'
     ENV: str = Field("dev", env="ENV")
+    
+    # Security
+    CIPHER_KEY: str = Field("uN7f_pS_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y=", env="CIPHER_KEY")
 
     # JWT Auth
     SECRET_KEY: str = Field(..., env="SECRET_KEY")
@@ -63,6 +66,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 100
 
     class Config:
+        env_prefix = "DRISHYAM_"
         case_sensitive = True
         env_file = ".env"
         extra = "ignore" # Ignore extra env vars
