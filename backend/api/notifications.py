@@ -17,9 +17,18 @@ async def citizen_push_alert(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/family-trust-circle/alert")
 async def family_trust_alert(body: dict, db: Session = Depends(get_db)):
+    phone = body.get("phone")
+    message = body.get("message", "DRISHYAM ALERT: A suspicious call has been intercepted on your elder's device.")
+    
+    success = False
+    if phone:
+        from core.twilio_engine import twilio_engine
+        success = twilio_engine.send_sms(phone, message)
+
     return {
-        "members_notified": 3,
-        "notification_ids": [f"NOT-{uuid.uuid4().hex[:4].upper()}" for _ in range(3)],
+        "status": "success" if success else "failed",
+        "members_notified": 1 if success else 0,
+        "notification_ids": [f"NOT-{uuid.uuid4().hex[:4].upper()}"] if success else [],
         "elder_call_intercepted": True,
         "ai_handoff_offered": True,
         "real_family_member_contacted": True,

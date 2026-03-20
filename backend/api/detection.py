@@ -53,6 +53,18 @@ def detect_fraud(call_in: CallCreate, db: Session = Depends(get_db)):
     
     db.commit()
     
+    # Automated Alerting with Twilio SMS
+    if db_call.verdict in ["ROUTE_TO_HONEYPOT", "FLAG_AND_WARN"]:
+        try:
+            from core.twilio_engine import twilio_engine
+            # In a real scenario, we'd look up the user's Trust Circle numbers.
+            # For now, we use a placeholder or the receiver_num if appropriate.
+            alert_msg = f"DRISHYAM ALERT: High-risk scam detected from {db_call.caller_num}. Verdict: {db_call.verdict}"
+            # Attempt to notify receiver if they are a registered citizen with a trust circle
+            twilio_engine.send_sms(db_call.receiver_num, alert_msg)
+        except Exception as e:
+            print(f"Failed to send automated detection alert: {e}")
+
     return {
         "call_id": db_call.id,
         "fraud_risk_score": db_call.fraud_risk_score,

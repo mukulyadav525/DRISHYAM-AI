@@ -22,8 +22,8 @@ from core.ai import honeypot_ai
 logger = logging.getLogger("drishyam.twilio")
 
 
-class TwilioCallEngine:
-    """Manages outbound Twilio calls with AI-powered voice interaction."""
+class TwilioEngine:
+    """Manages Twilio services (Voice & SMS) with AI-powered interaction."""
 
     def __init__(self):
         self.account_sid = settings.TWILIO_ACCOUNT_SID
@@ -380,6 +380,30 @@ class TwilioCallEngine:
             logger.error(f"TWILIO: Failed to end call {stream_id}: {e}")
             return False
 
+    def send_sms(self, to_number: str, message: str) -> bool:
+        """
+        Send an SMS message via Twilio.
+        """
+        if not self.client:
+            logger.warning("TWILIO: Cannot send SMS. Client not initialized.")
+            return False
+
+        if not self.phone_number:
+            logger.warning("TWILIO: Cannot send SMS. TWILIO_PHONE_NUMBER not set.")
+            return False
+
+        try:
+            msg = self.client.messages.create(
+                body=message,
+                from_=self.phone_number,
+                to=to_number
+            )
+            logger.info(f"TWILIO SMS: Sent to {to_number} (SID: {msg.sid})")
+            return True
+        except Exception as e:
+            logger.error(f"TWILIO SMS: Failed to send to {to_number}: {e}")
+            return False
+
 
 # Singleton instance
-twilio_engine = TwilioCallEngine()
+twilio_engine = TwilioEngine()

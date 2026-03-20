@@ -46,6 +46,12 @@ class EndCallRequest(BaseModel):
     stream_id: str = Field(..., description="Stream ID of the call to end")
 
 
+class SendSMSRequest(BaseModel):
+    """Request body for sending an SMS."""
+    to_number: str = Field(..., description="Recipient phone number (E.164)")
+    message: str = Field(..., description="Message text")
+
+
 # ------------------------------------------------------------------
 # INITIATE OUTBOUND CALL
 # ------------------------------------------------------------------
@@ -396,6 +402,31 @@ async def end_call(
     db.commit()
 
     return {"status": "success", "message": f"Call {req.stream_id} terminated"}
+
+
+@router.post("/sms")
+async def send_sms(
+    req: SendSMSRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Send a manual SMS via Twilio."""
+    success = twilio_engine.send_sms(req.to_number, req.message)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to send SMS")
+
+    # Log the action
+    action = SystemAction(
+        user_id=current_user.id,
+        action_type="TWILIO_SEND_SMS",
+        target_id=req.to_number,
+        metadata_json={"message": req.message},
+        status="success",
+    )
+    db.add(action)
+    db.commit()
+
+    return {"status": "success", "message": f"SMS sent to {req.to_number}"}
 
 
 @router.get("/health")
