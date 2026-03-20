@@ -34,9 +34,14 @@ export default function SimulationPortal() {
 
   // Fetch Personas for Chat
   useEffect(() => {
+    if (personas.length > 0) return;
+
+    const controller = new AbortController();
     const fetchPersonas = async () => {
       try {
-        const res = await fetch(`${API_BASE}/voice/personas`);
+        const res = await fetch(`${API_BASE}/voice/personas`, {
+            signal: controller.signal
+        });
         if (res.ok) {
           const data = await res.json();
           const formatted = data.personas.map((p: any) => ({
@@ -47,12 +52,14 @@ export default function SimulationPortal() {
           setPersonas(formatted);
           if (formatted.length > 0) setSelectedPersona(formatted[0]);
         }
-      } catch (error) {
+      } catch (error: any) {
+        if (error.name === 'AbortError') return;
         console.error("Error fetching personas:", error);
       }
     };
     fetchPersonas();
-  }, []);
+    return () => controller.abort();
+  }, [personas.length]);
 
   // Poll for Admin Approval
   useEffect(() => {
