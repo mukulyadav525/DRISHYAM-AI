@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.ai import honeypot_ai
+from core.intel_engine import intel_engine
 from models.database import HoneypotSession, HoneypotMessage
 import uuid
 import datetime
@@ -88,15 +89,15 @@ async def honeypot_direct_chat(body: dict, db: Session = Depends(get_db)):
 async def end_honeypot_session(body: dict, db: Session = Depends(get_db)):
     session_id = body.get("session_id")
     if session_id:
-        session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
-        if session:
-            session.status = "completed"
-            db.commit()
+        # Trigger IntelEngine for analysis and multi-agency reporting
+        await intel_engine.process_session_completion(session_id, db)
+        
     return {
         "session_id": session_id,
         "transcript_id": f"TX-{uuid.uuid4().hex[:6].upper()}",
         "scammer_profile_id": f"PROF-{uuid.uuid4().hex[:6].upper()}",
-        "fir_packet_ready": True
+        "fir_packet_ready": True,
+        "intelligence_report": "AUTOMATED_DISSEMINATION_COMPLETE"
     }
 
 @router.post("/direct-conclude")

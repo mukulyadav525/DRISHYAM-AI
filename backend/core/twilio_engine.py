@@ -20,6 +20,7 @@ from core.config import settings
 from core.voice_engine import voice_engine
 from core.deepgram_engine import deepgram_engine
 from core.ai import honeypot_ai
+from core.intel_engine import intel_engine
 
 logger = logging.getLogger("drishyam.twilio")
 
@@ -306,66 +307,36 @@ class TwilioEngine:
         except Exception as e:
             logger.error(f"TWILIO STREAM: Audio processing error: {e}")
 
-    async def _analyze_and_report(self, stream_id: str, history: list, full_audio: bytes = None) -> None:
-        """Analyze the call after it ends and generate a crime report."""
+    async def _analyze_and_report(self, stream_id: str, history: list, full_audio: bytes = b"") -> None:
+        """Analyze the call after it ends and generate a crime report via IntelEngine."""
         try:
             from core.database import SessionLocal
-            from models.database import HoneypotSession, CrimeReport, IntelligenceAlert
-            import json
-
-            # 1. AI Analysis
-            analysis = await honeypot_ai.analyze_scam(history)
             
-            # 1a. Enhanced Deepgram Forensics if audio is available
-            if full_audio and len(full_audio) > 1000:
-                logger.info(f"TWILIO ANALYSIS: Running Deepgram Forensics for {stream_id}")
-                dg_forensics = await deepgram_engine.analyze_recording(full_audio)
-                if dg_forensics:
-                    analysis["vocal_intelligence"] = dg_forensics
-                    # Combine summaries or insights
-                    if dg_forensics.get("summary"):
-                        analysis["details"] = f"{analysis.get('details', '')}\n\nAI Summary: {dg_forensics['summary']}"
-            
-            logger.info(f"TWILIO ANALYSIS: Results for {stream_id}: {analysis.get('scam_type')}")
-
-            # Use explicit session open/close (SessionLocal is not a context manager)
             db = SessionLocal()
             try:
-                session = db.query(HoneypotSession).filter(HoneypotSession.session_id == stream_id).first()
-                if session:
-                    session.status = "completed"
-                    session.recording_analysis_json = analysis
+                # 1. Run unified intelligence processing
+                # This handles AI analysis, cross-agency reports, and Auto-FIR
+                await intel_engine.process_session_completion(stream_id, db)
+                
+                # 2. Add specific audio forensics if audio is available
+                if full_audio and len(full_audio) > 1000:
+                    logger.info(f"TWILIO ANALYSIS: Running additional Deepgram Forensics for {stream_id}")
+                    dg_forensics = await deepgram_engine.analyze_recording(full_audio)
                     
-                    # 2. Generate Crime Report if risk is high
-                    if analysis.get("risk_score", 0) > 0.7 or (analysis.get("scam_type", "UNKNOWN") not in ["UNKNOWN", "ERROR"]):
-                        report_id = f"AUTO-{uuid.uuid4().hex[:6].upper()}"
-                        new_report = CrimeReport(
-                            report_id=report_id,
-                            category="police",
-                            scam_type=analysis.get("scam_type", "UNKNOWN"),
-                            platform="Voice Call",
-                            priority="HIGH" if analysis.get("risk_score", 0) > 0.8 else "MEDIUM",
-                            status="PENDING",
-                            reporter_num=session.caller_num,
-                            metadata_json=analysis
-                        )
-                        db.add(new_report)
-                        
-                        # 3. Add to live Intelligence Alerts for Dashboard
-                        alert = IntelligenceAlert(
-                            severity="HIGH",
-                            message=f"Automated detection: {analysis.get('scam_type')} attempt from {session.caller_num}",
-                            category="VOICE_SCAM",
-                        )
-                        db.add(alert)
-                        
-                    db.commit()
-                    logger.info(f"TWILIO REPORT: Created report for session {stream_id}")
+                    # Update the session with audio forensics
+                    from models.database import HoneypotSession
+                    session = db.query(HoneypotSession).filter(HoneypotSession.session_id == stream_id).first()
+                    if session and dg_forensics:
+                        if not session.recording_analysis_json:
+                            session.recording_analysis_json = {}
+                        session.recording_analysis_json["vocal_forensics"] = dg_forensics
+                        db.commit()
+
             finally:
                 db.close()
 
         except Exception as e:
-            logger.error(f"TWILIO ANALYSIS: Failed: {e}")
+            logger.error(f"TWILIO ANALYSIS: Unified processing failed: {e}")
 
     async def _send_audio_to_stream(
 
