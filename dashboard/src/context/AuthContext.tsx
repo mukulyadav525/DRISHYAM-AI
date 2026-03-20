@@ -69,13 +69,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Restore session from localStorage on mount
     useEffect(() => {
-        const stored = localStorage.getItem("sentinel_auth");
+        const stored = localStorage.getItem("drishyam_auth");
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
                 setUser(parsed);
             } catch {
-                localStorage.removeItem("sentinel_auth");
+                localStorage.removeItem("drishyam_auth");
             }
         }
         setIsLoading(false);
@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             };
 
             setUser(authUser);
-            localStorage.setItem("sentinel_auth", JSON.stringify(authUser));
+            localStorage.setItem("drishyam_auth", JSON.stringify(authUser));
         } catch (error: any) {
             console.error("Login request failed:", error);
             throw error;
@@ -129,7 +129,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const logout = useCallback(() => {
         setUser(null);
-        localStorage.removeItem("sentinel_auth");
+        localStorage.removeItem("drishyam_auth");
     }, []);
 
     return (

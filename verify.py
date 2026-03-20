@@ -1,6 +1,6 @@
 """
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║   SENTINEL 1930 — BASIG COMPLETE TEST SUITE v3.0                              ║
+║   DRISHYAM 1930 — BASIG COMPLETE TEST SUITE v3.0                              ║
 ║   Bharat Anti-Scam Intelligence Grid                                           ║
 ║                                                                                ║
 ║   41 Testable Units across 15 Modules                                         ║
@@ -26,9 +26,9 @@
 ╚══════════════════════════════════════════════════════════════════════════════════╝
 
 Usage:
-    python test_sentinel_1930_full.py              # run all 41 scenarios
-    python test_sentinel_1930_full.py --module 2   # run only Module 2 tests
-    python test_sentinel_1930_full.py --dry-run    # validate structure only (no HTTP)
+    python test_drishyam_1930_full.py              # run all 41 scenarios
+    python test_drishyam_1930_full.py --module 2   # run only Module 2 tests
+    python test_drishyam_1930_full.py --dry-run    # validate structure only (no HTTP)
 """
 
 import sys
@@ -50,7 +50,7 @@ except ImportError:
 #  CONFIG
 # ─────────────────────────────────────────────────────────────────────────────
 BASE_URL  = "http://localhost:8000/api/v1"
-HEADERS   = {"Content-Type": "application/json", "X-Sentinel-Key": "test-key-1930"}
+HEADERS   = {"Content-Type": "application/json", "X-DRISHYAM-Key": "test-key-1930"}
 T_DEFAULT = 12   # default request timeout (seconds)
 T_AGENT   = 90   # AI honeypot / long-inference timeout
 T_FIR     = 65   # FIR generation SLA ceiling
@@ -626,7 +626,7 @@ def test_m5_u3_sarpanch_network() -> None:
         "scam_type"      : "PM_KISAN_IMPERSONATION",
         "alert_hindi"    : "सावधान! पीएम किसान के नाम पर ठगी हो रही है। OTP किसी को न दें।",
         "sarpanch_count" : 847,
-        "source"         : "SENTINEL_INTELLIGENCE",
+        "source"         : "DRISHYAM_INTELLIGENCE",
     }
     res = _post("/notifications/sarpanch-network/broadcast", body)
     _assert(res, "broadcast_id")
@@ -743,9 +743,9 @@ def test_m7_u1_citizen_push_alert() -> None:
     _assert(res, "delivery_rate_percent")
 
 
-def test_m7_u2_sentinel_score() -> None:
-    """M7-U2  Sentinel Score — opt-in cyber safety rating (0–100), device-local privacy."""
-    unit("M7-U2  Sentinel Score — personal cyber safety rating")
+def test_m7_u2_drishyam_score() -> None:
+    """M7-U2  DRISHYAM Score — opt-in cyber safety rating (0–100), device-local privacy."""
+    unit("M7-U2  DRISHYAM Score — personal cyber safety rating")
     body = {
         "citizen_id"        : "CITIZEN-ANON-" + str(uuid.uuid4())[:8],
         "drills_completed"  : 5,
@@ -753,14 +753,14 @@ def test_m7_u2_sentinel_score() -> None:
         "hygiene_behaviours": ["2FA_ENABLED", "DIGILOCKER_VERIFIED", "OTP_NEVER_SHARED"],
         "consent_given"     : True,
     }
-    res = _post("/citizen/sentinel-score/compute", body)
+    res = _post("/citizen/drishyam-score/compute", body)
     _assert(res, "score")           # 0–100
     _assert(res, "decile_band")     # 1–10 (only this shared with banks)
     _assert(res, "computed_locally", True)
     _assert(res, "central_storage", False)
     _assert(res, "badge")           # GOLD_SHIELD / SILVER / STANDARD
     if res:
-        info(f"Sentinel Score: {res.get('score')}/100  Band: {res.get('decile_band')}")
+        info(f"DRISHYAM Score: {res.get('score')}/100  Band: {res.get('decile_band')}")
 
 
 def test_m7_u3_family_trust_circle() -> None:
@@ -1293,8 +1293,8 @@ def test_m13_u2_personalised_vulnerability() -> None:
 
 
 def test_m13_u3_corporate_b2b_shield() -> None:
-    """M13-U3  Sentinel Workplace Shield — Rs.49/employee/month, HR dashboard."""
-    unit("M13-U3  Corporate B2B — Sentinel Workplace Shield")
+    """M13-U3  DRISHYAM Workplace Shield — Rs.49/employee/month, HR dashboard."""
+    unit("M13-U3  Corporate B2B — DRISHYAM Workplace Shield")
     body = {
         "company_gstin"    : "29AABCT1332L1ZS",
         "employee_count"   : 500,
@@ -1315,7 +1315,7 @@ def test_m13_u4_nep_school_curriculum() -> None:
     """M13-U4  NEP 2020 DIKSHA school curriculum — Class 8–10, 25 Cr students."""
     unit("M13-U4  NEP / DIKSHA School Curriculum Integration (25 Cr students)")
     body = {
-        "diksha_course_id"   : "SENTINEL-CYBER-SAFETY-2024",
+        "diksha_course_id"   : "DRISHYAM-CYBER-SAFETY-2024",
         "class_levels"       : ["8", "9", "10"],
         "states_active"      : ["UP", "MH", "TN", "WB", "KA"],
         "languages_available": ["hi", "en", "ta", "bn", "kn"],
@@ -1645,7 +1645,7 @@ ALL_TESTS = [
     ("M6-U4", "Scam Weather Panel",              test_m6_u4_scam_weather_panel),
     # Module 7
     ("M7-U1", "Citizen Push Alert",              test_m7_u1_citizen_push_alert),
-    ("M7-U2", "Sentinel Score",                  test_m7_u2_sentinel_score),
+    ("M7-U2", "DRISHYAM Score",                  test_m7_u2_drishyam_score),
     ("M7-U3", "Family Trust Circle",             test_m7_u3_family_trust_circle),
     ("M7-U4", "Scam Habit Breaker",              test_m7_u4_scam_habit_breaker),
     ("M7-U5", "Hyper-Local Scam Alert",          test_m7_u5_hyper_local_alert),
@@ -1709,7 +1709,7 @@ def run(module_filter: Optional[int] = None, dry_run: bool = False) -> None:
     banner = f"""
 {BOLD}{B}
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║   SENTINEL 1930  —  BASIG COMPLETE TEST SUITE v3.0                            ║
+║   DRISHYAM 1930  —  BASIG COMPLETE TEST SUITE v3.0                            ║
 ║   {len(ALL_TESTS)} Test Units · 15 Modules · 4 Integrations                               ║
 ║   Mode: {'DRY-RUN (structure only)' if dry_run else 'LIVE (requires server at '+BASE_URL+')'}
 ╚══════════════════════════════════════════════════════════════════════════════════╝
@@ -1750,7 +1750,7 @@ def run(module_filter: Optional[int] = None, dry_run: bool = False) -> None:
   {R}FAIL  : {_fail}{RESET}{BOLD}{B}
   {DIM}SKIP  : {_skip}{RESET}{BOLD}{B}
   ─────────────────────────────────────────
-  {'⊘  DRY-RUN — no HTTP calls made.' if dry_run else '✔  Live run against Sentinel server.'}
+  {'⊘  DRY-RUN — no HTTP calls made.' if dry_run else '✔  Live run against DRISHYAM server.'}
 {BAR}
 {RESET}""")
     if _fail > 0:
@@ -1761,7 +1761,7 @@ def run(module_filter: Optional[int] = None, dry_run: bool = False) -> None:
 #  CLI
 # ─────────────────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Sentinel 1930 Full Test Suite")
+    parser = argparse.ArgumentParser(description="DRISHYAM 1930 Full Test Suite")
     parser.add_argument("--module",  type=int, default=None,
                         help="Run tests for a single module (1–15)")
     parser.add_argument("--dry-run", action="store_true",

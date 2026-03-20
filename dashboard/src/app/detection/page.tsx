@@ -79,22 +79,22 @@ export default function DetectionGrid() {
     });
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("detection_grid")}</h2>
-                    <p className="text-silver mt-1">{t("telecom_analysis")}</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">{t("detection_grid")}</h2>
+                    <p className="text-silver mt-1 text-sm">{t("telecom_analysis")}</p>
                 </div>
-                <div className="flex gap-4">
-                    <div className="relative">
+                <div className="flex gap-3 sm:gap-4">
+                    <div className="relative flex-1 sm:flex-none">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-silver" size={16} />
                         <input
                             type="text"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder={t("search_number")}
-                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none focus:border-saffron/40 transition-colors w-64"
+                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none focus:border-saffron/40 transition-colors w-full sm:w-64"
                         />
                     </div>
                     <button
@@ -102,7 +102,7 @@ export default function DetectionGrid() {
                             setFilterRisk(prev => prev === 'ALL' ? 'SCAM' : 'ALL');
                             performAction('FILTER_RISK', filterRisk === 'ALL' ? 'SCAM' : 'ALL');
                         }}
-                        className={`p-2 border rounded-lg transition-colors ${filterRisk === 'SCAM' ? 'bg-redalert text-white border-redalert' : 'bg-white border-silver/10 text-silver hover:text-indblue'}`}>
+                        className={`p-2 border rounded-lg transition-colors flex-shrink-0 ${filterRisk === 'SCAM' ? 'bg-redalert text-white border-redalert' : 'bg-white border-silver/10 text-silver hover:text-indblue'}`}>
                         <Filter size={20} />
                     </button>
                 </div>
@@ -127,7 +127,8 @@ export default function DetectionGrid() {
                         <Loader2 className="animate-spin text-indblue" size={32} />
                     </div>
                 ) : (
-                    <table className="w-full text-left border-collapse">
+                    <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[700px]">
                         <thead>
                             <tr className="bg-boxbg/50 text-[10px] font-bold text-silver uppercase tracking-widest">
                                 <th className="px-6 py-4">{t("source_number")}</th>
@@ -196,6 +197,7 @@ export default function DetectionGrid() {
                             ))}
                         </tbody>
                     </table>
+                    </div>
                 )}
 
                 <div className="p-4 bg-boxbg/20 flex justify-between items-center px-6">

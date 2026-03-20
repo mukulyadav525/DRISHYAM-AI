@@ -32,7 +32,7 @@ def generate_report(output_path):
     c.setFont("Helvetica-Bold", 32)
     c.setStrokeColor(colors.HexColor("#0b1739"))
     c.setFillColor(colors.HexColor("#0b1739"))
-    c.drawString(2.5*cm, height - 3*cm, "SENTINEL 1930")
+    c.drawString(2.5*cm, height - 3*cm, "DRISHYAM AI")
     
     c.setFont("Helvetica-Bold", 10)
     c.setFillColor(colors.silver)
@@ -120,13 +120,13 @@ def generate_report(output_path):
     c.setFillColor(colors.grey, alpha=0.05)
     c.translate(width/2, height/2)
     c.rotate(45)
-    c.drawCentredString(0, 0, "SENTINEL 1930")
+    c.drawCentredString(0, 0, "DRISHYAM AI")
     c.restoreState()
 
     c.showPage()
     c.save()
 
 if __name__ == "__main__":
-    out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "sentinel_template.pdf")
+    out = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "drishyam_template.pdf")
     generate_report(out)
     print(f"Professional PDF Report generated at: {out}")

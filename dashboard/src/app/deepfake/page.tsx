@@ -64,7 +64,7 @@ export default function DeepfakePage() {
         performAction('SCAN_VIDEO', 'FORENSIC_PIPELINE');
 
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
+            const authStr = localStorage.getItem('drishyam_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
 
             let res;
@@ -142,7 +142,7 @@ export default function DeepfakePage() {
         if (!aiResult?.id) return;
         
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
+            const authStr = localStorage.getItem('drishyam_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
             
             const res = await fetch(`${API_BASE}/forensic/report/${aiResult.id}`, {
@@ -210,10 +210,10 @@ export default function DeepfakePage() {
     };
 
     return (
-        <div className="space-y-8">
-            <div className="flex justify-between items-end">
+        <div className="space-y-6 sm:space-y-8">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">Deepfake Defense</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">Deepfake Defense</h2>
                     <p className="text-silver mt-1">Multi-layer forensic analysis for Images, Videos, Audio, and PDFs.</p>
                 </div>
                 <div className="flex gap-3">

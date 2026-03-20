@@ -100,7 +100,7 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
         </div>
 
         {/* Content */}
-        <div className="p-8 max-h-[60vh] overflow-y-auto">
+        <div className="p-5 sm:p-8 max-h-[60vh] overflow-y-auto">
           {isLoading && requests.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12">
               <Loader2 className="animate-spin text-indblue mb-4" size={32} />
@@ -113,7 +113,7 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
           ) : (
             <div className="space-y-4">
               {requests.map((req) => (
-                <div key={req.id} className="p-5 rounded-2xl bg-boxbg border border-silver/10 flex items-center justify-between group hover:border-indblue/20 transition-all">
+                <div key={req.id} className="p-4 sm:p-5 rounded-2xl bg-boxbg border border-silver/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group hover:border-indblue/20 transition-all">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 bg-white rounded-xl shadow-sm border border-silver/5 flex items-center justify-center text-indblue">
                       <Phone size={20} />

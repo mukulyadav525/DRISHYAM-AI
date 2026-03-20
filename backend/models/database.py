@@ -26,7 +26,7 @@ class User(Base):
     full_name = Column(String, nullable=True)
     role = Column(String, nullable=False, default=UserRole.COMMON.value)
     is_active = Column(Boolean, default=True)
-    sentinel_score = Column(Integer, default=100) # [AC-M7-05] Fraud Immunity Score
+    drishyam_score = Column(Integer, default=100) # [AC-M7-05] Fraud Immunity Score
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 class CallRecord(Base):

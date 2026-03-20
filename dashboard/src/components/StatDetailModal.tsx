@@ -96,8 +96,8 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                         </div>
 
                         {/* Content */}
-                        <div className="p-8 space-y-8">
-                            <div className="grid grid-cols-3 gap-4">
+                        <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                                 {current.metrics.map((m: any, i: number) => (
                                     <div key={i} className="p-4 bg-boxbg rounded-2xl border border-silver/10 hover:border-silver/20 transition-all">
                                         <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1">{m.label}</p>
@@ -115,7 +115,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                                 <h4 className="flex items-center gap-2 text-xs font-bold text-indblue uppercase tracking-widest">
                                     <Zap size={16} className="text-saffron" /> Tactical Menu & Actions
                                 </h4>
-                                <div className="grid grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                                     {current.actions.map((action: string, i: number) => (
                                         <button
                                             key={i}
@@ -129,7 +129,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-silver/10 flex justify-between items-center">
+                            <div className="pt-4 sm:pt-6 border-t border-silver/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div className="flex items-center gap-4">
                                     <div className="flex items-center gap-2 text-silver">
                                         <Globe size={14} />

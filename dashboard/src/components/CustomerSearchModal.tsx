@@ -30,7 +30,7 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                         className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative z-10 border border-silver/20"
                     >
                         {/* Header */}
-                        <div className={`p-8 text-white relative flex items-center gap-6 ${(data?.score || 0) > 700 ? 'bg-indblue' : 'bg-redalert'}`}>
+                        <div className={`p-6 sm:p-8 text-white relative flex flex-col sm:flex-row items-center gap-4 sm:gap-6 ${(data?.score || 0) > 700 ? 'bg-indblue' : 'bg-redalert'}`}>
                             <button
                                 onClick={onClose}
                                 className="absolute top-6 right-6 p-2 hover:bg-white/10 rounded-full transition-colors"
@@ -57,8 +57,8 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                         </div>
 
                         {/* Content */}
-                        <div className="p-8 space-y-8">
-                            <div className="grid grid-cols-3 gap-6">
+                        <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center">
                                     <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-2">DRISHYAM Score</p>
                                     <p className={`text-3xl font-black ${(data?.score || 0) > 700 ? 'text-indgreen' : 'text-redalert'}`}>{data?.score || 0}</p>
@@ -95,7 +95,7 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                                 </div>
                             </div>
 
-                            <div className="pt-6 border-t border-silver/10 flex justify-between items-center">
+                            <div className="pt-4 sm:pt-6 border-t border-silver/10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div className="flex items-center gap-2 text-silver">
                                     <History size={14} />
                                     <span className="text-[10px] font-bold uppercase tracking-wider">Last Activity: {data?.details?.last_active ? new Date(data.details.last_active).toLocaleString() : 'N/A'}</span>

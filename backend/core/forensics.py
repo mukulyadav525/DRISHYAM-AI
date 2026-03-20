@@ -8,7 +8,7 @@ try:
 except ImportError:
     Image = None
 
-logger = logging.getLogger("sentinel.forensics")
+logger = logging.getLogger("drishyam.forensics")
 
 class ForensicEngine:
     """

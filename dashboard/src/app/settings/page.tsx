@@ -19,7 +19,7 @@ export default function SettingsPage() {
         <div className="space-y-8 max-w-4xl">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold text-indblue tracking-tight">System Settings</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">System Settings</h2>
                 <p className="text-silver mt-1">Manage grid parameters, security protocols, and node connectivity.</p>
             </div>
 

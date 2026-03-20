@@ -13,8 +13,8 @@ from core.ai import honeypot_ai
 from core.database import get_db
 from models.database import HoneypotPersona, HoneypotSession, HoneypotMessage
 
-logger = logging.getLogger("sentinel.voice")
-router = APIRouter(prefix="/voice", tags=["Voice Chat"])
+logger = logging.getLogger("drishyam.voice")
+router = APIRouter(tags=["Voice Chat"])
 
 RECORDINGS_DIR = "static/recordings"
 # Get the absolute path to the backend directory
@@ -174,5 +174,5 @@ async def speech_to_text(request: STTRequest):
 async def list_personas(db: Session = Depends(get_db)):
     personas = db.query(HoneypotPersona).all()
     if not personas:
-        return {"personas": [{"name": "Sentinel AI", "language": "en", "speaker": "Female", "pace": 1.0}]}
+        return {"personas": [{"name": "DRISHYAM AI", "language": "en", "speaker": "Female", "pace": 1.0}]}
     return {"personas": [{"name": p.name, "language": p.language, "speaker": p.speaker, "pace": p.pace} for p in personas]}

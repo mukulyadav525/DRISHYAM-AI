@@ -1,5 +1,5 @@
 // Production Railway URL as default fallback
-const PRODUCTION_API_URL = "https://sentinel-1930-production.up.railway.app/api/v1";
+const PRODUCTION_API_URL = "https://drishyam-1930-production.up.railway.app/api/v1";
 
 let API_BASE_RAW = (process.env.NEXT_PUBLIC_API_BASE || PRODUCTION_API_URL).trim();
 

@@ -2,7 +2,7 @@ import logging
 from typing import List, Dict, Any
 import random
 
-logger = logging.getLogger("sentinel.graph")
+logger = logging.getLogger("drishyam.graph")
 
 class FraudIntelligenceGraph:
     """

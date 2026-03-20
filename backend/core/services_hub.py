@@ -1,5 +1,5 @@
 """
-Sentinel 1930 – Unified Backend Services & Database Hub.
+DRISHYAM AI – Unified Backend Services & Database Hub.
 All services connect to real databases and external APIs.
 No mocks, no stubs — production only.
 """
@@ -9,7 +9,7 @@ import logging
 import uuid
 from core.config import settings
 
-logger = logging.getLogger("sentinel.services")
+logger = logging.getLogger("drishyam.services")
 
 
 class BackendService:
@@ -76,7 +76,7 @@ class ClientDBHub:
         """Generate official digital FIR packet."""
         import datetime
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        content = f"SENTINEL-1930 FIR PACKET\nCASE:{uuid.uuid4().hex[:8].upper()}\nTIME:{timestamp}\n"
+        content = f"DRISHYAM AI FIR PACKET\nCASE:{uuid.uuid4().hex[:8].upper()}\nTIME:{timestamp}\n"
         for ent in entities:
              content += f"- {ent.get('value')} ({ent.get('type')})\n"
         return content

@@ -77,11 +77,11 @@ export default function AlertsPage() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("public_alert_console")}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">{t("public_alert_console")}</h2>
                     <p className="text-silver mt-1">{t("broadcast_warnings")}</p>
                 </div>
                 <div className="flex gap-3">

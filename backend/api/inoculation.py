@@ -27,7 +27,7 @@ async def assess_vulnerability(body: dict, db: Session = Depends(get_db)):
 async def corporate_enrol(body: dict, db: Session = Depends(get_db)):
     return {
         "subscription_id": f"CORP-{uuid.uuid4().hex[:8].upper()}",
-        "hr_dashboard_url": "https://sentinel.gov.in/corporate/dashboard",
+        "hr_dashboard_url": "https://drishyam.gov.in/corporate/dashboard",
         "team_vulnerability_score_enabled": True,
         "first_drill_scheduled": True
     }

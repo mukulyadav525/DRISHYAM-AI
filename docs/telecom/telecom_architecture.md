@@ -2,7 +2,7 @@
 ## National Gateway Interface (NGI)
 
 ### 1. SIP Handoff Protocol
-- **Endpoint**: `https://api.sentinel1930.gov.in/v1/telecom/handoff`
+- **Endpoint**: `https://api.drishyam1930.gov.in/v1/telecom/handoff`
 - **Method**: POST
 - **Payload**:
   ```json

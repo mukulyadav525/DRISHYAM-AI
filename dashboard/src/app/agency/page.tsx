@@ -123,7 +123,7 @@ export default function AgencyPage() {
             {/* Header & Role Switcher */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight underline decoration-indblue decoration-4 underline-offset-8">Agency Operational Portal</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-indblue decoration-4 underline-offset-8">Agency Operational Portal</h2>
                     <p className="text-silver mt-4 italic font-medium">Tactical Interface for Law Enforcement & Financial Institutions (Module 7/8/9).</p>
                 </div>
                 <div className="flex bg-white p-1 rounded-2xl border border-silver/10 shadow-sm">

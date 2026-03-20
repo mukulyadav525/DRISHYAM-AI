@@ -52,7 +52,7 @@ def run_test():
         logger.info(f"Phishing Detected: {is_phishing} (PASS: Result matches expected)")
         
         # 3. Phishing Link Blocked
-        logger.info("[STEP 2] Ramesh clicks link -> Blocked by Sentinel")
+        logger.info("[STEP 2] Ramesh clicks link -> Blocked by DRISHYAM")
         action = SystemAction(
             user_id=ramesh.id,
             action_type="INTERCEPT_MESSAGE",

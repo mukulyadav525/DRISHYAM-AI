@@ -1,6 +1,6 @@
 """
-SENTINEL-ML: Scam Number Classifier — Training Script
-Generates synthetic training data representative of SENTINEL-1930's threat profile
+DRISHYAM-ML: Scam Number Classifier — Training Script
+Generates synthetic training data representative of DRISHYAM AI's threat profile
 and trains a RandomForestClassifier. Saves the model to model/model.pkl.
 
 Run: python model/train.py
@@ -83,7 +83,7 @@ def generate_synthetic_data(n_samples: int = 5000) -> pd.DataFrame:
 
 
 def train():
-    print("🔬 SENTINEL-ML: Training Scam Classifier...")
+    print("🔬 DRISHYAM-ML: Training Scam Classifier...")
     df = generate_synthetic_data(n_samples=5000)
 
     X = df[FEATURES]

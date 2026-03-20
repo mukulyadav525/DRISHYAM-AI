@@ -1,5 +1,5 @@
 ================================================================================
-SENTINEL 1930 — COMPLETE OPERATIONAL CHECKLIST
+DRISHYAM 1930 — COMPLETE OPERATIONAL CHECKLIST
 Bharat Anti-Scam Intelligence Grid (BASIG)
 Version: 3.0 | Use this before EVERY demo, pilot, or production deploy
 For My India
@@ -286,7 +286,7 @@ Timer should be running. Target: complete scenario in under 5 minutes.
 C1. PRE-SCENARIO SETUP
 ────────────────────────────────────────────────────────────────────────────────
 
-[ ] (*) Citizen test phone has Sentinel app installed and logged in
+[ ] (*) Citizen test phone has DRISHYAM app installed and logged in
 [ ] (*) "Suresh" is added as family trust circle contact
 [ ] (*) Test SIP number configured as the scam target
 [ ] (*) Scammer phone ready to call test SIP number
@@ -387,7 +387,7 @@ C5. PHASE 4 — POST-CALL AUTOMATION (T+4:20 to T+5:00)
 [ ] (*) Citizen SMS delivered to Ramesh's test number
 [ ] (*) SMS is in Hindi and contains a Case ID
 [ ] (*) Family trust circle alert sent to "Suresh" number
-[ ] (*) Sentinel Score updated for Ramesh (increases by at least 3 points)
+[ ] (*) DRISHYAM Score updated for Ramesh (increases by at least 3 points)
 [ ] (*) Recovery companion prompt appears in Ramesh's app
 [ ] (*) Total time from call start to police notification is under 5 minutes
 [ ] (*) All events are logged with timestamps in audit trail
@@ -404,7 +404,7 @@ C6. PHASE 5 — FINAL SCREEN VERIFICATION
 [ ] (*) App shows "No money transferred. No data shared."
 [ ] (*) App shows "Police have been notified."
 [ ] (*) Recovery companion screen accessible from incident
-[ ] (*) Sentinel Score screen shows updated (increased) score
+[ ] (*) DRISHYAM Score screen shows updated (increased) score
 [ ] (*) Police dashboard shows new case in Patna queue
 [ ] (*) Police dashboard case has FIR PDF attached
 [ ] (*) Graph view shows 4+ new nodes from this incident
@@ -633,7 +633,7 @@ QUICK REFERENCE — CRITICAL THRESHOLDS
     System uptime                   | 99.9%         | < 99%
 
 ================================================================================
-END OF CHECKLIST — SENTINEL 1930 v3.0
+END OF CHECKLIST — DRISHYAM 1930 v3.0
 
 "168 items. Every single one.
  Because on the other side of each checkbox is a citizen like Ramesh

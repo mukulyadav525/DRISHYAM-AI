@@ -156,21 +156,21 @@ export default function OverviewPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex justify-between items-end">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("welcome")}</h2>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">{t("welcome")}</h2>
             <div className="px-2 py-0.5 bg-indgreen/10 border border-indgreen/20 rounded flex items-center gap-1">
               <ShieldCheck size={12} className="text-indgreen" />
               <span className="text-[10px] font-bold text-indgreen uppercase tracking-wider">Security Audit: PASSED</span>
             </div>
           </div>
-          <p className="text-silver mt-1">{t("sub_welcome")}</p>
+          <p className="text-silver mt-1 text-sm">{t("sub_welcome")}</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-3 flex-shrink-0">
           <button
             onClick={() => downloadSimulatedFile('overview', 'pdf')}
-            className="px-4 py-2 bg-white border border-silver/20 rounded-lg text-sm font-semibold text-charcoal hover:bg-boxbg transition-colors">
+            className="px-3 sm:px-4 py-2 bg-white border border-silver/20 rounded-lg text-xs sm:text-sm font-semibold text-charcoal hover:bg-boxbg transition-colors">
             {t("export_report")}
           </button>
           <button
@@ -178,7 +178,7 @@ export default function OverviewPage() {
               performAction('VIEW_MAP');
               setShowMap(true);
             }}
-            className="px-4 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2">
+            className="px-3 sm:px-4 py-2 bg-saffron text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2">
             {t("view_live_map")} <ArrowUpRight size={16} />
           </button>
         </div>
@@ -356,10 +356,10 @@ export default function OverviewPage() {
       {/* Floating Management Button */}
       <button 
         onClick={() => setIsManagementOpen(true)}
-        className="fixed bottom-32 right-8 w-16 h-16 bg-indblue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-50 animate-bounce hover:animate-none group"
+        className="fixed bottom-20 right-4 lg:bottom-32 lg:right-8 w-14 h-14 lg:w-16 lg:h-16 bg-indblue text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all z-40 animate-bounce hover:animate-none group"
       >
-        <Settings size={28} className="group-hover:rotate-90 transition-transform duration-500" />
-        <div className="absolute right-20 bg-white border border-silver/10 px-4 py-2 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+        <Settings size={24} className="lg:w-7 lg:h-7 group-hover:rotate-90 transition-transform duration-500" />
+        <div className="absolute right-16 lg:right-20 bg-white border border-silver/10 px-4 py-2 rounded-xl shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hidden sm:block">
             <p className="text-[10px] font-black text-indblue uppercase tracking-widest">Command Management</p>
         </div>
       </button>

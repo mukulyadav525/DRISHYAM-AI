@@ -1,5 +1,5 @@
 """
-Sentinel 1930 – Twilio Voice Call Engine.
+DRISHYAM 1930 – Twilio Voice Call Engine.
 Enables outbound AI-powered phone calls using Twilio Media Streams.
 The AI honeypot persona talks to the target in real-time via:
   Twilio Audio → STT (Sarvam) → AI Response (Sarvam-M) → TTS (Sarvam) → Twilio Audio
@@ -19,7 +19,7 @@ from core.config import settings
 from core.voice_engine import voice_engine
 from core.ai import honeypot_ai
 
-logger = logging.getLogger("sentinel.twilio")
+logger = logging.getLogger("drishyam.twilio")
 
 
 class TwilioCallEngine:
@@ -121,7 +121,7 @@ class TwilioCallEngine:
         ws_url = f"{ws_scheme}://{ws_base}/api/v1/twilio/media-stream"
 
         connect = Connect()
-        stream = connect.stream(url=ws_url, name=f"sentinel-{stream_id}")
+        stream = connect.stream(url=ws_url, name=f"drishyam-{stream_id}")
         stream.parameter(name="stream_id", value=stream_id)
         stream.parameter(name="persona", value=persona)
         response.append(connect)

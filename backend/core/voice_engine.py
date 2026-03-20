@@ -1,5 +1,5 @@
 """
-Sentinel 1930 – Sarvam AI Voice Engine.
+DRISHYAM AI – Sarvam AI Voice Engine.
 Real-time Speech-to-Text (STT) and Text-to-Speech (TTS)
 for the AI Honeypot system using Sarvam AI's Indian-language APIs.
 Production only — no mocks.
@@ -15,7 +15,7 @@ import httpx
 from typing import Dict, Any
 from core.config import settings
 
-logger = logging.getLogger("sentinel.voice")
+logger = logging.getLogger("drishyam.voice")
 
 SARVAM_BASE_URL = "https://api.sarvam.ai"
 

@@ -30,7 +30,7 @@ async def analyze_deepfake(
     try:
         # Construct a prompt for Sarvam AI to act as a forensic scanner
         prompt = """
-        You are the Sentinel 1930 Visual Forensic Engine. 
+        You are the DRISHYAM 1930 Visual Forensic Engine. 
         Perform a forensic analysis for a potential deepfake.
         Return a JSON response with:
         1. verdict: Either "DEEPFAKE" or "VERIFIED"

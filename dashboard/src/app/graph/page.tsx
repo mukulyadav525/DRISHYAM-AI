@@ -55,9 +55,9 @@ export default function FraudGraphPage() {
     return (
         <div className="space-y-8 h-full flex flex-col">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("fraud_graph")}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">{t("fraud_graph")}</h2>
                     <p className="text-silver mt-1">{t("cross_entity")}</p>
                 </div>
                 <div className="flex gap-3">
@@ -66,7 +66,7 @@ export default function FraudGraphPage() {
                         <input
                             type="text"
                             placeholder={t("query_entity")}
-                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none w-64 shadow-sm"
+                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none w-full sm:w-64 shadow-sm"
                         />
                     </div>
                     <button

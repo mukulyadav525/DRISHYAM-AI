@@ -40,7 +40,7 @@ async def hyper_local_alert(body: dict, db: Session = Depends(get_db)):
     return {
         "alert_id": f"HYP-{uuid.uuid4().hex[:6].upper()}",
         "area_label": "Sector 14, Gurugram",
-        "density_map_url": "https://maps.sentinel.gov.in/density/gurugram-s14",
+        "density_map_url": "https://maps.drishyam.gov.in/density/gurugram-s14",
         "incidents_anonymised": True
     }
 

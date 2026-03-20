@@ -6,8 +6,8 @@ import datetime
 
 router = APIRouter()
 
-@router.post("/sentinel-score/compute")
-async def compute_sentinel_score(body: dict, db: Session = Depends(get_db)):
+@router.post("/drishyam-score/compute")
+async def compute_drishyam_score(body: dict, db: Session = Depends(get_db)):
     return {
         "score": 88,
         "decile_band": 9,

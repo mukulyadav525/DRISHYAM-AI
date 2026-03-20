@@ -58,7 +58,7 @@ export default function LaunchPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight underline decoration-indgreen decoration-4 underline-offset-8">Launch Control Center</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-indgreen decoration-4 underline-offset-8">Launch Control Center</h2>
                     <p className="text-silver mt-4 italic font-medium">Strategic Planning & National Rollout Command (Phases 34-36).</p>
                 </div>
                 <div className="flex gap-2">

@@ -61,7 +61,7 @@ async def get_roi(period: str = "MONTH", agency: str = "MHA", db: Session = Depe
         "citizens_protected": 1240000,
         "firs_generated": 8470,
         "mule_accounts_frozen": 1242,
-        "embeddable_widget_url": "https://gov.in/sentinel/roi-widget"
+        "embeddable_widget_url": "https://gov.in/drishyam/roi-widget"
     }
 
 from typing import Optional

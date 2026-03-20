@@ -10,9 +10,9 @@ import datetime
 
 # Configure Celery
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-celery_app = Celery("sentinel_worker", broker=REDIS_URL, backend=REDIS_URL)
+celery_app = Celery("drishyam_worker", broker=REDIS_URL, backend=REDIS_URL)
 
-logger = logging.getLogger("sentinel.worker")
+logger = logging.getLogger("drishyam.worker")
 
 @celery_app.task(name="perform_forensic_analysis")
 def perform_forensic_analysis(upload_id: int):
@@ -84,7 +84,7 @@ def perform_forensic_analysis(upload_id: int):
             guardians = db.query(TrustLink).filter(TrustLink.user_id == upload.user_id).all()
             for g in guardians:
                 # Trigger Twilio/SMS (Simulated)
-                print(f"SENTINEL ALERT: Deepfake detected for user {upload.user_id}. Notifying {g.guardian_name} at {g.guardian_phone}")
+                print(f"DRISHYAM ALERT: Deepfake detected for user {upload.user_id}. Notifying {g.guardian_name} at {g.guardian_phone}")
             
             # 3. Create Crime Report
             new_report = CrimeReport(

@@ -6,7 +6,7 @@
 
 ### 1. Create virtual environment & install dependencies
 ```bash
-cd sentinel-ml
+cd drishyam-ml
 python3 -m venv .venv
 source .venv/bin/activate   # On Windows: .venv\Scripts\activate
 pip install -r requirements.txt

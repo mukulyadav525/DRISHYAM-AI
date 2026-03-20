@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name VARCHAR(255),
     role VARCHAR(50) NOT NULL DEFAULT 'common',
     is_active BOOLEAN DEFAULT TRUE,
-    sentinel_score INTEGER DEFAULT 100,
+    drishyam_score INTEGER DEFAULT 100,
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 

@@ -83,23 +83,24 @@ export default function HoneypotPage() {
     }
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">{t("honeypot_engine")}</h2>
-                    <p className="text-silver mt-1">{t("agentic_orchestration")}</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">{t("honeypot_engine")}</h2>
+                    <p className="text-silver mt-1 text-sm">{t("agentic_orchestration")}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex gap-3 flex-shrink-0">
                     <button
                         onClick={() => performAction('OPTIMIZE_STRATEGIES')}
-                        className="px-4 py-2 bg-white border border-silver/10 rounded-lg text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors">
+                        className="px-3 sm:px-4 py-2 bg-white border border-silver/10 rounded-lg text-xs sm:text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors">
                         <Brain size={16} className="text-saffron" />
-                        {t("optimize_strategies")}
+                        <span className="hidden sm:inline">{t("optimize_strategies")}</span>
+                        <span className="sm:hidden">Optimize</span>
                     </button>
                     <button
                         onClick={() => performAction('LAUNCH_PROBE')}
-                        className="px-4 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors">
+                        className="px-3 sm:px-4 py-2 bg-saffron text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-deeporange transition-colors">
                         {t("launch_probe")}
                     </button>
                 </div>

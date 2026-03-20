@@ -7,7 +7,7 @@ from PIL import Image
 import json
 import io
 
-logger = logging.getLogger("sentinel.vision")
+logger = logging.getLogger("drishyam.vision")
 
 class GeminiVisionEngine:
     def __init__(self):
@@ -54,7 +54,7 @@ class GeminiVisionEngine:
                 media_category = "Temporal Visual"
 
             prompt = (
-                f"You are the Sentinel 1930 {media_category} Forensic Engine. "
+                f"You are the DRISHYAM AI {media_category} Forensic Engine. "
                 f"Perform a deep forensic analysis on the provided {mime_type} file. "
                 "For visual media, check lighting, edges, and blending. "
                 "For audio, check for speech artifacts and frequency clipping. "

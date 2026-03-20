@@ -73,7 +73,7 @@ export default function ProfilingPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight underline decoration-redalert decoration-4 underline-offset-8">Scammer Reverse Profiling</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-redalert decoration-4 underline-offset-8">Scammer Reverse Profiling</h2>
                     <p className="text-silver mt-4 italic font-medium">De-anonymizing domestic scam clusters via Honeypot Intelligence (Module 11).</p>
                 </div>
                 <div className="flex gap-2">

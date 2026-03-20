@@ -1,9 +1,9 @@
-SENTINEL 1930 - Extracted Checklist Items
+DRISHYAM 1930 - Extracted Checklist Items
 ==========================================
 
 Phase 0 -- Founding Decisions
 -----------------------------
-Freeze project name: Sentinel 1930
+Freeze project name: DRISHYAM 1930
 Freeze expanded name: BASIG
 Freeze mission statement
 Freeze one-line product positioning
@@ -204,7 +204,7 @@ Design entity model: FIR packets
 Design entity model: deepfake video incidents
 Design entity model: inoculation drills
 Design entity model: recovery journeys
-Design entity model: Sentinel Score
+Design entity model: DRISHYAM Score
 Define canonical scam category taxonomy
 Define canonical language codes
 Define canonical district/state IDs
@@ -481,7 +481,7 @@ Build Aadhaar-linked opt-in alert flow
 Build family trust circle creation flow
 Build habit breaker challenge engine
 Build reward logic for gamified nudges
-Build Sentinel Score UX
+Build DRISHYAM Score UX
 Build privacy-preserving local score computation
 Build neighborhood scam density display
 Build TV / DD ticker content export workflow
@@ -517,7 +517,7 @@ Design immutable audit logs
 Design citizen data deletion service
 Design India-region storage enforcement
 Design field-level encryption for sensitive fields
-Build local scoring for Sentinel Score
+Build local scoring for DRISHYAM Score
 Build privacy-preserving analytics aggregation
 Build access logging and anomaly detection
 Build retention-based automatic deletion jobs
@@ -746,7 +746,7 @@ Build push notification integration
 Build call-related permissions flow
 Build "Let AI Handle" flow
 Build alert receipt and acknowledgment
-Build Sentinel Score local engine
+Build DRISHYAM Score local engine
 Build trust circle onboarding
 Build deepfake verification entry point
 Build recovery companion screens
@@ -1027,7 +1027,7 @@ Define rupees-saved methodology
 Define recovered-amount methodology
 Define fraud reduction methodology
 Define district score methodology
-Define Sentinel Score methodology
+Define DRISHYAM Score methodology
 Define inoculation effectiveness methodology
 Define false-positive reporting methodology
 Define agency accountability metrics

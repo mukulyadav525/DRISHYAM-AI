@@ -185,7 +185,7 @@ CREATE TABLE crime_reports (
 -- 1. Demo Users (Password: password123)
 -- bcrypt hash for 'password123'
 INSERT INTO users (username, email, hashed_password, full_name, role) VALUES
-('admin', 'admin@sentinel.gov.in', '$2b$12$rZ2e19sttSddtNJINi5LTey0l9ikpRSVvKFfPV/g9r7SybHkGdCN2', 'System Administrator', 'admin'),
+('admin', 'admin@drishyam.gov.in', '$2b$12$rZ2e19sttSddtNJINi5LTey0l9ikpRSVvKFfPV/g9r7SybHkGdCN2', 'System Administrator', 'admin'),
 ('police_officer', 'sharma@police.gov.in', '$2b$12$rZ2e19sttSddtNJINi5LTey0l9ikpRSVvKFfPV/g9r7SybHkGdCN2', 'Inspector Sharma', 'police'),
 ('sbi_fraud', 'cell@sbi.co.in', '$2b$12$rZ2e19sttSddtNJINi5LTey0l9ikpRSVvKFfPV/g9r7SybHkGdCN2', 'SBI Fraud Desk', 'bank'),
 ('govt_analyst', 'analyst@mha.gov.in', '$2b$12$rZ2e19sttSddtNJINi5LTey0l9ikpRSVvKFfPV/g9r7SybHkGdCN2', 'MHA Data Analyst', 'government'),

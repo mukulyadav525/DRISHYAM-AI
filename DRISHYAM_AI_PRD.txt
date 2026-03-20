@@ -1,5 +1,5 @@
 ================================================================================
-SENTINEL 1930 — PRODUCT REQUIREMENTS DOCUMENT (PRD)
+DRISHYAM 1930 — PRODUCT REQUIREMENTS DOCUMENT (PRD)
 Bharat Anti-Scam Intelligence Grid (BASIG)
 Version: 3.0 | Status: Active | Classification: Confidential
 For My India
@@ -10,9 +10,9 @@ SECTION 1 — PRODUCT OVERVIEW
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 1.1 PRODUCT NAME
-    Full Name   : Sentinel 1930
+    Full Name   : DRISHYAM 1930
     Expanded    : Bharat Anti-Scam Intelligence Grid (BASIG)
-    Short Name  : Sentinel
+    Short Name  : DRISHYAM
 
 1.2 MISSION STATEMENT
     To protect every Indian citizen — from metro smartphone users to rural
@@ -92,7 +92,7 @@ SECTION 2 — PROBLEM STATEMENT
     - No common threat intelligence feed
 
 2.3 OPPORTUNITY
-    Sentinel 1930 connects all these stakeholders on a single AI-powered
+    DRISHYAM 1930 connects all these stakeholders on a single AI-powered
     platform — intercepting scams in real time, profiling scammers,
     protecting victims, and routing evidence to law enforcement automatically.
 
@@ -291,7 +291,7 @@ Key Features:
     - "Let AI Handle" one-tap button (primary CTA)
     - Senior mode UI (larger text, simpler language)
     - Caregiver / family trust circle notifications
-    - Sentinel Score (citizen's personal fraud immunity score)
+    - DRISHYAM Score (citizen's personal fraud immunity score)
     - Neighborhood scam density display
     - DigiLocker document verification integration
     - Gamified habit breaker challenges
@@ -302,7 +302,7 @@ Acceptance Criteria:
     [AC-M7-02] Push alert delivered in < 2 minutes of trigger
     [AC-M7-03] Senior mode activatable from settings
     [AC-M7-04] Family trust circle alert within 30 seconds
-    [AC-M7-05] Sentinel Score updates after each incident
+    [AC-M7-05] DRISHYAM Score updates after each incident
 
 
 MODULE 8 — POPULATION SEGMENT PROTECTION
@@ -493,7 +493,7 @@ SECTION 4 — USER STORIES (CORE FLOWS)
     claiming his KYC is frozen.
 
     Step 1: BEFORE THE PHONE RINGS
-    Sentinel scores the incoming call: FRI = 93.
+    DRISHYAM scores the incoming call: FRI = 93.
     A red warning banner appears on Ramesh's phone:
     "HIGH FRAUD RISK — This number called 847 people today.
      Do NOT share OTP or bank details."
@@ -516,7 +516,7 @@ SECTION 4 — USER STORIES (CORE FLOWS)
     - NPCI alerted on scammer's UPI ID
     - Hindi SMS to Ramesh with Case ID
     - Family trust circle (son Suresh) notified
-    - Ramesh's Sentinel Score increases by 5 points
+    - Ramesh's DRISHYAM Score increases by 5 points
     - Recovery Companion prompt appears in app
 
     Step 5: RECOVERY TRACKING
@@ -555,7 +555,7 @@ SECTION 4 — USER STORIES (CORE FLOWS)
 
     Ravi, 22, looking for jobs on a portal.
     He sees: "Work from home — receive and transfer funds — Rs. 50,000/month."
-    Sentinel has flagged this ad (mule score: 92%).
+    DRISHYAM has flagged this ad (mule score: 92%).
     When he clicks "Apply", a warning appears:
     "WARNING: This job may be a money mule recruitment scam.
      Applying may make you a criminal. Report instead."
@@ -566,7 +566,7 @@ SECTION 4 — USER STORIES (CORE FLOWS)
 
     Seema, 55, receives a WhatsApp video call from someone
     claiming to be a CBI officer with a uniform on screen.
-    She taps "Verify This Caller" in the Sentinel app.
+    She taps "Verify This Caller" in the DRISHYAM app.
     3-second analysis runs. Verdict: DEEPFAKE.
     Red alert shown. Her daughter (family trust circle) notified.
     Evidence frames saved automatically. Case opened.
@@ -581,7 +581,7 @@ SECTION 5 — WORKING APP FLOW (END-TO-END ARCHITECTURE)
          |
          v
     [TELECOM LAYER]
-    Telco sends call metadata to Sentinel scoring API via webhook
+    Telco sends call metadata to DRISHYAM scoring API via webhook
          |
          v
     [MODULE 1: FRI SCORING ENGINE] -- Target: < 200ms
@@ -634,7 +634,7 @@ SECTION 5 — WORKING APP FLOW (END-TO-END ARCHITECTURE)
     +-- Bank alert sent for precautionary watch (72hr)
     +-- Hindi/regional SMS to citizen with Case ID
     +-- Family trust circle notification (push + SMS)
-    +-- Sentinel Score recalculated and updated
+    +-- DRISHYAM Score recalculated and updated
     +-- Recovery Companion prompt surfaced in citizen app
     +-- All events written to immutable audit log
 
@@ -838,7 +838,7 @@ SECTION 9 — REVENUE MODEL
     TARGET ARR: Rs. 106 crore by Year 3
 
 ================================================================================
-END OF PRD — SENTINEL 1930 v3.0
+END OF PRD — DRISHYAM 1930 v3.0
 "Every checkbox ticked = one step closer to protecting 150 crore Indians."
 For My India | Jai Hind
 ================================================================================

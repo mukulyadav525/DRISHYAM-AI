@@ -1,6 +1,6 @@
 """
 API Router for Twilio Voice Calling.
-Enables outbound AI-powered phone calls where the Sentinel AI agent
+Enables outbound AI-powered phone calls where the DRISHYAM AI agent
 talks to the recipient in real-time.
 """
 
@@ -18,7 +18,7 @@ from models.database import User, SystemAction, HoneypotSession
 import uuid
 import datetime
 
-logger = logging.getLogger("sentinel.twilio_api")
+logger = logging.getLogger("drishyam.twilio_api")
 
 router = APIRouter()
 
@@ -58,7 +58,7 @@ async def initiate_call(
 ):
     """
     Initiate an outbound AI-powered phone call.
-    The Sentinel AI persona will talk to the recipient in real-time.
+    The DRISHYAM AI persona will talk to the recipient in real-time.
     Requires valid Twilio credentials in environment variables.
     """
     if not twilio_engine.client:

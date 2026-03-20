@@ -8,7 +8,7 @@ from typing import Optional
 load_dotenv()
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Sentinel 1930"
+    PROJECT_NAME: str = "DRISHYAM AI"
     API_V1_STR: str = "/api/v1"
     
     # Environment Mode: 'dev' or 'prod'
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     TWILIO_WEBHOOK_BASE_URL: Optional[str] = Field(None, env="TWILIO_WEBHOOK_BASE_URL")
     
     # Database
-    DATABASE_URL: str = Field("sqlite:///./sentinel.db", env="DATABASE_URL")
+    DATABASE_URL: str = Field("sqlite:///./drishyam.db", env="DATABASE_URL")
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
@@ -89,7 +89,7 @@ except Exception as e:
     if os.getenv("ENV") != "prod":
         print("Falling back to robust mock settings for development...")
         class MockSettings:
-            PROJECT_NAME = "Sentinel 1930 (MOCK)"
+            PROJECT_NAME = "DRISHYAM AI (MOCK)"
             API_V1_STR = "/api/v1"
             ENV = "dev"
             SECRET_KEY = "mock-secret"
@@ -97,7 +97,7 @@ except Exception as e:
             ACCESS_TOKEN_EXPIRE_MINUTES = 480
             SARVAM_API_KEY = "mock-key"
             DEEPGRAM_API_KEY = "mock-key"
-            SQLALCHEMY_DATABASE_URI = "sqlite:///./sentinel.db"
+            SQLALCHEMY_DATABASE_URI = "sqlite:///./drishyam.db"
             REDIS_URL = None
             NEO4J_URI = None
             NEO4J_USER = "neo4j"

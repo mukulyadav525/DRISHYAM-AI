@@ -3,7 +3,7 @@ from models.database import SystemAuditLog
 import datetime
 import logging
 
-logger = logging.getLogger("sentinel.audit")
+logger = logging.getLogger("drishyam.audit")
 
 def log_audit(
     db: Session, 

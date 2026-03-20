@@ -143,7 +143,7 @@ export default function UPIPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">UPI Shield & WhatsApp Interceptor</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">UPI Shield & WhatsApp Interceptor</h2>
                     <p className="text-silver mt-1 italic font-medium">Protecting the digital payment layer from "Collect-Request" traps.</p>
                 </div>
                 <div className="flex bg-boxbg p-1 rounded-xl border border-silver/10 self-start">

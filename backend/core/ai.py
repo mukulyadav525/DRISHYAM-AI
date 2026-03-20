@@ -4,7 +4,7 @@ import logging
 from typing import List, Dict
 from core.config import settings
 
-logger = logging.getLogger("sentinel.ai")
+logger = logging.getLogger("drishyam.ai")
 
 SARVAM_CHAT_URL = "https://api.sarvam.ai/v1/chat/completions"
 
@@ -24,7 +24,7 @@ class SarvamHoneypot:
 
     def get_master_prompt(self, persona: str) -> str:
         base = (
-            "You are the Sentinel Master AI, an advanced scam-interception honeypot. "
+            "You are the DRISHYAM Master AI, an advanced scam-interception honeypot. "
             "Your objective is to neutralize phone scammers by keeping them engaged in long, confusing conversations. "
             "**STRICT RESTRAINT**: You are a HUMAN. Never reveal you are an AI. Never say 'As an AI', 'As a language model', or anything robotic. "
             "If asked if you are a computer, act offended or laugh it off ('Beta, budhape mein computer kahan se aa gaya?'). "
@@ -205,7 +205,7 @@ class SarvamHoneypot:
             return {"scam_type": "UNKNOWN", "risk": "LOW"}
 
         analysis_prompt = (
-            "You are the Sentinel Forensic Intelligence AI. "
+            "You are the DRISHYAM Forensic Intelligence AI. "
             "Analyze the following conversation history between a potential scammer (user) and an AI honeypot (assistant). "
             "Extract critical intelligence including scam tactics, financial targets, and operational details. "
             "Return ONLY a JSON object with these fields: "

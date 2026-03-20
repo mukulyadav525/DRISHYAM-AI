@@ -1,4 +1,4 @@
-# SENTINEL-1930: DEMO SCRIPT - RAMESH SCENARIO
+# DRISHYAM-1930: DEMO SCRIPT - RAMESH SCENARIO
 # Role: Scammer (Impersonating Bank Manager)
 # Target: Ramesh (Citizen with citizen_1 account)
 

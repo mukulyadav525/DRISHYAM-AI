@@ -7,7 +7,7 @@ services:
       - "8000:8000"
     environment:
       - ENV=prod
-      - DATABASE_URL=postgresql://postgres:password@db:5432/sentinel
+      - DATABASE_URL=postgresql://postgres:password@db:5432/drishyam
       - REDIS_URL=redis://redis:6379/0
       - NEO4J_URI=bolt://neo4j:7687
       - SECRET_KEY=${SECRET_KEY}
@@ -17,23 +17,23 @@ services:
       - redis
       - neo4j
     networks:
-      - sentinel-net
+      - drishyam-net
 
   db:
     image: postgres:15-alphine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=sentinel
+      - POSTGRES_DB=drishyam
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - sentinel-net
+      - drishyam-net
 
   redis:
     image: redis:7-alpine
     networks:
-      - sentinel-net
+      - drishyam-net
 
   neo4j:
     image: neo4j:5-community
@@ -42,10 +42,10 @@ services:
     volumes:
       - neo4j_data:/data
     networks:
-      - sentinel-net
+      - drishyam-net
 
 networks:
-  sentinel-net:
+  drishyam-net:
     driver: bridge
 
 volumes:

@@ -49,8 +49,8 @@ export default function FeedModal({ isOpen, onClose, data }: FeedModalProps) {
                                 </div>
 
                                 {/* Content */}
-                                <div className="p-6 space-y-6 w-full">
-                                    <div className="grid grid-cols-2 gap-4">
+                                <div className="p-5 sm:p-6 space-y-5 sm:space-y-6 w-full">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div className="p-4 bg-boxbg rounded-xl border border-silver/10">
                                             <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1">Scam Vector</p>
                                             <p className="text-sm font-bold text-indblue">{data.scam_type}</p>
@@ -87,7 +87,7 @@ export default function FeedModal({ isOpen, onClose, data }: FeedModalProps) {
                                         </ul>
                                     </div>
 
-                                    <div className="flex items-center justify-between pt-4 border-t border-silver/5">
+                                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-silver/5 gap-3">
                                         <div className="flex items-center gap-2">
                                             <div className="w-2 h-2 rounded-full bg-indgreen animate-pulse" />
                                             <span className="text-[10px] font-bold text-indgreen uppercase tracking-widest">{data.status}</span>

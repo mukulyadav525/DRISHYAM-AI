@@ -12,7 +12,7 @@ export const useActions = () => {
     const performAction = async (actionType: string, targetId?: string, metadata?: ActionMetadata) => {
         setIsLoading(true);
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
+            const authStr = localStorage.getItem('drishyam_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
             const res = await fetch(`${API_BASE}/actions/perform`, {
                 method: 'POST',
@@ -47,7 +47,7 @@ export const useActions = () => {
     const downloadSimulatedFile = async (category: string, fileType: string = 'pdf') => {
         setIsLoading(true);
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
+            const authStr = localStorage.getItem('drishyam_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
             const res = await fetch(`${API_BASE}/actions/download-sim?file_type=${fileType}&category=${category}`, {
                 headers: {

@@ -1,11 +1,11 @@
-/Users/mukul/Desktop/SENTINEL-1930/verify.py:1718: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+/Users/mukul/Desktop/DRISHYAM-1930/verify.py:1718: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
   print(f"  Started : {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}")
-/Users/mukul/Desktop/SENTINEL-1930/verify.py:226: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
+/Users/mukul/Desktop/DRISHYAM-1930/verify.py:226: DeprecationWarning: datetime.datetime.utcnow() is deprecated and scheduled for removal in a future version. Use timezone-aware objects to represent datetimes in UTC: datetime.datetime.now(datetime.UTC).
   "swap_timestamp_utc": datetime.utcnow().isoformat(),
 
 [1m[94m
 ╔══════════════════════════════════════════════════════════════════════════════════╗
-║   SENTINEL 1930  —  BASIG COMPLETE TEST SUITE v3.0                            ║
+║   DRISHYAM 1930  —  BASIG COMPLETE TEST SUITE v3.0                            ║
 ║   73 Test Units · 15 Modules · 4 Integrations                               ║
 ║   Mode: LIVE (requires server at http://localhost:8000/api/v1)
 ╚══════════════════════════════════════════════════════════════════════════════════╝
@@ -198,7 +198,7 @@
     [92m✔  'citizens_protected' = 1240000[0m
     [92m✔  'firs_generated' = 8470[0m
     [92m✔  'mule_accounts_frozen' = 1242[0m
-    [92m✔  'embeddable_widget_url' = 'https://gov.in/sentinel/roi-widget'[0m
+    [92m✔  'embeddable_widget_url' = 'https://gov.in/drishyam/roi-widget'[0m
     [96mℹ  ₹450,000,000 saved this month (MHA dashboard counter)[0m
 
 [93m  ▶ M6-U4  Scam Weather Panel — 48h advance alert for command staff[0m
@@ -213,13 +213,13 @@
     [92m✔  'channels_dispatched' = ['PUSH', 'SMS'][0m
     [92m✔  'delivery_rate_percent' = 98.5[0m
 
-[93m  ▶ M7-U2  Sentinel Score — personal cyber safety rating[0m
+[93m  ▶ M7-U2  DRISHYAM Score — personal cyber safety rating[0m
     [92m✔  'score' = 88[0m
     [92m✔  'decile_band' = 9[0m
     [92m✔  'computed_locally' = True[0m
     [92m✔  'central_storage' = False[0m
     [92m✔  'badge' = 'GOLD_SHIELD'[0m
-    [96mℹ  Sentinel Score: 88/100  Band: 9[0m
+    [96mℹ  DRISHYAM Score: 88/100  Band: 9[0m
 
 [93m  ▶ M7-U3  Family Trust Circle Notification[0m
     [92m✔  'members_notified' = 3[0m
@@ -236,7 +236,7 @@
 [93m  ▶ M7-U5  Hyper-Local Scam Density Alert (neighbourhood level)[0m
     [92m✔  'alert_id' = 'HYP-0C7F1C'[0m
     [92m✔  'area_label' = 'Sector 14, Gurugram'[0m
-    [92m✔  'density_map_url' = 'https://maps.sentinel.gov.in/density/gurugram-s14'[0m
+    [92m✔  'density_map_url' = 'https://maps.drishyam.gov.in/density/gurugram-s14'[0m
     [92m✔  'incidents_anonymised' = True[0m
 
 [93m  ▶ M8-U1  Jan Dhan Guard — fake PM scheme call detection[0m
@@ -407,9 +407,9 @@
     [92m✔  'drill_format' = 'VOICE_IVR'[0m
     [92m✔  'personalisation_score' = 0.88[0m
 
-[93m  ▶ M13-U3  Corporate B2B — Sentinel Workplace Shield[0m
+[93m  ▶ M13-U3  Corporate B2B — DRISHYAM Workplace Shield[0m
     [92m✔  'subscription_id' = 'CORP-8FE6D0CF'[0m
-    [92m✔  'hr_dashboard_url' = 'https://sentinel.gov.in/corporate/dashboard'[0m
+    [92m✔  'hr_dashboard_url' = 'https://drishyam.gov.in/corporate/dashboard'[0m
     [92m✔  'team_vulnerability_score_enabled' = True[0m
     [92m✔  'first_drill_scheduled' = True[0m
     [96mℹ  Corporate subscription: CORP-8FE6D0CF — 500 employees[0m
@@ -525,6 +525,6 @@
   [91mFAIL  : 1[0m[1m[94m
   [2mSKIP  : 4[0m[1m[94m
   ─────────────────────────────────────────
-  ✔  Live run against Sentinel server.
+  ✔  Live run against DRISHYAM server.
 ────────────────────────────────────────────────────────────────────────────────
 [0m

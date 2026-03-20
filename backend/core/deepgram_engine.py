@@ -1,5 +1,5 @@
 """
-Sentinel 1930 – Deepgram Voice Engine.
+DRISHYAM AI – Deepgram Voice Engine.
 Real-time STT (Nova-2) and TTS (Aura) integration for the AI Honeypot.
 Includes support for conversation recording and analysis.
 """
@@ -12,7 +12,7 @@ import asyncio
 from typing import Dict, Any, List, Optional
 from core.config import settings
 
-logger = logging.getLogger("sentinel.deepgram")
+logger = logging.getLogger("drishyam.deepgram")
 
 DEEPGRAM_STT_URL = "https://api.deepgram.com/v1/listen"
 DEEPGRAM_TTS_URL = "https://api.deepgram.com/v1/speak"

@@ -1,5 +1,5 @@
 """
-SENTINEL-ML: Inference Engine
+DRISHYAM-ML: Inference Engine
 Loads the trained model and provides the predict() function used by the FastAPI server.
 """
 import os

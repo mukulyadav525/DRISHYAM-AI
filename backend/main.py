@@ -48,7 +48,7 @@ if settings.ENV == "prod":
     setup_production_logging()
 else:
     logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("sentinel.main")
+logger = logging.getLogger("drishyam.main")
 
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -222,7 +222,7 @@ app.include_router(ai_router, prefix="/api/v1/ai", tags=["ai"])
 @app.get("/")
 async def root():
     logger.info("[HIT] Root endpoint")
-    return {"message": "Sentinel 1930 (BASIG) API is running. For My India."}
+    return {"message": "DRISHYAM AI (BASIG) API is running. For My India."}
 
 @app.get("/health")
 async def health_check():

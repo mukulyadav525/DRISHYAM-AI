@@ -86,7 +86,7 @@ export default function BharatPage() {
             // If it's the final processing step, send to backend
             if (nextStep === ussdFlow.length - 1) {
                 try {
-                    const authStr = localStorage.getItem('sentinel_auth');
+                    const authStr = localStorage.getItem('drishyam_auth');
                     const token = authStr ? JSON.parse(authStr).token : null;
                     
                     const res = await fetch(`${API_BASE}/bharat/ussd/report?phone_number=919988776655&scam_type=${ussdInput || 'General'}&lang=en`, {
@@ -135,7 +135,7 @@ export default function BharatPage() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight underline decoration-saffron decoration-4 underline-offset-8">Bharat Feature Phone Layer</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-saffron decoration-4 underline-offset-8">Bharat Feature Phone Layer</h2>
                     <p className="text-silver mt-4 italic font-medium">Protecting the Offline & Feature Phone Userbase (Module 5).</p>
                 </div>
                 <div className="flex gap-2">

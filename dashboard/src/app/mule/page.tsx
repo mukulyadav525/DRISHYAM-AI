@@ -82,29 +82,30 @@ export default function MulePage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-6 sm:space-y-8">
             {/* Header */}
-            <div className="flex justify-between items-end">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-indblue tracking-tight">Mule Recruitment Interceptor</h2>
-                    <p className="text-silver mt-1">Detecting job scams and money mule recruitment campaigns.</p>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">Mule Recruitment Interceptor</h2>
+                    <p className="text-silver mt-1 text-sm">Detecting job scams and money mule recruitment campaigns.</p>
                 </div>
                 <div className="flex gap-3">
-                    <div className="relative">
+                    <div className="relative flex-1 sm:flex-none">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-silver" size={16} />
                         <input
                             type="text"
                             placeholder="Search Recruiter ID..."
-                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none w-64 shadow-sm"
+                            className="pl-10 pr-4 py-2 bg-white border border-silver/10 rounded-lg text-sm outline-none w-full sm:w-64 shadow-sm"
                         />
                     </div>
                     <button
                         onClick={startScan}
                         disabled={isScanning}
-                        className="px-4 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-3 sm:px-4 py-2 bg-saffron text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2 disabled:opacity-50 flex-shrink-0 whitespace-nowrap"
                     >
                         {isScanning ? <Loader2 className="animate-spin" size={16} /> : <Filter size={16} />}
-                        {isScanning ? `Analyzing ${scanProgress}%` : "Scan Active Feed"}
+                        <span className="hidden sm:inline">{isScanning ? `Analyzing ${scanProgress}%` : "Scan Active Feed"}</span>
+                        <span className="sm:hidden">{isScanning ? `${scanProgress}%` : "Scan"}</span>
                     </button>
                 </div>
             </div>

@@ -28,7 +28,7 @@ def ensure_schema_compliance():
     
     queries_pg = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR;",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS sentinel_score INTEGER DEFAULT 100;",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS drishyam_score INTEGER DEFAULT 100;",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS customer_id VARCHAR;",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS user_id INTEGER REFERENCES users(id);",
         "ALTER TABLE honeypot_sessions ADD COLUMN IF NOT EXISTS recording_analysis_json JSON;",
@@ -41,7 +41,7 @@ def ensure_schema_compliance():
     
     queries_sqlite = [
         "ALTER TABLE users ADD COLUMN phone_number VARCHAR;",
-        "ALTER TABLE users ADD COLUMN sentinel_score INTEGER DEFAULT 100;",
+        "ALTER TABLE users ADD COLUMN drishyam_score INTEGER DEFAULT 100;",
         "ALTER TABLE honeypot_sessions ADD COLUMN customer_id VARCHAR;",
         "ALTER TABLE honeypot_sessions ADD COLUMN user_id INTEGER;",
         "ALTER TABLE honeypot_sessions ADD COLUMN recording_analysis_json JSON;",

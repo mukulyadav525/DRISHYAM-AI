@@ -10,7 +10,7 @@ from typing import Optional
 
 # For MVP, we use a fixed key if not in .env
 # In prod, this MUST be a 32-byte base64 encoded string
-SECRET_CIPHER_KEY = os.getenv("SENTINEL_CIPHER_KEY", "uN7f_pS_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y=")
+SECRET_CIPHER_KEY = os.getenv("DRISHYAM_CIPHER_KEY", os.getenv("DRISHYAM_CIPHER_KEY", "uN7f_pS_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y_Z_X_Z_Q_Z_R_Y="))
 
 def get_cipher():
     if not HAS_CRYPTO:

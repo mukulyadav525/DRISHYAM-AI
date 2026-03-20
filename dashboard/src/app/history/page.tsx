@@ -30,7 +30,7 @@ export default function HistoryPage() {
     useEffect(() => {
         const fetchHistory = async () => {
             try {
-                const authStr = localStorage.getItem('sentinel_auth');
+                const authStr = localStorage.getItem('drishyam_auth');
                 const token = authStr ? JSON.parse(authStr).token : null;
                 
                 const res = await fetch(`${API_BASE}/forensic/history`, {
@@ -54,7 +54,7 @@ export default function HistoryPage() {
 
     const handleDownload = async (id: number) => {
         try {
-            const authStr = localStorage.getItem('sentinel_auth');
+            const authStr = localStorage.getItem('drishyam_auth');
             const token = authStr ? JSON.parse(authStr).token : null;
             
             const res = await fetch(`${API_BASE}/forensic/report/${id}`, {
@@ -91,7 +91,7 @@ export default function HistoryPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h2 className="text-3xl font-bold text-indblue tracking-tight">Forensic History</h2>
+                <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">Forensic History</h2>
                 <p className="text-silver mt-1">Audit log of all media authenticity scans.</p>
             </div>
 

@@ -1,6 +1,6 @@
 """
-SENTINEL-ML: FastAPI Inference Server
-Standalone API — runs on port 8001, separate from SENTINEL-1930 backend.
+DRISHYAM-ML: FastAPI Inference Server
+Standalone API — runs on port 8001, separate from DRISHYAM AI backend.
 
 Run: uvicorn api.main:app --port 8001 --reload
 """
@@ -11,13 +11,13 @@ from typing import Optional
 import sys
 import os
 
-# Ensure the sentinel-ml root is on the path
+# Ensure the drishyam-ml root is on the path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from model.classifier import predict
 
 app = FastAPI(
-    title="SENTINEL-ML: Scam Classifier",
-    description="AI-powered phone number scam classification engine for SENTINEL-1930.",
+    title="DRISHYAM-ML: Scam Classifier",
+    description="AI-powered phone number scam classification engine for DRISHYAM AI.",
     version="1.0.0",
 )
 

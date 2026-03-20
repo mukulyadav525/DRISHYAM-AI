@@ -16,7 +16,7 @@ from core.audit import log_audit
 import datetime
 import uuid
 
-logger = logging.getLogger("sentinel.actions")
+logger = logging.getLogger("drishyam.actions")
 
 router = APIRouter()
 
@@ -39,7 +39,7 @@ async def perform_action(
         
         # Generic to User-Friendly mapping
         messages = {
-            "VIEW_MAP": "Sentinel Live Threat Map Initialized",
+            "VIEW_MAP": "DRISHYAM Live Threat Map Initialized",
             "FILTER_RISK": f"Risk Filter Applied: {req.target_id or 'Updated'}",
             "BLOCK_NUMBER": f"Telecom Block Sequence Initiated for {req.target_id or 'target'}",
             "VPA_LOOKUP": f"VPA Reputation Analysis for {req.target_id or 'VPA'} Complete",
@@ -58,11 +58,11 @@ async def perform_action(
             "GENERATE_RECOVERY_BUNDLE": "Legal Restitution Bundle Generated",
             "SUPPORT_TOOL": f"Redirecting to {req.target_id or 'Support Resource'}",
             "OPTIMIZE_STRATEGIES": "AI Strategy Optimization Complete",
-            "LAUNCH_PROBE": "Sentinel Agentic Probe Dispatched",
+            "LAUNCH_PROBE": "DRISHYAM Agentic Probe Dispatched",
             "BROADCAST_EMERGENCY": "Emergency Broadcast Dispatched to Target Region",
             "DEPLOY_BHARAT_ALERT": "National Strategic Alert successfully deployed to cellular nodes",
             "VIEW_ALERT_HISTORY": "Accessing Historical Broadcast Logs",
-            "SAVE_ALERT_DRAFT": "Alert Draft Saved to Sentinel Vault",
+            "SAVE_ALERT_DRAFT": "Alert Draft Saved to DRISHYAM Vault",
             "PREVIEW_SEND_ALERT": "Alert Preview Generated. Awaiting Final Confirmation",
             "VIEW_CASE": f"Loading Full Case Dossier for {req.target_id or 'Case'}",
             "MARK_RISK": f"VPA {req.target_id or 'Unknown'} Flagged as High-Risk in NPCI Registry",
@@ -194,11 +194,11 @@ async def perform_action(
             status="success"
         )
         
-        # [AC-M7-05] Increment Sentinel Score for Active Defense
+        # [AC-M7-05] Increment DRISHYAM Score for Active Defense
         active_defense_actions = ["SCAN_VIDEO", "GENERATE_FIR", "FREEZE_VPA", "BLOCK_IMEI", "REPORT_INCIDENT", "SCAN_MULE_FEED"]
         if req.action_type.upper() in active_defense_actions:
-            current_user.sentinel_score = (current_user.sentinel_score or 100) + 5
-            logger.info(f"User {current_user.username} Sentinel Score increased to {current_user.sentinel_score}")
+            current_user.drishyam_score = (current_user.drishyam_score or 100) + 5
+            logger.info(f"User {current_user.username} DRISHYAM Score increased to {current_user.drishyam_score}")
         
         db.add(new_action)
         db.commit()
@@ -283,13 +283,13 @@ async def get_download_file(
     except Exception as e:
         logger.error(f"Failed to generate dynamic report: {e}")
         # Fallback to template if generation fails
-        template_file = os.path.join(static_dir, "sentinel_template.pdf")
+        template_file = os.path.join(static_dir, "drishyam_template.pdf")
         if os.path.exists(template_file):
             dynamic_file = template_file
         else:
             # Emergency fallback
             with open(dynamic_file, "w") as f:
-                f.write("%PDF-1.4\n% Sentinel Emergency Fallback\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Count 0 >> endobj\n%%EOF")
+                f.write("%PDF-1.4\n% DRISHYAM Emergency Fallback\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Count 0 >> endobj\n%%EOF")
 
     return FileResponse(
         path=dynamic_file,
@@ -320,7 +320,7 @@ async def download_simulation(
         db.add(new_action)
         db.commit()
         
-        filename = f"SENTINEL_{category.upper().replace('.', '_')}_{current_user.username}.pdf"
+        filename = f"DRISHYAM_{category.upper().replace('.', '_')}_{current_user.username}.pdf"
         
         # Construct a real URL pointing to our new endpoint
         # In a real app, this would be a signed URL to an S3 bucket or similar

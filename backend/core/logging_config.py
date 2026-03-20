@@ -30,7 +30,7 @@ def setup_production_logging():
     handler = logging.StreamHandler()
     handler.setFormatter(JsonFormatter())
     
-    logger = logging.getLogger("sentinel")
+    logger = logging.getLogger("drishyam")
     logger.setLevel(logging.INFO)
     logger.addHandler(handler)
     
