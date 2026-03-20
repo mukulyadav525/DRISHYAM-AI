@@ -18,6 +18,7 @@ import urllib.parse
 
 from core.config import settings
 from core.voice_engine import voice_engine
+from core.deepgram_engine import deepgram_engine
 from core.ai import honeypot_ai
 
 logger = logging.getLogger("drishyam.twilio")
@@ -166,13 +167,24 @@ class TwilioEngine:
                     persona = custom_params.get("persona", "Elderly Uncle")
 
                     logger.info(f"TWILIO STREAM: Started (StreamSID: {stream_sid}, ID: {stream_id}, Persona: {persona})")
+                    
+                    if stream_id not in self.active_calls:
+                        self.active_calls[stream_id] = {
+                            "sid": stream_sid,
+                            "persona": persona,
+                            "status": "in-progress",
+                            "start_time": asyncio.get_event_loop().time(),
+                            "history": [],
+                            "full_audio": bytearray() # Accumulate audio for forensics
+                        }
 
                     # If persona is ADAPTIVE, we wait for the first user message before picking one.
                     # Initial greeting for ADAPTIVE mode.
                     if persona == "ADAPTIVE":
                         greeting = "Hello? Namaste? Koun bol raha hai?" # Generic opening
                         call_history.append({"role": "assistant", "content": greeting})
-                        tts_result = await voice_engine.synthesize_speech(greeting, persona)
+                        # Use Deepgram for near-zero latency greeting
+                        tts_result = await deepgram_engine.synthesize_speech(greeting)
                         if tts_result.get("audio_base64"):
                             await self._send_audio_to_stream(websocket, stream_sid, tts_result["audio_base64"])
                     else:
@@ -182,7 +194,8 @@ class TwilioEngine:
                         )
                         logger.info(f"TWILIO STREAM: AI Greeting: {greeting[:80]}...")
 
-                        tts_result = await voice_engine.synthesize_speech(greeting, persona)
+                        # Use Deepgram for near-zero latency response
+                        tts_result = await deepgram_engine.synthesize_speech(greeting)
                         if tts_result.get("audio_base64"):
                             await self._send_audio_to_stream(
                                 websocket, stream_sid, tts_result["audio_base64"]
@@ -202,9 +215,13 @@ class TwilioEngine:
 
                         # Process once we have enough audio
                         if len(audio_buffer) >= 2000: # Threshold for processing
+                            # Store in full audio for post-call forensics
+                            if stream_id in self.active_calls:
+                                self.active_calls[stream_id]["full_audio"].extend(audio_buffer)
+                                
                             await self._process_audio_chunk(
                                 websocket,
-                                stream_sid, # Static analyzer might still complain, but runtime is safe now
+                                stream_sid, 
                                 bytes(audio_buffer),
                                 persona,
                                 call_history,
@@ -231,7 +248,8 @@ class TwilioEngine:
                         self.active_calls[stream_id]["history"] = call_history
                         
                         # Trigger automated post-call analysis
-                        asyncio.create_task(self._analyze_and_report(stream_id, call_history))
+                        full_audio = bytes(self.active_calls[stream_id].get("full_audio", b""))
+                        asyncio.create_task(self._analyze_and_report(stream_id, call_history, full_audio))
 
                     break
 
@@ -288,7 +306,7 @@ class TwilioEngine:
         except Exception as e:
             logger.error(f"TWILIO STREAM: Audio processing error: {e}")
 
-    async def _analyze_and_report(self, stream_id: str, history: list) -> None:
+    async def _analyze_and_report(self, stream_id: str, history: list, full_audio: bytes = None) -> None:
         """Analyze the call after it ends and generate a crime report."""
         try:
             from core.database import SessionLocal
@@ -297,6 +315,17 @@ class TwilioEngine:
 
             # 1. AI Analysis
             analysis = await honeypot_ai.analyze_scam(history)
+            
+            # 1a. Enhanced Deepgram Forensics if audio is available
+            if full_audio and len(full_audio) > 1000:
+                logger.info(f"TWILIO ANALYSIS: Running Deepgram Forensics for {stream_id}")
+                dg_forensics = await deepgram_engine.analyze_recording(full_audio)
+                if dg_forensics:
+                    analysis["vocal_intelligence"] = dg_forensics
+                    # Combine summaries or insights
+                    if dg_forensics.get("summary"):
+                        analysis["details"] = f"{analysis.get('details', '')}\n\nAI Summary: {dg_forensics['summary']}"
+            
             logger.info(f"TWILIO ANALYSIS: Results for {stream_id}: {analysis.get('scam_type')}")
 
             # Use explicit session open/close (SessionLocal is not a context manager)

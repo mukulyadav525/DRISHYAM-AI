@@ -283,7 +283,7 @@ export default function ChatModule({
       });
       if (res.ok) {
         const data = await res.json();
-        setMessages(prev => [...prev, { role: "ai", text: data.response, timestamp: new Date() }]);
+        setMessages(prev => [...prev, { role: "ai", text: data.ai_response, timestamp: new Date() }]);
       }
     } catch (error) {
       console.error("Text chat error:", error);
@@ -303,16 +303,16 @@ export default function ChatModule({
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-charcoal rounded-b-2xl z-30" />
         <div className="relative w-full h-full bg-white flex flex-col">
           {callState === "idle" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-8 p-6 fade-in">
-              <div className="w-20 h-20 rounded-2xl bg-boxbg flex items-center justify-center text-indblue pulse-saffron shadow-inner">
-                <ShieldCheck size={40} />
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6 p-4 sm:p-5 fade-in overflow-y-auto scrollbar-hide">
+              <div className="w-16 h-16 rounded-2xl bg-boxbg flex items-center justify-center text-indblue pulse-saffron shadow-inner shrink-0 mt-2">
+                <ShieldCheck size={32} />
               </div>
               <div className="text-center space-y-1">
-                <p className="text-xl font-black text-indblue">Shield Ready</p>
-                <p className="text-[9px] text-silver font-bold uppercase tracking-widest leading-relaxed">Secure Line Established<br />AI Core Synchronized</p>
+                <p className="text-lg font-black text-indblue">Shield Ready</p>
+                <p className="text-[8px] text-silver font-bold uppercase tracking-widest leading-relaxed">Secure Line Established<br />AI Core Synchronized</p>
               </div>
-              <div className="flex flex-col gap-3 w-full max-w-[200px]">
-                <div className="space-y-2 mb-2">
+              <div className="flex flex-col gap-2.5 w-full max-w-[220px]">
+                <div className="space-y-2 mb-1">
                   <p className="text-[8px] text-silver font-black uppercase tracking-widest text-center">Test on your real phone</p>
                   <input 
                     type="text" 
@@ -321,23 +321,43 @@ export default function ChatModule({
                     onChange={(e) => setTestPhoneNumber(e.target.value)}
                     className="w-full bg-boxbg border border-silver/10 rounded-xl px-4 py-2 text-[11px] font-bold text-indblue focus:outline-none focus:ring-2 focus:ring-indblue/10 transition-all"
                   />
-                  <button 
-                    onClick={handleTestCall}
-                    disabled={isTestCallLoading}
-                    className="w-full py-2.5 bg-saffron/10 text-saffron border border-saffron/20 rounded-xl text-[10px] font-black hover:bg-saffron hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                  >
-                    {isTestCallLoading ? <Loader2 size={12} className="animate-spin" /> : <Phone size={12} />}
-                    {isTestCallLoading ? "DIALING..." : "CALL MY PHONE"}
-                  </button>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={handleTestCall}
+                      disabled={isTestCallLoading}
+                      className="py-2.5 bg-saffron/10 text-saffron border border-saffron/20 rounded-xl text-[9px] font-black hover:bg-saffron hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    >
+                      {isTestCallLoading ? <Loader2 size={10} className="animate-spin" /> : <Phone size={10} />}
+                      CALL
+                    </button>
+                    <button 
+                      onClick={async () => {
+                        if (!testPhoneNumber) { toast.error("Enter phone number"); return; }
+                        try {
+                          const res = await fetch(`${API_BASE}/twilio/sms`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ to_number: testPhoneNumber, message: "DRISHYAM AI Security Alert: We have detected a suspicious login attempt from Jamtara, Jharkhand. Please do not share your OTP with anyone." })
+                          });
+                          if (res.ok) toast.success("SMS Alert Sent!");
+                          else toast.error("SMS Failed");
+                        } catch (e) { toast.error("Network Error"); }
+                      }}
+                      className="py-2.5 bg-indblue/10 text-indblue border border-indblue/20 rounded-xl text-[9px] font-black hover:bg-indblue hover:text-white transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <MessageSquare size={10} />
+                      SMS
+                    </button>
+                  </div>
                 </div>
 
-                <div className="h-[1px] bg-silver/5 w-full mb-1" />
+                <div className="h-[1px] bg-silver/5 w-full my-0.5" />
 
                 <div className="flex bg-boxbg p-1 rounded-full border border-silver/10">
-                  <button onClick={() => setIsVoiceMode(false)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold ${!isVoiceMode ? "bg-indblue text-white shadow-md" : "text-silver"}`}><MessageSquare size={10} /> TEXT</button>
-                  <button onClick={() => setIsVoiceMode(true)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold ${isVoiceMode ? "bg-saffron text-white shadow-md" : "text-silver"}`}><Volume2 size={10} /> VOICE</button>
+                  <button onClick={() => setIsVoiceMode(false)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold flex items-center justify-center gap-1.5 ${!isVoiceMode ? "bg-indblue text-white shadow-md" : "text-silver"}`}><MessageSquare size={10} /> TEXT</button>
+                  <button onClick={() => setIsVoiceMode(true)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold flex items-center justify-center gap-1.5 ${isVoiceMode ? "bg-saffron text-white shadow-md" : "text-silver"}`}><Volume2 size={10} /> VOICE</button>
                 </div>
-                <button onClick={startCall} className="w-full py-3.5 bg-indblue text-white rounded-xl text-xs font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg">SIMULATE HERE <Zap size={14} className="text-saffron fill-saffron" /></button>
+                <button onClick={startCall} className="w-full py-3 bg-indblue text-white rounded-xl text-[11px] font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg mb-2">SIMULATE HERE <Zap size={12} className="text-saffron fill-saffron" /></button>
               </div>
             </div>
           )}
