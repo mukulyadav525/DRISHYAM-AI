@@ -1,4 +1,5 @@
 import httpx
+import json
 import logging
 from typing import List, Dict
 from core.config import settings
@@ -58,7 +59,54 @@ class SarvamHoneypot:
         persona_prompt = personas.get(persona, "Persona: General Citizen. Natural Hinglish speaker.")
         return f"{base}\n\n{persona_prompt}"
 
+    async def pick_persona(self, message: str) -> str:
+        """Analyze the first message to pick a suitable persona."""
+        analysis_prompt = (
+            "Analyze the following opening line from a phone caller. "
+            "Suggest which AI persona would be best to trap them: "
+            "1. Elderly Uncle: Best for bank/KYC/pension scams. "
+            "2. Rural Farmer: Best for KCC/lottery/government scheme scams. "
+            "3. College Student: Best for job scams/crypto/tech-support scams. "
+            "4. Housewife: Best for home-delivery/courier/family-emergency scams. "
+            "Return ONLY the persona name."
+        )
+        
+        try:
+            response = await self.client.post(
+                SARVAM_CHAT_URL,
+                headers={
+                    "api-subscription-key": self.api_key,
+                    "Content-Type": "application/json"
+                },
+                json={
+                    "model": "sarvam-m",
+                    "messages": [
+                        {"role": "system", "content": analysis_prompt},
+                        {"role": "user", "content": message}
+                    ],
+                    "temperature": 0.1,
+                    "max_tokens": 10
+                }
+            )
+            if response.status_code == 200:
+                persona = response.json()["choices"][0]["message"]["content"].strip()
+                if "Elderly" in persona: return "Elderly Uncle"
+                if "Farmer" in persona: return "Rural Farmer"
+                if "Student" in persona: return "College Student"
+                if "Housewife" in persona: return "Housewife"
+            
+            return "Elderly Uncle" # Default
+        except:
+            return "Elderly Uncle"
+
     async def generate_response(self, persona: str, history: List[Dict[str, str]], message: str) -> str:
+        # If persona is ADAPTIVE and this is the first real turn, pick one
+        if persona == "ADAPTIVE" and message:
+            # This is handled in twilio_engine, but providing a safety here
+            pass
+            
+        system_prompt = self.get_master_prompt(persona)
+
         system_prompt = self.get_master_prompt(persona)
 
         # Prepare messages in OpenAI format

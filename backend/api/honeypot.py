@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from core.database import get_db
+from core.ai import honeypot_ai
 from models.database import HoneypotSession, HoneypotMessage
 import uuid
 import datetime
-from typing import Optional
+from typing import Optional, List
 
 router = APIRouter()
 
@@ -40,25 +41,42 @@ async def honeypot_turn(body: dict, db: Session = Depends(get_db)):
     session_id = body.get("session_id")
     user_message = body.get("message", "")
     
-    # Simple Mock AI Response
-    ai_response = "Ji beta, main samajh gaya. Bataiye kya karna hai?"
-    if "account" in user_message.lower() or "bank" in user_message.lower():
-        ai_response = "Theek hai beta, main abhi apni bank details check karke batata hoon."
+    if not session_id:
+        raise HTTPException(status_code=400, detail="session_id is required")
+
+    # Fetch session and history
+    session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
+    if not session:
+        # Create session on the fly if it doesn't exist (flexible for simulation)
+        session = HoneypotSession(
+            session_id=session_id,
+            persona=body.get("persona", "Elderly Uncle"),
+            status="active"
+        )
+        db.add(session)
+        db.commit()
+        db.refresh(session)
+
+    # Convert messages to history format for AI
+    history = []
+    messages = db.query(HoneypotMessage).filter(HoneypotMessage.session_id == session.id).order_by(HoneypotMessage.timestamp.asc()).all()
+    for m in messages:
+        history.append({"role": m.role, "content": m.content})
+
+    # Generate real AI response
+    ai_response = await honeypot_ai.generate_response(session.persona, history, user_message)
     
-    # Log messages if session exists
-    if session_id:
-        session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
-        if session:
-            # Log user message
-            db.add(HoneypotMessage(session_id=session.id, role="user", content=user_message))
-            # Log AI response
-            db.add(HoneypotMessage(session_id=session.id, role="assistant", content=ai_response))
-            db.commit()
+    # Log user message
+    db.add(HoneypotMessage(session_id=session.id, role="user", content=user_message))
+    # Log AI response
+    db.add(HoneypotMessage(session_id=session.id, role="assistant", content=ai_response))
+    db.commit()
             
     return {
         "ai_response": ai_response,
-        "psychological_exploitation_index": 0.85,
-        "entities_extracted": {"upi": "scammer@upi", "phone": "9876543210"}
+        "session_id": session_id,
+        "persona": session.persona,
+        "status": session.status
     }
 
 @router.post("/direct-chat")
@@ -68,7 +86,14 @@ async def honeypot_direct_chat(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/session/end")
 async def end_honeypot_session(body: dict, db: Session = Depends(get_db)):
+    session_id = body.get("session_id")
+    if session_id:
+        session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
+        if session:
+            session.status = "completed"
+            db.commit()
     return {
+        "session_id": session_id,
         "transcript_id": f"TX-{uuid.uuid4().hex[:6].upper()}",
         "scammer_profile_id": f"PROF-{uuid.uuid4().hex[:6].upper()}",
         "fir_packet_ready": True
@@ -117,28 +142,43 @@ async def switch_persona_adversarial(body: dict, db: Session = Depends(get_db)):
 
 @router.get("/sessions")
 async def list_honeypot_sessions(db: Session = Depends(get_db)):
-    return [
-        {
-            "id": "H-124",
-            "persona": "ELDERLY_UNCLE",
-            "duration": "12m",
-            "status": "active",
-            "threat_level": "high"
-        },
-        {
-            "id": "H-125",
-            "persona": "HELPLESS_GRANDMA",
-            "duration": "4m",
-            "status": "active",
-            "threat_level": "medium"
-        }
-    ]
+    import datetime
+    sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(50).all()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    result = []
+    for s in sessions:
+        try:
+            created = s.created_at
+            if created and created.tzinfo is None:
+                # Make naive datetime comparable by treating it as UTC
+                created = created.replace(tzinfo=datetime.timezone.utc)
+            age_sec = (now - created).total_seconds() if created else 0
+        except Exception:
+            age_sec = 0
+        result.append({
+            "id": s.session_id,
+            "persona": s.persona,
+            "caller_num": s.caller_num,
+            "direction": s.direction,
+            "duration": f"{int(age_sec // 60)}m",
+            "status": s.status,
+            "user_id": s.user_id,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        })
+    return result
 
 @router.get("/stats")
 async def get_honeypot_stats(db: Session = Depends(get_db)):
+    active = db.query(HoneypotSession).filter(HoneypotSession.status == "active").count()
+    completed = db.query(HoneypotSession).filter(HoneypotSession.status == "completed").count()
+    total = db.query(HoneypotSession).count()
+    # Count sessions with auto-generated reports (completed + has analysis)
+    analyzed = db.query(HoneypotSession).filter(
+        HoneypotSession.recording_analysis_json.isnot(None)
+    ).count()
     return {
-        "active_sessions": 124,
-        "total_engagement_hours": 1450,
-        "scammers_attributed": 420,
-        "successful_traps": 892
+        "active_sessions": active or 0,
+        "completed_sessions": completed or 0,
+        "total_sessions": total or 0,
+        "scam_reports_generated": analyzed or 0,
     }

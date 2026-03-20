@@ -30,8 +30,15 @@ router = APIRouter()
 class InitiateCallRequest(BaseModel):
     """Request body for initiating an outbound call."""
     to_number: str = Field(..., description="Phone number to call (E.164 format, e.g. +919876543210)")
-    persona: str = Field("Elderly Uncle", description="AI persona to use during the call")
+    persona: Optional[str] = Field(None, description="AI persona to use during the call. If None, the AI will adapt dynamically.")
     session_id: Optional[str] = Field(None, description="Optional honeypot session ID to link this call to")
+
+
+class HandoffCallRequest(BaseModel):
+    """Request body for handing off an active call to the AI."""
+    call_sid: str = Field(..., description="The Twilio CallSid to hand off")
+    persona: Optional[str] = Field(None, description="Optional persona to start with")
+
 
 
 class EndCallRequest(BaseModel):
@@ -129,6 +136,168 @@ async def twilio_webhook(request: Request):
 
     twiml = twilio_engine.generate_twiml_connect(stream_id, persona)
     return Response(content=twiml, media_type="application/xml")
+
+
+# ------------------------------------------------------------------
+# INCOMING CALL HANDLER
+# ------------------------------------------------------------------
+
+@router.post("/incoming")
+async def twilio_incoming(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """
+    Twilio webhook hit when someone calls our Twilio number.
+    Creates a session and returns TwiML to connect the call to the AI agent.
+    """
+    form_data = await request.form()
+    from_number = form_data.get("From", "unknown")
+    to_number = form_data.get("To", "unknown")
+    call_sid = form_data.get("CallSid", "unknown")
+
+    # Generate a unique stream ID for this incoming call
+    stream_id = str(uuid.uuid4())
+    persona = "Elderly Uncle" # Default persona for incoming calls
+
+    logger.info(f"TWILIO INCOMING: Call from {from_number} to {to_number} (SID: {call_sid})")
+
+    try:
+        # Create a honeypot session for this incoming call
+        db_session = HoneypotSession(
+            session_id=stream_id,
+            caller_num=from_number,
+            persona=persona,
+            status="active",
+            direction="incoming",
+            metadata_json={"call_sid": call_sid}
+        )
+        db.add(db_session)
+
+        # Log the action (system-initiated as it's an incoming call)
+        action = SystemAction(
+            action_type="TWILIO_INCOMING_CALL",
+            target_id=from_number,
+            metadata_json={
+                "persona": persona,
+                "session_id": stream_id,
+                "call_sid": call_sid,
+            },
+            status="accepted",
+        )
+        db.add(action)
+        db.commit()
+
+        # Register the call in the engine's active_calls map
+        twilio_engine.active_calls[stream_id] = {
+            "call_sid": call_sid,
+            "stream_id": stream_id,
+            "to": to_number,
+            "from": from_number,
+            "persona": persona,
+            "status": "in-progress",
+            "history": [],
+            "direction": "incoming",
+        }
+
+        # Generate TwiML to connect to WebSocket
+        twiml = twilio_engine.generate_twiml_connect(stream_id, persona)
+        return Response(content=twiml, media_type="application/xml")
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"TWILIO INCOMING: Failed to handle call: {e}")
+        # Return a polite error message to the caller
+        twiml = f'<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Aditi" language="hi-IN">Namaste. Hum abhi vyast hain. Kripya baad mein phone karein.</Say></Response>'
+        return Response(content=twiml, media_type="application/xml")
+
+
+# ------------------------------------------------------------------
+# CALL HANDOFF (Activate AI during an active call)
+# ------------------------------------------------------------------
+
+@router.post("/handoff")
+async def call_handoff(
+    req: HandoffCallRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """
+    User clicks "Let AI Handle" during an active call.
+    Redirects the call to our media stream setup.
+    """
+    if not twilio_engine.client:
+        raise HTTPException(status_code=503, detail="Twilio not configured")
+
+    try:
+        # Generate a unique stream ID for this handoff
+        stream_id = str(uuid.uuid4())
+        persona = req.persona or "ADAPTIVE" # Set to adaptive if not specified
+
+        # Get call details from Twilio
+        call = twilio_engine.client.calls(req.call_sid).fetch()
+        
+        # Create a honeypot session for this handoff
+        db_session = HoneypotSession(
+            session_id=stream_id,
+            user_id=current_user.id,
+            caller_num=call.from_,
+            persona=persona,
+            status="active",
+            direction="handoff",
+            metadata_json={"call_sid": req.call_sid}
+        )
+        db.add(db_session)
+
+        # Log the action
+        action = SystemAction(
+            user_id=current_user.id,
+            action_type="TWILIO_CALL_HANDOFF",
+            target_id=call.from_,
+            metadata_json={
+                "persona": persona,
+                "session_id": stream_id,
+                "call_sid": req.call_sid,
+            },
+            status="success",
+        )
+        db.add(action)
+        db.commit()
+
+        # Register the call in the engine's active_calls map
+        twilio_engine.active_calls[stream_id] = {
+            "call_sid": req.call_sid,
+            "stream_id": stream_id,
+            "to": call.to,
+            "from": call.from_,
+            "persona": persona,
+            "status": "in-progress",
+            "history": [],
+            "direction": "handoff",
+            "user_id": current_user.id
+        }
+
+        # Redirect the call to our webhook which returns TwiML Connect
+        # The webhook expects stream_id and persona in query params
+        webhook_url = f"{twilio_engine.webhook_base_url}/api/v1/twilio/webhook?stream_id={stream_id}&persona={persona}"
+        
+        twilio_engine.client.calls(req.call_sid).update(url=webhook_url, method="POST")
+
+        logger.info(f"TWILIO HANDOFF: Call {req.call_sid} handed off to AI by {current_user.username}")
+
+        return {
+            "status": "success",
+            "message": "Call handed off to AI agent",
+            "stream_id": stream_id,
+            "persona": persona
+        }
+
+    except Exception as e:
+        db.rollback()
+        logger.error(f"TWILIO HANDOFF: Failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Handoff failed: {str(e)}")
+
+
 
 
 # ------------------------------------------------------------------

@@ -74,14 +74,18 @@ class HoneypotSession(Base):
     __tablename__ = "honeypot_sessions"
     id = Column(Integer, primary_key=True, index=True)
     session_id = Column(String, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     caller_num = Column(String)
     customer_id = Column(String, index=True, nullable=True)
     persona = Column(String) # e.g., "Elderly Uncle"
     status = Column(String, default="active") # active, completed
+    direction = Column(String, default="outgoing") # incoming, outgoing, handoff
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     handoff_timestamp = Column(DateTime, nullable=True)
     metadata_json = Column(JSON, nullable=True)
+    recording_analysis_json = Column(JSON, nullable=True)
     
+    user = relationship("User", backref="honeypot_sessions")
     messages = relationship("HoneypotMessage", back_populates="session")
 
 class HoneypotMessage(Base):

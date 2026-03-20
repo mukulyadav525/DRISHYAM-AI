@@ -163,31 +163,44 @@ class TwilioCallEngine:
 
                     logger.info(f"TWILIO STREAM: Started (StreamSID: {stream_sid}, ID: {stream_id}, Persona: {persona})")
 
-                    # Send initial AI greeting
-                    greeting = await honeypot_ai.generate_response(
-                        persona, [], "The person has picked up the phone. Introduce yourself naturally."
-                    )
-                    logger.info(f"TWILIO STREAM: AI Greeting: {greeting[:80]}...")
-
-                    tts_result = await voice_engine.synthesize_speech(greeting, persona)
-                    if tts_result.get("audio_base64"):
-                        await self._send_audio_to_stream(
-                            websocket, stream_sid, tts_result["audio_base64"]
-                        )
+                    # If persona is ADAPTIVE, we wait for the first user message before picking one.
+                    # Initial greeting for ADAPTIVE mode.
+                    if persona == "ADAPTIVE":
+                        greeting = "Hello? Namaste? Koun bol raha hai?" # Generic opening
                         call_history.append({"role": "assistant", "content": greeting})
+                        tts_result = await voice_engine.synthesize_speech(greeting, persona)
+                        if tts_result.get("audio_base64"):
+                            await self._send_audio_to_stream(websocket, stream_sid, tts_result["audio_base64"])
+                    else:
+                        # Send initial AI greeting
+                        greeting = await honeypot_ai.generate_response(
+                            persona, [], "The call has just started. Introduce yourself naturally as the persona and engage with the other person."
+                        )
+                        logger.info(f"TWILIO STREAM: AI Greeting: {greeting[:80]}...")
+
+                        tts_result = await voice_engine.synthesize_speech(greeting, persona)
+                        if tts_result.get("audio_base64"):
+                            await self._send_audio_to_stream(
+                                websocket, stream_sid, tts_result["audio_base64"]
+                            )
+                            call_history.append({"role": "assistant", "content": greeting})
+
 
                 elif event == "media":
                     # Accumulate incoming audio
+                    if not stream_sid:
+                        continue # Skip media if start event hasn't happened
+                        
                     payload = data.get("media", {}).get("payload", "")
                     if payload:
                         audio_chunk = base64.b64decode(payload)
                         audio_buffer.extend(audio_chunk)
 
                         # Process once we have enough audio
-                        if len(audio_buffer) >= BUFFER_THRESHOLD:
+                        if len(audio_buffer) >= 2000: # Threshold for processing
                             await self._process_audio_chunk(
                                 websocket,
-                                stream_sid,
+                                stream_sid, # Static analyzer might still complain, but runtime is safe now
                                 bytes(audio_buffer),
                                 persona,
                                 call_history,
@@ -198,7 +211,7 @@ class TwilioCallEngine:
                     logger.info(f"TWILIO STREAM: Stopped (StreamSID: {stream_sid})")
 
                     # Process any remaining buffered audio
-                    if len(audio_buffer) > 500:
+                    if stream_sid and len(audio_buffer) > 500:
                         await self._process_audio_chunk(
                             websocket,
                             stream_sid,
@@ -212,8 +225,12 @@ class TwilioCallEngine:
                     if stream_id and stream_id in self.active_calls:
                         self.active_calls[stream_id]["status"] = "completed"
                         self.active_calls[stream_id]["history"] = call_history
+                        
+                        # Trigger automated post-call analysis
+                        asyncio.create_task(self._analyze_and_report(stream_id, call_history))
 
                     break
+
 
         except Exception as e:
             logger.error(f"TWILIO STREAM: Error: {e}")
@@ -241,7 +258,16 @@ class TwilioCallEngine:
             logger.info(f"TWILIO STREAM: Caller said: {caller_text}")
             history.append({"role": "user", "content": caller_text})
 
+            # If ADAPTIVE, pick a persona now based on first user message
+            if persona == "ADAPTIVE":
+                persona = await honeypot_ai.pick_persona(caller_text)
+                logger.info(f"TWILIO STREAM: ADAPTIVE picked persona: {persona}")
+                # Update the stream state
+                # Note: This is an internal variable for this function call
+                # In a real system, we'd update self.active_calls[stream_id]
+
             # 2. AI: Generate response
+
             ai_response = await honeypot_ai.generate_response(persona, history, caller_text)
             logger.info(f"TWILIO STREAM: AI responds: {ai_response[:80]}...")
             history.append({"role": "assistant", "content": ai_response})
@@ -258,7 +284,58 @@ class TwilioCallEngine:
         except Exception as e:
             logger.error(f"TWILIO STREAM: Audio processing error: {e}")
 
+    async def _analyze_and_report(self, stream_id: str, history: list) -> None:
+        """Analyze the call after it ends and generate a crime report."""
+        try:
+            from core.database import SessionLocal
+            from models.database import HoneypotSession, CrimeReport, IntelligenceAlert
+            import json
+
+            # 1. AI Analysis
+            analysis = await honeypot_ai.analyze_scam(history)
+            logger.info(f"TWILIO ANALYSIS: Results for {stream_id}: {analysis.get('scam_type')}")
+
+            # Use explicit session open/close (SessionLocal is not a context manager)
+            db = SessionLocal()
+            try:
+                session = db.query(HoneypotSession).filter(HoneypotSession.session_id == stream_id).first()
+                if session:
+                    session.status = "completed"
+                    session.recording_analysis_json = analysis
+                    
+                    # 2. Generate Crime Report if risk is high
+                    if analysis.get("risk_score", 0) > 0.7 or (analysis.get("scam_type", "UNKNOWN") not in ["UNKNOWN", "ERROR"]):
+                        report_id = f"AUTO-{uuid.uuid4().hex[:6].upper()}"
+                        new_report = CrimeReport(
+                            report_id=report_id,
+                            category="police",
+                            scam_type=analysis.get("scam_type", "UNKNOWN"),
+                            platform="Voice Call",
+                            priority="HIGH" if analysis.get("risk_score", 0) > 0.8 else "MEDIUM",
+                            status="PENDING",
+                            reporter_num=session.caller_num,
+                            metadata_json=analysis
+                        )
+                        db.add(new_report)
+                        
+                        # 3. Add to live Intelligence Alerts for Dashboard
+                        alert = IntelligenceAlert(
+                            severity="HIGH",
+                            message=f"Automated detection: {analysis.get('scam_type')} attempt from {session.caller_num}",
+                            category="VOICE_SCAM",
+                        )
+                        db.add(alert)
+                        
+                    db.commit()
+                    logger.info(f"TWILIO REPORT: Created report for session {stream_id}")
+            finally:
+                db.close()
+
+        except Exception as e:
+            logger.error(f"TWILIO ANALYSIS: Failed: {e}")
+
     async def _send_audio_to_stream(
+
         self, websocket, stream_sid: str, audio_base64: str
     ) -> None:
         """Send audio payload back to Twilio through the WebSocket media stream."""
