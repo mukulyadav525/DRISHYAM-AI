@@ -259,7 +259,7 @@ async def get_upi_stats_module(db: Session = Depends(get_db)):
         feed.append({
             "type": t.scam_type or "UPI_DETECTION",
             "risk": t.priority.capitalize(),
-            "time": "JUST NOW" if (datetime.datetime.utcnow() - t.created_at).seconds < 60 else f"{(datetime.datetime.utcnow() - t.created_at).seconds // 60}m ago"
+            "time": "JUST NOW" if ((datetime.datetime.now(t.created_at.tzinfo) if t.created_at.tzinfo else datetime.datetime.utcnow()) - t.created_at).seconds < 60 else f"{((datetime.datetime.now(t.created_at.tzinfo) if t.created_at.tzinfo else datetime.datetime.utcnow()) - t.created_at).seconds // 60}m ago"
         })
 
     # Fallback handle
