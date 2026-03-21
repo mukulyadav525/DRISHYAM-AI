@@ -11,15 +11,14 @@ logger = logging.getLogger("drishyam.vision")
 
 class GeminiVisionEngine:
     def __init__(self):
-        # We prefer GEMINI_API_KEY, but fallback to GOOGLE_API_KEY if present in the environment
-        import os
-        self.api_key = os.environ.get("GEMINI_API_KEY", os.environ.get("GOOGLE_API_KEY", ""))
+        self.api_key = settings.GEMINI_API_KEY
         if not self.api_key:
             logger.warning("GEMINI_API_KEY or GOOGLE_API_KEY is missing. Vision AI features will run in mock mode.")
             self.client = None
         else:
             self.client = genai.Client(api_key=self.api_key)
             logger.info("AI ENGINE: Gemini Vision initialized.")
+
 
     async def analyze_multimodal_forensic(self, file_content: bytes, mime_type: str = "image/jpeg", filename: str = "") -> Dict[str, Any]:
         """
