@@ -7,11 +7,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from core.auth import get_current_verified_user, require_role
+from core.access_control import authorize_agency_access
 from core.database import get_db
 from models.database import (
     BillingRecord,
     GovernanceReview,
     PartnerPipeline,
+    PartnerIntegrationStatus,
     PilotProgram,
     SupportTicket,
     User,
@@ -315,6 +317,35 @@ class GovernanceReviewCreate(BaseModel):
     days_until_next: int = Field(30, ge=0, le=365)
 
 
+class PartnerIntegrationCreate(BaseModel):
+    partner_name: str
+    segment: str
+    owner: str
+    region_scope: str = "INDIA"
+    mou_status: str = "PROPOSAL_SENT"
+    sandbox_access_status: str = "REQUESTED"
+    production_access_status: str = "PLANNED"
+    api_access_status: str = "PENDING"
+    credential_status: str = "NOT_ISSUED"
+    sla_status: str = "IN_NEGOTIATION"
+    escalation_contact: str | None = None
+    next_milestone: str
+    status: str = "ON_TRACK"
+
+
+class PartnerIntegrationUpdate(BaseModel):
+    mou_status: str | None = None
+    sandbox_access_status: str | None = None
+    production_access_status: str | None = None
+    api_access_status: str | None = None
+    credential_status: str | None = None
+    sla_status: str | None = None
+    escalation_contact: str | None = None
+    next_milestone: str | None = None
+    status: str | None = None
+    note: str | None = None
+
+
 def _absolute_path(relative_path: str) -> str:
     return str((ROOT_DIR / relative_path).resolve())
 
@@ -433,6 +464,88 @@ def _seed_billing(db: Session):
         if existing:
             continue
         db.add(BillingRecord(**payload))
+        created = True
+    if created:
+        db.commit()
+
+
+def _seed_partner_integrations(db: Session):
+    rows = [
+        {
+            "partner_name": "Ministry of Home Affairs",
+            "segment": "B2G",
+            "owner": "Aarav Menon",
+            "region_scope": "NATIONAL",
+            "mou_status": "SIGNED",
+            "sandbox_access_status": "READY",
+            "production_access_status": "PILOT_READY",
+            "api_access_status": "ACTIVE",
+            "credential_status": "ISSUED",
+            "sla_status": "SIGNED",
+            "escalation_contact": "mha-grid@drishyam.ai",
+            "next_milestone": "National readiness review",
+            "status": "LIVE",
+            "last_checked_at": datetime.datetime.utcnow(),
+            "metadata_json": {"task": "PRT29-21", "integration_owner": "Gov Strategy"},
+        },
+        {
+            "partner_name": "Airtel National Scam Shield",
+            "segment": "TELECOM",
+            "owner": "Ritika Shah",
+            "region_scope": "INDIA",
+            "mou_status": "REDLINE_REVIEW",
+            "sandbox_access_status": "READY",
+            "production_access_status": "PLANNED",
+            "api_access_status": "SANDBOX_ACTIVE",
+            "credential_status": "ISSUED",
+            "sla_status": "IN_NEGOTIATION",
+            "escalation_contact": "airtel-ops@drishyam.ai",
+            "next_milestone": "Production webhook validation",
+            "status": "ON_TRACK",
+            "last_checked_at": datetime.datetime.utcnow(),
+            "metadata_json": {"task": "PRT29-21", "wave": "Phase 35"},
+        },
+        {
+            "partner_name": "State Bank of India Recovery Grid",
+            "segment": "BANK",
+            "owner": "Nikhil Rao",
+            "region_scope": "INDIA",
+            "mou_status": "SIGNED",
+            "sandbox_access_status": "READY",
+            "production_access_status": "PLANNED",
+            "api_access_status": "SANDBOX_ACTIVE",
+            "credential_status": "ISSUED",
+            "sla_status": "SIGNED",
+            "escalation_contact": "sbi-recovery@drishyam.ai",
+            "next_milestone": "Recovery API production readiness review",
+            "status": "ON_TRACK",
+            "last_checked_at": datetime.datetime.utcnow(),
+            "metadata_json": {"task": "PRT29-21", "pilot_geo": "North Grid"},
+        },
+        {
+            "partner_name": "CERT-In Incident Exchange",
+            "segment": "B2G",
+            "owner": "Rekha Sethi",
+            "region_scope": "NATIONAL",
+            "mou_status": "PROPOSAL_SENT",
+            "sandbox_access_status": "REQUESTED",
+            "production_access_status": "PLANNED",
+            "api_access_status": "PENDING",
+            "credential_status": "NOT_ISSUED",
+            "sla_status": "IN_NEGOTIATION",
+            "escalation_contact": "certin-bridge@drishyam.ai",
+            "next_milestone": "Threat-sharing schema approval",
+            "status": "AT_RISK",
+            "last_checked_at": datetime.datetime.utcnow(),
+            "metadata_json": {"task": "PRT29-21", "dependency": "Cross-border exchange pack"},
+        },
+    ]
+    created = False
+    for payload in rows:
+        existing = db.query(PartnerIntegrationStatus).filter(PartnerIntegrationStatus.partner_name == payload["partner_name"]).first()
+        if existing:
+            continue
+        db.add(PartnerIntegrationStatus(**payload))
         created = True
     if created:
         db.commit()
@@ -589,6 +702,27 @@ def _serialize_billing(row: BillingRecord) -> dict:
         "billing_cycle": row.billing_cycle,
         "due_date": row.due_date.isoformat() if row.due_date else None,
         "metadata": row.metadata_json or {},
+    }
+
+
+def _serialize_partner_integration(row: PartnerIntegrationStatus) -> dict:
+    return {
+        "partner_name": row.partner_name,
+        "segment": row.segment,
+        "owner": row.owner,
+        "region_scope": row.region_scope,
+        "mou_status": row.mou_status,
+        "sandbox_access_status": row.sandbox_access_status,
+        "production_access_status": row.production_access_status,
+        "api_access_status": row.api_access_status,
+        "credential_status": row.credential_status,
+        "sla_status": row.sla_status,
+        "escalation_contact": row.escalation_contact,
+        "next_milestone": row.next_milestone,
+        "status": row.status,
+        "last_checked_at": row.last_checked_at.isoformat() if row.last_checked_at else None,
+        "metadata": row.metadata_json or {},
+        "updated_at": row.updated_at.isoformat() if row.updated_at else None,
     }
 
 
@@ -852,6 +986,44 @@ def _build_support_summary(db: Session) -> dict:
     }
 
 
+def _build_partner_summary(db: Session) -> dict:
+    _seed_partner_integrations(db)
+    rows = db.query(PartnerIntegrationStatus).order_by(PartnerIntegrationStatus.updated_at.desc()).all()
+    integrations = [_serialize_partner_integration(row) for row in rows]
+
+    playbooks = [
+        {"task": "PRT29-15", "title": "Partner onboarding playbook", "path": "docs/playbooks/partner_onboarding.md"},
+        {"task": "PRT29-16", "title": "Telecom onboarding playbook", "path": "docs/playbooks/telecom_onboarding.md"},
+        {"task": "PRT29-16", "title": "Bank onboarding playbook", "path": "docs/playbooks/bank_onboarding.md"},
+        {"task": "PRT29-18", "title": "API reference and partner contract pack", "path": "docs/api/api_reference.md"},
+        {"task": "PRT29-20", "title": "Incident escalation plan", "path": "docs/playbooks/incident_escalation.md"},
+    ]
+    for playbook in playbooks:
+        playbook["absolute_path"] = _absolute_path(playbook["path"])
+        playbook["published"] = Path(playbook["absolute_path"]).exists()
+
+    return {
+        "summary": {
+            "tracked": len(integrations),
+            "live": len([item for item in integrations if item["status"] == "LIVE"]),
+            "at_risk": len([item for item in integrations if item["status"] == "AT_RISK"]),
+            "mou_signed": len([item for item in integrations if item["mou_status"] == "SIGNED"]),
+            "api_ready": len([item for item in integrations if item["api_access_status"] in {"ACTIVE", "SANDBOX_ACTIVE"}]),
+        },
+        "integration_plans": [
+            {"task": "PRT29-15", "title": "Sandbox integration plan", "status": "ACTIVE"},
+            {"task": "PRT29-16", "title": "Production integration plan", "status": "ACTIVE"},
+            {"task": "PRT29-17", "title": "Partner SLA definition", "status": "ACTIVE"},
+            {"task": "PRT29-18", "title": "Partner data contract", "status": "ACTIVE"},
+            {"task": "PRT29-19", "title": "Partner failure handling", "status": "ACTIVE"},
+            {"task": "PRT29-20", "title": "Partner escalation contacts", "status": "ACTIVE"},
+            {"task": "PRT29-21", "title": "MoU and API access status tracking", "status": "LIVE"},
+        ],
+        "playbooks": playbooks,
+        "integrations": integrations,
+    }
+
+
 def _build_documentation_summary() -> dict:
     phase_38 = [_serialize_document(item) for item in PHASE_38_ARTIFACTS]
     extended = [_serialize_document(item) for item in EXTENDED_LIBRARY]
@@ -1089,6 +1261,118 @@ async def get_support_summary(
     current_user: User = Depends(require_role(*READ_ROLES)),
 ):
     return _build_support_summary(db)
+
+
+@router.get("/partners")
+async def get_partner_summary(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role(*READ_ROLES)),
+):
+    return _build_partner_summary(db)
+
+
+@router.post("/partners")
+async def create_partner_integration(
+    body: PartnerIntegrationCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    authorize_agency_access(
+        db,
+        current_user,
+        action="WRITE",
+        resource="partner_registry",
+        attrs={"segment": body.segment, "region": body.region_scope, "sensitivity": "HIGH"},
+    )
+
+    row = db.query(PartnerIntegrationStatus).filter(PartnerIntegrationStatus.partner_name == body.partner_name).first()
+    if row:
+        row.segment = body.segment.upper()
+        row.owner = body.owner
+        row.region_scope = body.region_scope.upper()
+        row.mou_status = body.mou_status.upper()
+        row.sandbox_access_status = body.sandbox_access_status.upper()
+        row.production_access_status = body.production_access_status.upper()
+        row.api_access_status = body.api_access_status.upper()
+        row.credential_status = body.credential_status.upper()
+        row.sla_status = body.sla_status.upper()
+        row.escalation_contact = body.escalation_contact
+        row.next_milestone = body.next_milestone
+        row.status = body.status.upper()
+        row.last_checked_at = datetime.datetime.utcnow()
+        row.metadata_json = {**(row.metadata_json or {}), "updated_by": current_user.username}
+    else:
+        row = PartnerIntegrationStatus(
+            partner_name=body.partner_name,
+            segment=body.segment.upper(),
+            owner=body.owner,
+            region_scope=body.region_scope.upper(),
+            mou_status=body.mou_status.upper(),
+            sandbox_access_status=body.sandbox_access_status.upper(),
+            production_access_status=body.production_access_status.upper(),
+            api_access_status=body.api_access_status.upper(),
+            credential_status=body.credential_status.upper(),
+            sla_status=body.sla_status.upper(),
+            escalation_contact=body.escalation_contact,
+            next_milestone=body.next_milestone,
+            status=body.status.upper(),
+            last_checked_at=datetime.datetime.utcnow(),
+            metadata_json={"created_by": current_user.username, "task": "PRT29-21"},
+        )
+        db.add(row)
+
+    db.commit()
+    db.refresh(row)
+    return _serialize_partner_integration(row)
+
+
+@router.post("/partners/{partner_name}/status")
+async def update_partner_integration(
+    partner_name: str,
+    body: PartnerIntegrationUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    row = db.query(PartnerIntegrationStatus).filter(PartnerIntegrationStatus.partner_name == partner_name).first()
+    if not row:
+        return {"status": "NOT_FOUND", "partner_name": partner_name}
+
+    authorize_agency_access(
+        db,
+        current_user,
+        action="WRITE",
+        resource="partner_registry",
+        attrs={"segment": row.segment, "region": row.region_scope, "sensitivity": "HIGH"},
+    )
+
+    if body.mou_status:
+        row.mou_status = body.mou_status.upper()
+    if body.sandbox_access_status:
+        row.sandbox_access_status = body.sandbox_access_status.upper()
+    if body.production_access_status:
+        row.production_access_status = body.production_access_status.upper()
+    if body.api_access_status:
+        row.api_access_status = body.api_access_status.upper()
+    if body.credential_status:
+        row.credential_status = body.credential_status.upper()
+    if body.sla_status:
+        row.sla_status = body.sla_status.upper()
+    if body.escalation_contact is not None:
+        row.escalation_contact = body.escalation_contact
+    if body.next_milestone:
+        row.next_milestone = body.next_milestone
+    if body.status:
+        row.status = body.status.upper()
+
+    row.last_checked_at = datetime.datetime.utcnow()
+    row.metadata_json = {
+        **(row.metadata_json or {}),
+        "updated_by": current_user.username,
+        "latest_note": body.note,
+    }
+    db.commit()
+    db.refresh(row)
+    return _serialize_partner_integration(row)
 
 
 @router.post("/support/tickets")

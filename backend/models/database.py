@@ -377,6 +377,78 @@ class GovernanceReview(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
+class PartnerIntegrationStatus(Base):
+    __tablename__ = "partner_integrations"
+    id = Column(Integer, primary_key=True, index=True)
+    partner_name = Column(String, unique=True, nullable=False, index=True)
+    segment = Column(String, nullable=False, index=True)
+    owner = Column(String, nullable=False)
+    region_scope = Column(String, default="INDIA", index=True)
+    mou_status = Column(String, default="DRAFT", index=True)
+    sandbox_access_status = Column(String, default="REQUESTED", index=True)
+    production_access_status = Column(String, default="PLANNED", index=True)
+    api_access_status = Column(String, default="PENDING", index=True)
+    credential_status = Column(String, default="NOT_ISSUED", index=True)
+    sla_status = Column(String, default="IN_NEGOTIATION", index=True)
+    escalation_contact = Column(String, nullable=True)
+    next_milestone = Column(String, nullable=True)
+    status = Column(String, default="ON_TRACK", index=True)  # ON_TRACK, AT_RISK, BLOCKED, LIVE
+    last_checked_at = Column(DateTime, default=datetime.datetime.utcnow)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class AgencyAccessPolicy(Base):
+    __tablename__ = "agency_access_policies"
+    id = Column(Integer, primary_key=True, index=True)
+    policy_id = Column(String, unique=True, nullable=False, index=True)
+    name = Column(String, nullable=False)
+    role_scope = Column(String, nullable=False, index=True)
+    resource_scope = Column(String, default="*", index=True)
+    action_scope = Column(String, default="*", index=True)
+    region_scope = Column(String, default="*", index=True)
+    effect = Column(String, default="ALLOW", index=True)  # ALLOW, DENY
+    active = Column(Boolean, default=True, index=True)
+    conditions_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class AgencySession(Base):
+    __tablename__ = "agency_sessions"
+    id = Column(Integer, primary_key=True, index=True)
+    session_uid = Column(String, unique=True, nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    device_label = Column(String, nullable=False)
+    device_type = Column(String, default="WEB", index=True)
+    ip_address = Column(String, nullable=True)
+    network_zone = Column(String, nullable=True)
+    auth_stage = Column(String, default="PASSWORD_ONLY", index=True)  # PASSWORD_ONLY, MFA_VERIFIED
+    risk_level = Column(String, default="LOW", index=True)  # LOW, MEDIUM, HIGH, CRITICAL
+    status = Column(String, default="ACTIVE", index=True)  # ACTIVE, REVOKED, EXPIRED
+    last_seen_at = Column(DateTime, default=datetime.datetime.utcnow)
+    verified_at = Column(DateTime, nullable=True)
+    revoked_at = Column(DateTime, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class AdminApproval(Base):
+    __tablename__ = "admin_approvals"
+    id = Column(Integer, primary_key=True, index=True)
+    approval_id = Column(String, unique=True, nullable=False, index=True)
+    requested_by_user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    approver_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    action_type = Column(String, nullable=False, index=True)
+    resource = Column(String, nullable=False, index=True)
+    risk_level = Column(String, default="HIGH", index=True)
+    justification = Column(String, nullable=False)
+    status = Column(String, default="PENDING", index=True)  # PENDING, APPROVED, REJECTED, EXECUTED, EXPIRED
+    expires_at = Column(DateTime, nullable=True)
+    decided_at = Column(DateTime, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
 class NPCILog(Base):
     __tablename__ = "npci_logs"
     id = Column(Integer, primary_key=True, index=True)

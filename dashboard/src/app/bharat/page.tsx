@@ -147,13 +147,8 @@ export default function BharatPage() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isBroadcasting, setIsBroadcasting] = useState(false);
 
-    const regionOptions = stats?.regions || [
-        { id: "north", name: "North India (Haryana/Punjab)", towers: 1240, reach: "8.2M" },
-        { id: "east", name: "East India (Bihar/WB)", towers: 2150, reach: "12.4M" },
-        { id: "west", name: "West India (Rajasthan/Gujarat)", towers: 1890, reach: "10.1M" },
-        { id: "south", name: "South India (Karnataka/TN)", towers: 2450, reach: "15.2M" },
-    ];
-    const currentRegion = regionOptions.find((region) => region.id === selectedRegion) || regionOptions[0];
+    const regionOptions = stats?.regions || [];
+    const currentRegion = regionOptions.find((region) => region.id === selectedRegion) || regionOptions[0] || null;
     const currentLanguage = languages.find((language) => language.code === selectedLanguage) || null;
 
     const loadOperationalData = async () => {

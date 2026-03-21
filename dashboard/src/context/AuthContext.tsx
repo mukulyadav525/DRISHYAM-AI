@@ -1,7 +1,23 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { API_BASE } from "@/config/api";
+
+export interface AccessPageDecision {
+    path: string;
+    resource: string;
+    label: string;
+    allowed: boolean;
+}
+
+export interface AccessManifest {
+    role: string;
+    role_label: string;
+    allowed_pages: string[];
+    allowed_resources: string[];
+    pages: AccessPageDecision[];
+    generated_at?: string | null;
+}
 
 interface AuthUser {
     username: string;
@@ -10,6 +26,7 @@ interface AuthUser {
     token: string;
     mfaRequired: boolean;
     mfaVerified: boolean;
+    access: AccessManifest;
 }
 
 interface AuthContextType {
@@ -23,56 +40,31 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-// ─── Role → Page Access Matrix ─────────────────────────────────────────
-export const ROLE_ACCESS: Record<string, string[]> = {
-    admin: [
-        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
-        "/mule", "/inoculation", "/upi", "/score", "/profiling", "/command",
-        "/agency", "/launch", "/national", "/business", "/ops", "/governance",
-        "/shield", "/bharat", "/recovery", "/settings",
-    ],
-    police: [
-        "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
-        "/mule", "/inoculation", "/score", "/profiling", "/command",
-        "/agency", "/national", "/business", "/ops", "/governance",
-        "/shield", "/bharat", "/recovery",
-    ],
-    bank: [
-        "/", "/graph", "/alerts", "/mule", "/inoculation", "/upi",
-        "/score", "/agency", "/national", "/business", "/ops", "/governance",
-        "/bharat", "/recovery",
-    ],
-    government: [
-        "/", "/detection", "/graph", "/alerts", "/deepfake", "/history", "/inoculation",
-        "/upi", "/score", "/command", "/agency", "/launch", "/national",
-        "/business", "/ops", "/governance", "/shield", "/bharat",
-    ],
-    telecom: [
-        "/", "/detection", "/alerts", "/inoculation", "/agency", "/national",
-        "/business", "/ops", "/governance", "/shield", "/bharat",
-    ],
-    court: [
-        "/", "/graph", "/deepfake", "/history", "/mule", "/score", "/profiling",
-        "/agency", "/national", "/business", "/ops", "/governance", "/bharat", "/recovery",
-    ],
-    common: [
-        "/", "/alerts", "/inoculation", "/upi", "/score", "/shield",
-        "/bharat", "/recovery",
-    ],
-};
-
-export const ROLE_LABELS: Record<string, string> = {
-    admin: "Administrator",
-    police: "Police / LEA",
-    bank: "Banking / NBFC",
-    government: "Government",
-    telecom: "Telecom Operator",
-    court: "Judiciary / Court",
-    common: "Citizen",
-};
-
+const STORAGE_KEY = "drishyam_auth";
 const PRIVILEGED_ROLES = new Set(["admin", "police", "bank", "government", "telecom", "court"]);
+
+function defaultAccess(role: string): AccessManifest {
+    return {
+        role,
+        role_label: role === "common" ? "Citizen" : role.charAt(0).toUpperCase() + role.slice(1),
+        allowed_pages: [],
+        allowed_resources: [],
+        pages: [],
+        generated_at: null,
+    };
+}
+
+function normalizeAccess(raw: any, role: string): AccessManifest {
+    const manifest = raw && typeof raw === "object" ? raw : {};
+    return {
+        role: manifest.role || role,
+        role_label: manifest.role_label || defaultAccess(role).role_label,
+        allowed_pages: Array.isArray(manifest.allowed_pages) ? manifest.allowed_pages : [],
+        allowed_resources: Array.isArray(manifest.allowed_resources) ? manifest.allowed_resources : [],
+        pages: Array.isArray(manifest.pages) ? manifest.pages : [],
+        generated_at: manifest.generated_at || null,
+    };
+}
 
 function normalizeStoredUser(parsed: any): AuthUser {
     const role = parsed?.role || "common";
@@ -86,75 +78,170 @@ function normalizeStoredUser(parsed: any): AuthUser {
         token: parsed?.token || "",
         mfaRequired,
         mfaVerified,
+        access: normalizeAccess(parsed?.access, role),
     };
+}
+
+function buildAuthHeaders(init?: HeadersInit): Headers {
+    const headers = new Headers(init || {});
+    if (headers.has("Authorization")) {
+        return headers;
+    }
+
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            return headers;
+        }
+        const parsed = normalizeStoredUser(JSON.parse(stored));
+        if (parsed.token) {
+            headers.set("Authorization", `Bearer ${parsed.token}`);
+        }
+    } catch {
+        localStorage.removeItem(STORAGE_KEY);
+    }
+
+    return headers;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // Restore session from localStorage on mount
-    useEffect(() => {
-        const stored = localStorage.getItem("drishyam_auth");
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                setUser(normalizeStoredUser(parsed));
-            } catch {
-                localStorage.removeItem("drishyam_auth");
-            }
+    const persistUser = useCallback((authUser: AuthUser | null) => {
+        setUser(authUser);
+        if (authUser) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
+        } else {
+            localStorage.removeItem(STORAGE_KEY);
         }
-        setIsLoading(false);
     }, []);
+
+    useEffect(() => {
+        const originalFetch = window.fetch.bind(window);
+
+        window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+            const requestUrl =
+                typeof input === "string"
+                    ? input
+                    : input instanceof URL
+                      ? input.toString()
+                      : input.url;
+
+            if (!requestUrl.startsWith(API_BASE)) {
+                return originalFetch(input, init);
+            }
+
+            const headers = buildAuthHeaders(init?.headers || (input instanceof Request ? input.headers : undefined));
+            return originalFetch(input, { ...init, headers });
+        }) as typeof window.fetch;
+
+        return () => {
+            window.fetch = originalFetch;
+        };
+    }, []);
+
+    useEffect(() => {
+        let active = true;
+
+        const restoreSession = async () => {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (!stored) {
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                const parsed = normalizeStoredUser(JSON.parse(stored));
+                if (!parsed.token) {
+                    persistUser(null);
+                    return;
+                }
+
+                setUser(parsed);
+
+                const res = await fetch(`${API_BASE}/auth/session`, {
+                    headers: {
+                        Authorization: `Bearer ${parsed.token}`,
+                    },
+                });
+
+                if (!res.ok) {
+                    throw new Error(`Session refresh failed (${res.status})`);
+                }
+
+                const session = await res.json();
+                const refreshedUser: AuthUser = {
+                    username: session.username,
+                    role: session.role,
+                    full_name: session.full_name ?? null,
+                    token: parsed.token,
+                    mfaRequired: Boolean(session.mfa_required),
+                    mfaVerified: Boolean(session.mfa_verified),
+                    access: normalizeAccess(session.access, session.role),
+                };
+
+                if (active) {
+                    persistUser(refreshedUser);
+                }
+            } catch {
+                if (active) {
+                    persistUser(null);
+                }
+            } finally {
+                if (active) {
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        void restoreSession();
+
+        return () => {
+            active = false;
+        };
+    }, [persistUser]);
 
     const login = useCallback(async (username: string, password: string) => {
         const formData = new URLSearchParams();
         formData.append("username", username);
         formData.append("password", password);
 
-        try {
-            const res = await fetch(`${API_BASE}/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                body: formData.toString(),
-            });
+        const res = await fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: formData.toString(),
+        });
 
-            const contentType = res.headers.get("content-type");
-            const isJson = contentType && contentType.includes("application/json");
+        const contentType = res.headers.get("content-type");
+        const isJson = contentType?.includes("application/json");
 
-            if (!res.ok) {
-                if (isJson) {
-                    const err = await res.json();
-                    throw new Error(err.detail || "Login failed");
-                } else {
-                    const text = await res.text();
-                    console.error("Non-JSON error response:", text);
-                    throw new Error(`Server error (${res.status}): ${res.statusText}`);
-                }
+        if (!res.ok) {
+            if (isJson) {
+                const err = await res.json();
+                throw new Error(err.detail || "Login failed");
             }
-
-            if (!isJson) {
-                throw new Error("Invalid server response: Expected JSON");
-            }
-
-            const data = await res.json();
-            const authUser: AuthUser = {
-                username: data.username,
-                role: data.role,
-                full_name: data.full_name,
-                token: data.access_token,
-                mfaRequired: Boolean(data.mfa_required),
-                mfaVerified: Boolean(data.mfa_verified),
-            };
-
-            setUser(authUser);
-            localStorage.setItem("drishyam_auth", JSON.stringify(authUser));
-            return authUser;
-        } catch (error: any) {
-            console.error("Login request failed:", error);
-            throw error;
+            throw new Error(`Server error (${res.status})`);
         }
-    }, []);
+
+        if (!isJson) {
+            throw new Error("Invalid server response: expected JSON");
+        }
+
+        const data = await res.json();
+        const authUser: AuthUser = {
+            username: data.username,
+            role: data.role,
+            full_name: data.full_name ?? null,
+            token: data.access_token,
+            mfaRequired: Boolean(data.mfa_required),
+            mfaVerified: Boolean(data.mfa_verified),
+            access: normalizeAccess(data.access, data.role),
+        };
+
+        persistUser(authUser);
+        return authUser;
+    }, [persistUser]);
 
     const verifyMfa = useCallback(async (otp: string) => {
         if (!user?.token) {
@@ -165,13 +252,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": `Bearer ${user.token}`,
+                Authorization: `Bearer ${user.token}`,
             },
             body: JSON.stringify({ otp }),
         });
 
         const contentType = res.headers.get("content-type");
-        const isJson = contentType && contentType.includes("application/json");
+        const isJson = contentType?.includes("application/json");
 
         if (!res.ok) {
             if (isJson) {
@@ -189,20 +276,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const authUser: AuthUser = {
             username: data.username,
             role: data.role,
-            full_name: data.full_name,
+            full_name: data.full_name ?? null,
             token: data.access_token,
             mfaRequired: Boolean(data.mfa_required),
             mfaVerified: Boolean(data.mfa_verified),
+            access: normalizeAccess(data.access, data.role),
         };
 
-        setUser(authUser);
-        localStorage.setItem("drishyam_auth", JSON.stringify(authUser));
-    }, [user]);
+        persistUser(authUser);
+    }, [persistUser, user]);
 
     const logout = useCallback(() => {
-        setUser(null);
-        localStorage.removeItem("drishyam_auth");
-    }, []);
+        persistUser(null);
+    }, [persistUser]);
 
     const isMfaPending = !!user && user.mfaRequired && !user.mfaVerified;
 

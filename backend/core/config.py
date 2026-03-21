@@ -1,6 +1,6 @@
 import os
 from pydantic_settings import BaseSettings
-from pydantic import Field, validator, field_validator
+from pydantic import Field, field_validator
 from dotenv import load_dotenv
 from typing import Optional
 
@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 480
     
     # External APIs
-    SARVAM_API_KEY: str = Field(..., env="SARVAM_API_KEY")
+    SARVAM_API_KEY: Optional[str] = Field(None, env="SARVAM_API_KEY")
     GEMINI_API_KEY: Optional[str] = Field(None, env="GEMINI_API_KEY")
     DEEPGRAM_API_KEY: Optional[str] = Field(None, env="DEEPGRAM_API_KEY")
     
@@ -34,7 +34,9 @@ class Settings(BaseSettings):
     TWILIO_WEBHOOK_BASE_URL: Optional[str] = Field(None, env="TWILIO_WEBHOOK_BASE_URL")
     
     # Database
-    DATABASE_URL: str = Field("sqlite:///./drishyam.db", env="DATABASE_URL")
+    DATABASE_URL: str = Field(..., env="DATABASE_URL")
+    ALLOW_DATABASE_FALLBACK: bool = Field(False, env="ALLOW_DATABASE_FALLBACK")
+    ENABLE_BOOTSTRAP_DATA: bool = Field(False, env="ENABLE_BOOTSTRAP_DATA")
     
     # Deepfake Forensic API (Railway)
     DEEPFAKE_API_URL: str = Field("https://deepfake-production-39b6.up.railway.app", env="DEEPFAKE_API_URL")
@@ -83,42 +85,6 @@ class Settings(BaseSettings):
         return v
 
 try:
-    # Use a dummy secret for validation if not provided in dev
-    if os.getenv("ENV") != "prod" and not os.getenv("SECRET_KEY"):
-        os.environ["SECRET_KEY"] = "dev-secret-key-only"
-    if os.getenv("ENV") != "prod" and not os.getenv("SARVAM_API_KEY"):
-        os.environ["SARVAM_API_KEY"] = "mock-sarvam-key"
-    if os.getenv("ENV") != "prod" and not os.getenv("DEEPGRAM_API_KEY"):
-        os.environ["DEEPGRAM_API_KEY"] = "mock-deepgram-key"
-        
     settings = Settings()
 except Exception as e:
-    print(f"Configuration Error: {e}")
-    if os.getenv("ENV") != "prod":
-        print("Falling back to robust mock settings for development...")
-        class MockSettings:
-            PROJECT_NAME = "DRISHYAM AI (MOCK)"
-            API_V1_STR = "/api/v1"
-            ENV = "dev"
-            SECRET_KEY = "mock-secret"
-            ALGORITHM = "HS256"
-            ACCESS_TOKEN_EXPIRE_MINUTES = 480
-            SARVAM_API_KEY = "mock-key"
-            GEMINI_API_KEY = "mock-key"
-            DEEPGRAM_API_KEY = "mock-key"
-            SQLALCHEMY_DATABASE_URI = "sqlite:///./drishyam.db"
-            REDIS_URL = None
-            NEO4J_URI = None
-            NEO4J_USER = "neo4j"
-            NEO4J_PASSWORD = "password"
-            CORS_ORIGINS = ["*"]
-            RATE_LIMIT_PER_MINUTE = 1000
-            TWILIO_ACCOUNT_SID = None
-            TWILIO_AUTH_TOKEN = None
-            TWILIO_PHONE_NUMBER = None
-            TWILIO_WEBHOOK_BASE_URL = None
-            DEEPFAKE_API_URL = "https://mock-deepfake.railway.app"
-            DEEPFAKE_API_KEY = "mock-key"
-        settings = MockSettings()
-    else:
-        raise e
+    raise RuntimeError(f"Configuration Error: {e}") from e

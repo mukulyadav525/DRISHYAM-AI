@@ -44,17 +44,9 @@ export default function CommandPage() {
         fetchStats();
     }, []);
 
-    const statePerformance = data?.state_performance || [
-        { state: "Uttar Pradesh", cases: 14205, resolved: "92%", trend: "down" },
-        { state: "Maharashtra", cases: 12100, resolved: "88%", trend: "up" },
-        { state: "Karnataka", cases: 9500, resolved: "94%", trend: "down" },
-        { state: "West Bengal", cases: 8800, resolved: "85%", trend: "up" }
-    ];
+    const statePerformance = data?.state_performance || [];
 
-    const alerts = data?.alerts || [
-        { id: 1, msg: "New Scam Pod detected in Noida Sector 15", time: "2m ago", severity: "HIGH" },
-        { id: 2, msg: "Massive VPA rotation detected in Jamtara", time: "15m ago", severity: "CRITICAL" }
-    ];
+    const alerts = data?.alerts || [];
 
     return (
         <div className="space-y-6 max-w-7xl">
@@ -80,7 +72,7 @@ export default function CommandPage() {
                 <div className="bg-indblue p-6 rounded-3xl text-white relative overflow-hidden shadow-xl">
                     <Zap size={60} className="absolute -right-4 -bottom-4 text-white/10" />
                     <p className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Rupees Saved (Live)</p>
-                    <h3 className="text-2xl font-black mt-2">₹{(data?.rupees_saved || 1420500000).toLocaleString('en-IN')}</h3>
+                    <h3 className="text-2xl font-black mt-2">₹{(data?.rupees_saved || 0).toLocaleString('en-IN')}</h3>
                     <div className="flex items-center gap-1 text-[10px] mt-4 text-indgreen font-bold bg-white/10 w-fit px-2 py-1 rounded-full border border-white/10">
                         <ArrowUpRight size={12} /> +12% vs last month
                     </div>
@@ -172,14 +164,10 @@ export default function CommandPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {(data?.forecast || [
-                                { day: 'Today', trend: 'High Activity', color: 'text-redalert' },
-                                { day: 'Tomorrow', trend: 'Moderate', color: 'text-saffron' },
-                                { day: 'Weekend', trend: 'Critical Spike', color: 'text-redalert' }
-                            ]).map((d: any, i: number) => (
+                            {(data?.forecast || []).map((d: any, i: number) => (
                                 <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <p className="text-[10px] uppercase font-bold text-white/40 mb-2">{d.day}</p>
-                                    <p className={`text-sm font-bold ${d.color || 'text-saffron'}`}>{d.trend}</p>
+                                    <p className={`text-sm font-bold ${d.color || 'text-white'}`}>{d.trend}</p>
                                 </div>
                             ))}
                         </div>
@@ -216,9 +204,9 @@ export default function CommandPage() {
                         </h4>
                         <div className="space-y-4 relative z-10">
                             {[
-                                { label: 'Detection Nodes', status: data?.system_health?.detection_nodes || 'Operational', color: 'text-indgreen' },
-                                { label: 'VPA Interceptor', status: data?.system_health?.vpa_interceptor || 'Busy', color: data?.system_health?.vpa_interceptor === 'Operational' ? 'text-indgreen' : 'text-saffron' },
-                                { label: 'Voice AI Core', status: data?.system_health?.voice_ai_core || 'Operational', color: 'text-indgreen' }
+                                { label: 'Detection Nodes', status: data?.system_health?.detection_nodes || 'Unknown', color: data?.system_health?.detection_nodes === 'Operational' ? 'text-indgreen' : 'text-silver' },
+                                { label: 'VPA Interceptor', status: data?.system_health?.vpa_interceptor || 'Unknown', color: data?.system_health?.vpa_interceptor === 'Operational' ? 'text-indgreen' : 'text-silver' },
+                                { label: 'Voice AI Core', status: data?.system_health?.voice_ai_core || 'Unknown', color: data?.system_health?.voice_ai_core === 'Operational' ? 'text-indgreen' : 'text-silver' }
                             ].map((s: any, i: number) => (
                                 <div key={i} className="flex justify-between items-center text-[10px]">
                                     <span className="text-silver font-bold uppercase">{s.label}</span>

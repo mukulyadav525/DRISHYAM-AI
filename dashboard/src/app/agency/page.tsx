@@ -102,13 +102,11 @@ export default function AgencyPage() {
                 setFrozenVPAs(prev => new Set(prev).add(vpa));
                 performAction('FREEZE_VPA', vpa);
             } else {
-                toast.error("Freeze request failed", { id });
+                const error = await res.json().catch(() => ({}));
+                toast.error(error.detail || "Freeze request failed", { id });
             }
         } catch {
-            // Fallback if backend is down - still show success for demo
-            performAction('FREEZE_VPA', vpa);
-            toast.success(`Freeze signal dispatched for ${vpa}`, { id });
-            setFrozenVPAs(prev => new Set(prev).add(vpa));
+            toast.error(`Freeze request failed for ${vpa}`, { id });
         }
     };
 

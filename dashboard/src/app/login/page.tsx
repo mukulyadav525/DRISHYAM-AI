@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, AlertTriangle, Eye, EyeOff, Lock, User } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
     const { login, verifyMfa, logout, isAuthenticated, isMfaPending, user } = useAuth();
@@ -90,11 +91,13 @@ export default function LoginPage() {
             <div className="relative z-10 w-full max-w-md mx-4">
                 {/* Logo / Header */}
                 <div className="text-center mb-8">
-                    <div className="w-20 h-20 mx-auto mb-6 relative">
-                        <div className="absolute inset-0 bg-saffron/20 rounded-2xl rotate-45 animate-pulse" />
-                        <div className="absolute inset-1 bg-gradient-to-br from-saffron to-deeporange rounded-xl rotate-45 flex items-center justify-center">
-                            <ShieldCheck className="text-white -rotate-45" size={36} />
-                        </div>
+                    <div className="w-20 h-20 mx-auto mb-6 relative overflow-hidden rounded-3xl border border-saffron/30 shadow-2xl shadow-saffron/10">
+                        <Image 
+                            src="/logo.png" 
+                            alt="Logo" 
+                            fill
+                            className="object-cover"
+                        />
                     </div>
                     <h1 className="text-3xl font-bold text-white tracking-tight">
                         <span className="text-saffron">DRISHYAM</span><sub className="text-indblue text-base font-bold ml-0.5">AI</sub>
@@ -143,7 +146,7 @@ export default function LoginPage() {
                                         value={otp}
                                         onChange={(e) => setOtp(e.target.value)}
                                         className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium tracking-[0.35em]"
-                                        placeholder="19301930"
+                                        placeholder="Enter your one-time code"
                                         required
                                         autoComplete="one-time-code"
                                     />
@@ -264,14 +267,13 @@ export default function LoginPage() {
                         </div>
                     </div>
 
-                    {/* Evaluator Credentials */}
                     <div className="mt-6 pt-4 border-t border-white/5 text-center">
                         <div className="inline-block px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
                             <p className="text-[10px] text-white/40 font-mono">
-                                <span className="text-saffron/60">ID:</span> admin <span className="mx-2 opacity-30">|</span> <span className="text-saffron/60">Pass:</span> password123
+                                Use your provisioned agency or citizen credentials from the live user registry.
                             </p>
                             <p className="text-[10px] text-white/30 font-mono mt-1">
-                                <span className="text-saffron/60">OTP:</span> 19301930
+                                MFA is validated against your active session before privileged access is unlocked.
                             </p>
                         </div>
                     </div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Phone, ArrowRight, User, Loader2 } from "lucide-react";
+import Image from "next/image";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 
@@ -182,8 +183,13 @@ export default function AuthScreen({
     return (
       <div className="w-full max-w-md bg-white rounded-[2.5rem] p-10 shadow-2xl border border-silver/10 fade-in">
         <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-20 h-20 bg-indblue rounded-3xl flex items-center justify-center text-white mb-6 shadow-xl shadow-indblue/20">
-            <User size={40} />
+          <div className="relative w-20 h-20 overflow-hidden rounded-3xl border border-saffron/30 shadow-xl shadow-indblue/20 mb-6">
+            <Image 
+                src="/logo.png" 
+                alt="DRISHYAM AI" 
+                fill
+                className="object-cover"
+            />
           </div>
           <h2 className="text-3xl font-black text-indblue tracking-tight mb-2">Citizen Login</h2>
           <p className="text-sm text-silver font-medium">Verify your phone to enter the protective grid.</p>

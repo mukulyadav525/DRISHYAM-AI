@@ -28,10 +28,14 @@ import {
     Globe,
     Scale,
     AlertTriangle,
+    Handshake,
+    BarChart3,
+    Shield,
     X,
 } from "lucide-react";
+import Image from "next/image";
 import { useLanguage } from "@/context/LanguageContext";
-import { useAuth, ROLE_ACCESS, ROLE_LABELS } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 interface SidebarProps {
     isOpen?: boolean;
@@ -44,7 +48,7 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
     const { user, logout } = useAuth();
 
     const role = user?.role || "common";
-    const allowedPages = ROLE_ACCESS[role] || ROLE_ACCESS["common"];
+    const allowedPages = user?.access?.allowed_pages || [];
 
     const allMenuItems = [
         { name: t("overview"), icon: LayoutDashboard, href: "/" },
@@ -63,8 +67,11 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
         { name: t("agency_portal"), icon: Building2, href: "/agency" },
         { name: t("launch_control"), icon: Rocket, href: "/launch" },
         { name: t("national_scale"), icon: Globe, href: "/national" },
+        { name: t("partners"), icon: Handshake, href: "/partners" },
         { name: t("business_ops"), icon: Briefcase, href: "/business" },
         { name: t("support_ops"), icon: AlertTriangle, href: "/ops" },
+        { name: t("observability"), icon: BarChart3, href: "/observability" },
+        { name: t("security_ops"), icon: Shield, href: "/security" },
         { name: t("governance"), icon: Scale, href: "/governance" },
         { name: t("bharat_layer"), icon: Smartphone, href: "/bharat" },
         { name: t("recovery"), icon: RotateCcw, href: "/recovery" },
@@ -98,9 +105,19 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
                 lg:translate-x-0
             `}>
                 <div className="p-6 flex items-center justify-between">
-                    <h1 className="text-xl font-bold tracking-tighter flex items-center gap-2">
-                        <span className="text-saffron">DRISHYAM</span><sub className="text-indblue text-xs font-bold ml-0.5">AI</sub>
-                    </h1>
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <div className="relative w-10 h-10 overflow-hidden rounded-xl border border-saffron/30 shadow-lg shadow-saffron/10 group-hover:scale-105 transition-transform duration-300">
+                            <Image 
+                                src="/logo.png" 
+                                alt="DRISHYAM AI Logo" 
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <h1 className="text-xl font-bold tracking-tighter">
+                            <span className="text-saffron">DRISHYAM</span><sub className="text-indblue text-xs font-bold ml-0.5">AI</sub>
+                        </h1>
+                    </Link>
                     {/* Mobile close button */}
                     <button
                         onClick={onToggle}
@@ -155,7 +172,7 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
                 <div className="p-4 border-t border-white/10 sticky bottom-0 bg-indblue">
                     <div className="space-y-1">
                         {/* Settings - only for admin */}
-                        {role === "admin" && (
+                        {allowedPages.includes("/settings") && (
                             <Link href="/settings" onClick={handleNavClick} className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-silver hover:bg-white/10 hover:text-white">
                                 <Settings size={18} />
                                 <span className="text-xs">{t("settings")}</span>
@@ -173,7 +190,7 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
                                         {user?.full_name || user?.username}
                                     </p>
                                     <p className="text-[9px] font-bold uppercase tracking-wide text-saffron">
-                                        {ROLE_LABELS[role] || role}
+                                        {user?.access?.role_label || role}
                                     </p>
                                 </div>
                             </div>

@@ -91,10 +91,9 @@ export default function OverviewPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const handleStatAction = async (type: string, query: string) => {
-    if (type === 'TRACE' && query === t("citizens_protected")) {
-      // Trigger customer search mock/input for real life feedback
-      const searchRes = await fetch(`${API_BASE}/system/search/citizen?query=GRID_USER_01`);
+    const handleStatAction = async (type: string, query: string) => {
+      if (type === 'TRACE' && query === t("citizens_protected")) {
+      const searchRes = await fetch(`${API_BASE}/system/search/citizen`);
       if (searchRes.ok) {
         setSearchData(await searchRes.json());
         setIsSearchModalOpen(true);

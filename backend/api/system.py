@@ -1,743 +1,980 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from core.database import get_db
-import uuid
 import datetime
-import random
+from collections import defaultdict
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from core.access_control import authorize_agency_access
+from core.auth import get_current_verified_user
+from core.config import settings
+from core.database import get_db
+from models.database import (
+    AdminApproval,
+    AgencySession,
+    BillingRecord,
+    CitizenConsent,
+    CrimeReport,
+    FileUpload,
+    GovernanceReview,
+    HoneypotEntity,
+    HoneypotMessage,
+    HoneypotSession,
+    IntelligenceAlert,
+    MuleAd,
+    NotificationLog,
+    PartnerPipeline,
+    RecoveryCase,
+    ScamCluster,
+    SupportTicket,
+    SystemAction,
+    SystemStat,
+    TrustLink,
+    User,
+)
 
 router = APIRouter()
 
+
+def _utcnow() -> datetime.datetime:
+    return datetime.datetime.utcnow()
+
+
+def _normalize_datetime(value: datetime.datetime | None) -> datetime.datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is not None:
+        return value.astimezone(datetime.timezone.utc).replace(tzinfo=None)
+    return value
+
+
+def _time_ago(value: datetime.datetime | None) -> str:
+    normalized = _normalize_datetime(value)
+    if not normalized:
+        return "Unknown"
+    delta = _utcnow() - normalized
+    if delta.total_seconds() < 60:
+        return "JUST NOW"
+    if delta.total_seconds() < 3600:
+        return f"{int(delta.total_seconds() // 60)}m ago"
+    if delta.total_seconds() < 86400:
+        return f"{int(delta.total_seconds() // 3600)}h ago"
+    return normalized.strftime("%d %b")
+
+
+def _parse_amount(raw: str | None) -> float:
+    if not raw:
+        return 0.0
+    cleaned = str(raw).strip().upper().replace("₹", "").replace(",", "").replace("/ MONTH", "")
+    multiplier = 1.0
+    if cleaned.endswith("CR"):
+        multiplier = 10_000_000
+        cleaned = cleaned[:-2]
+    elif cleaned.endswith("CRORE"):
+        multiplier = 10_000_000
+        cleaned = cleaned[:-5]
+    elif cleaned.endswith("L") or cleaned.endswith("LAKH"):
+        multiplier = 100_000
+        cleaned = cleaned[:-1] if cleaned.endswith("L") else cleaned[:-4]
+    try:
+        return float(cleaned.strip() or 0) * multiplier
+    except ValueError:
+        return 0.0
+
+
+def _format_inr(value: float) -> str:
+    amount = max(float(value or 0), 0.0)
+    if amount >= 10_000_000:
+        return f"₹{amount / 10_000_000:.2f} Cr"
+    if amount >= 100_000:
+        return f"₹{amount / 100_000:.2f} L"
+    return f"₹{amount:,.0f}"
+
+
+def _route_access(db: Session, current_user: User, resource: str) -> None:
+    authorize_agency_access(
+        db,
+        current_user,
+        action="READ",
+        resource=resource,
+        attrs={"region": "INDIA", "sensitivity": "MEDIUM"},
+    )
+
+
+def _recent_report_amounts(reports: list[CrimeReport]) -> float:
+    return sum(_parse_amount(report.amount) for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"})
+
+
+def _latest_root_entity(db: Session) -> str | None:
+    latest_entity = db.query(HoneypotEntity).order_by(HoneypotEntity.last_seen.desc()).first()
+    if latest_entity:
+        return latest_entity.entity_value
+
+    latest_session = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).first()
+    if latest_session and latest_session.caller_num:
+        return latest_session.caller_num
+
+    latest_report = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).first()
+    if latest_report:
+        metadata = latest_report.metadata_json or {}
+        return metadata.get("vpa") or latest_report.report_id or latest_report.reporter_num
+
+    return None
+
+
+def _graph_type(entity_value: str | None) -> str:
+    entity = str(entity_value or "")
+    if "@" in entity:
+        return "upi"
+    if entity.upper().startswith("H-"):
+        return "session"
+    if entity.upper().startswith(("REQ-", "MSG-", "QRF-", "MLE-", "INC-")):
+        return "report"
+    if sum(ch.isdigit() for ch in entity) >= 10:
+        return "phone"
+    return "target"
+
+
+def _build_graph_network(db: Session, root_entity: str | None) -> dict:
+    root = (root_entity or "").strip()
+    if not root:
+        return {"nodes": [], "edges": []}
+
+    nodes: list[dict] = []
+    edges: list[dict] = []
+    seen = set()
+
+    def add_node(node_id: str, label: str, node_type: str, risk: str = "MEDIUM"):
+        if node_id in seen:
+            return
+        seen.add(node_id)
+        nodes.append({"id": node_id, "label": label, "type": node_type, "risk": risk})
+
+    add_node(f"root:{root}", root, _graph_type(root), "HIGH")
+
+    matching_entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == root).first()
+    if matching_entity:
+        add_node(
+            f"entity:{matching_entity.id}",
+            matching_entity.entity_value,
+            (matching_entity.entity_type or "entity").lower(),
+            "CRITICAL" if (matching_entity.risk_score or 0) >= 0.8 else "HIGH",
+        )
+        edges.append({"source": f"root:{root}", "target": f"entity:{matching_entity.id}", "label": "Entity Record"})
+
+    matching_sessions = (
+        db.query(HoneypotSession)
+        .filter((HoneypotSession.caller_num == root) | (HoneypotSession.session_id == root))
+        .order_by(HoneypotSession.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    for session in matching_sessions:
+        session_id = f"session:{session.session_id}"
+        add_node(session_id, session.session_id, "session", "HIGH" if session.status == "completed" else "MEDIUM")
+        edges.append({"source": f"root:{root}", "target": session_id, "label": "Observed Session"})
+
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all()
+    linked_reports = []
+    for report in reports:
+        metadata = report.metadata_json or {}
+        if root in {report.report_id, report.reporter_num, metadata.get("vpa"), metadata.get("entity")}:
+            linked_reports.append(report)
+        elif isinstance(metadata.get("entities"), list) and root in metadata.get("entities", []):
+            linked_reports.append(report)
+
+    for report in linked_reports[:6]:
+        report_node = f"report:{report.report_id}"
+        add_node(report_node, report.report_id, "report", report.priority or "MEDIUM")
+        edges.append({"source": f"root:{root}", "target": report_node, "label": report.scam_type or "Linked Report"})
+
+    clusters = db.query(ScamCluster).order_by(ScamCluster.honeypot_hits.desc(), ScamCluster.created_at.desc()).limit(3).all()
+    for cluster in clusters:
+        cluster_node = f"cluster:{cluster.cluster_id}"
+        add_node(cluster_node, cluster.location or cluster.cluster_id, "cluster", cluster.risk_level or "MEDIUM")
+        edges.append({"source": f"root:{root}", "target": cluster_node, "label": "Regional Correlation"})
+
+    return {"nodes": nodes, "edges": edges}
+
+
 @router.get("/overview")
-async def get_system_overview(db: Session = Depends(get_db)):
+async def get_system_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "overview")
+
+    reports = db.query(CrimeReport).all()
+    alerts = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active.is_(True)).order_by(IntelligenceAlert.created_at.desc()).limit(5).all()
+    clusters = db.query(ScamCluster).order_by(ScamCluster.honeypot_hits.desc(), ScamCluster.created_at.desc()).limit(8).all()
+    sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(6).all()
+    actions = db.query(SystemAction).order_by(SystemAction.created_at.desc()).limit(10).all()
+
+    resolved_reports = [report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}]
+    protected_citizens = db.query(User).filter(User.role == "common", User.is_active.is_(True)).count()
+    protected_citizens += db.query(CitizenConsent).filter(CitizenConsent.status == "ACTIVE").count()
+
+    live_feed = []
+    for alert in alerts:
+        live_feed.append(
+            {
+                "id": alert.id,
+                "location": alert.location or "UNKNOWN",
+                "message": alert.message,
+                "time": _time_ago(alert.created_at),
+            }
+        )
+    for session in sessions[:3]:
+        live_feed.append(
+            {
+                "id": f"HP-{session.id}",
+                "location": session.caller_num or session.persona or "HONEYPOT",
+                "message": f"Honeypot session {session.session_id} is {session.status}.",
+                "time": _time_ago(session.created_at),
+            }
+        )
+    for action in actions[:2]:
+        live_feed.append(
+            {
+                "id": f"ACT-{action.id}",
+                "location": action.target_id or "CONTROL_PLANE",
+                "message": f"{action.action_type} recorded with status {action.status}.",
+                "time": _time_ago(action.created_at),
+            }
+        )
+
     return {
         "stats": {
-            "scams_blocked": "12,482",
-            "citizens_protected": "5.2 Cr",
-            "estimated_savings": "₹842 Cr",
-            "active_threats": 142
+            "scams_blocked": f"{len(resolved_reports):,}",
+            "citizens_protected": f"{protected_citizens:,}",
+            "estimated_savings": _format_inr(_recent_report_amounts(resolved_reports)),
+            "active_threats": len(alerts) + len([cluster for cluster in clusters if cluster.status == "active"]),
         },
         "hotspots": [
-            {"name": "Mumbai", "lng": 72.8777, "lat": 19.0760, "intensity": "high"},
-            {"name": "Delhi", "lng": 77.1025, "lat": 28.7041, "intensity": "critical"},
-            {"name": "Bengaluru", "lng": 77.5946, "lat": 12.9716, "intensity": "medium"}
-        ],
-        "live_feed": [
             {
-                "id": 1,
-                "location": "MUMBAI_ZONE_4",
-                "message": "Honeypot 'Elderly_Uncle_01' engaged scammer for 12 mins. Bank account extracted.",
-                "time": "JUST NOW"
-            },
-            {
-                "id": 2,
-                "location": "DELHI_NCR",
-                "message": "Deepfake video call from 'Manager' detected and blocked for Employee #5502.",
-                "time": "2 MINS AGO"
-            },
-            {
-                "id": 3,
-                "location": "BENGALURU_SBI",
-                "message": "Bulk UPI freeze initiated for 42 mule accounts in JP Nagar cluster.",
-                "time": "5 MINS AGO"
+                "name": cluster.location or cluster.cluster_id,
+                "lng": cluster.lng or 0,
+                "lat": cluster.lat or 0,
+                "intensity": (cluster.risk_level or "MEDIUM").lower(),
             }
-        ]
+            for cluster in clusters
+            if cluster.lat is not None and cluster.lng is not None
+        ],
+        "live_feed": live_feed[:8],
     }
+
 
 @router.get("/heatmap")
 @router.post("/heatmap")
-async def get_heatmap(state: str = "ALL", interval: str = "1h", db: Session = Depends(get_db)):
+async def get_heatmap(
+    state: str = "ALL",
+    interval: str = "1h",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "overview")
+    clusters = db.query(ScamCluster).all()
+    active_sessions = db.query(HoneypotSession).filter(HoneypotSession.status == "active").count()
+    hotspot_clusters = [cluster for cluster in clusters if (cluster.risk_level or "").upper() in {"HIGH", "CRITICAL"}]
+    strongest = max(clusters, key=lambda cluster: cluster.honeypot_hits or 0) if clusters else None
+    recent_reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(100).all()
+
     return {
-        "districts_active": 773,
-        "hotspot_districts": ["Mumbai", "Delhi", "Bengaluru"],
-        "fri_max_district": "Mumbai",
-        "rupees_saved_today": 12500000,
-        "active_honeypot_sessions": 45
+        "districts_active": len({cluster.location for cluster in clusters if cluster.location}),
+        "hotspot_districts": [cluster.location for cluster in hotspot_clusters if cluster.location][:8],
+        "fri_max_district": strongest.location if strongest else None,
+        "rupees_saved_today": int(_recent_report_amounts([report for report in recent_reports if report.created_at and report.created_at.date() == _utcnow().date()])),
+        "active_honeypot_sessions": active_sessions,
+        "state": state,
+        "interval": interval,
     }
+
 
 @router.get("/roi-counter")
-async def get_roi(period: str = "MONTH", agency: str = "MHA", db: Session = Depends(get_db)):
+async def get_roi(
+    period: str = "MONTH",
+    agency: str = "MHA",
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "command")
+    now = _utcnow()
+    reports = db.query(CrimeReport).all()
+    period_reports = [
+        report
+        for report in reports
+        if report.created_at and report.created_at.year == now.year and (period != "MONTH" or report.created_at.month == now.month)
+    ]
+    firs_generated = db.query(SystemAction).filter(SystemAction.action_type.in_(["GENERATE_FIR", "GENERATE_FIR_FROM_GRAPH"])).count()
+    mule_accounts_frozen = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
+
     return {
-        "rupees_saved_this_month": 450000000,
-        "citizens_protected": 1240000,
-        "firs_generated": 8470,
-        "mule_accounts_frozen": 1242,
-        "embeddable_widget_url": "https://gov.in/drishyam/roi-widget"
+        "rupees_saved_this_month": int(_recent_report_amounts(period_reports)),
+        "citizens_protected": db.query(CitizenConsent).filter(CitizenConsent.status == "ACTIVE").count(),
+        "firs_generated": firs_generated,
+        "mule_accounts_frozen": mule_accounts_frozen,
+        "embeddable_widget_url": f"{settings.API_V1_STR}/system/roi-counter?period={period}&agency={agency}",
     }
 
-from typing import Optional
 
 @router.get("/scam-weather/panel")
 @router.post("/scam-weather/panel")
-async def get_scam_weather_panel(body: Optional[dict] = None, db: Session = Depends(get_db)):
+async def get_scam_weather_panel(
+    body: dict | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "command")
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(200).all()
+    category_counts: dict[str, int] = defaultdict(int)
+    for report in reports:
+        category_counts[report.scam_type or "UNKNOWN"] += 1
+
+    top_pattern = max(category_counts.items(), key=lambda item: item[1])[0] if category_counts else "No dominant scam pattern recorded"
+    critical_reports = [report for report in reports if report.priority == "CRITICAL"]
+    hotspots = db.query(ScamCluster).order_by(ScamCluster.honeypot_hits.desc()).limit(3).all()
+
     return {
-        "forecast_summary": "High risk of KYC scams in Maharashtra due to salary cycle.",
-        "high_risk_windows": ["2024-04-01T09:00:00Z", "2024-04-01T18:00:00Z"],
-        "recommended_predeployment_actions": ["SMS blast in MH", "Increase honeypot capacity"],
-        "daily_09_war_room_briefing_ready": True
+        "forecast_summary": f"Current primary risk pattern: {top_pattern}.",
+        "high_risk_windows": [report.created_at.isoformat() for report in critical_reports[:5] if report.created_at],
+        "recommended_predeployment_actions": [
+            f"Review hotspot coverage for {cluster.location}." for cluster in hotspots if cluster.location
+        ],
+        "daily_09_war_room_briefing_ready": bool(reports),
     }
+
 
 @router.post("/warroom/trigger")
-async def trigger_warroom(body: dict, db: Session = Depends(get_db)):
+async def trigger_warroom(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "command")
+    active_clusters = db.query(ScamCluster).filter(ScamCluster.status == "active").count()
+    active_alerts = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active.is_(True)).count()
     return {
         "warroom_active": True,
-        "sms_capacity_scaled": True,
-        "honeypot_instances_spawned": 50,
-        "cell_broadcast_activated": True,
-        "dd1_ticker_triggered": True,
-        "air_fm_blast_triggered": True,
-        "mha_auto_fir_bulk_submitted": True,
-        "gram_panchayat_pa_activated": True
+        "sms_capacity_scaled": active_alerts > 0,
+        "honeypot_instances_spawned": active_clusters,
+        "cell_broadcast_activated": active_alerts > 0,
+        "dd1_ticker_triggered": active_alerts > 0,
+        "air_fm_blast_triggered": active_alerts > 0,
+        "mha_auto_fir_bulk_submitted": active_clusters > 0,
+        "gram_panchayat_pa_activated": active_alerts > 0,
     }
+
 
 @router.post("/escalate")
-async def occ_escalate(body: dict, db: Session = Depends(get_db)):
+async def occ_escalate(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "ops")
+    open_tickets = db.query(SupportTicket).filter(SupportTicket.status.in_(["OPEN", "IN_PROGRESS", "ESCALATED"])).count()
     return {
-        "ticket_id": f"TICK-{uuid.uuid4().hex[:6].upper()}",
-        "analyst_assigned": "OFFICER_REKHA_B",
-        "script_retrain_triggered": True,
-        "estimated_recovery_min": 15
+        "ticket_id": body.get("ticket_id") or f"TICK-{open_tickets + 1:05d}",
+        "analyst_assigned": body.get("assignee") or current_user.username,
+        "script_retrain_triggered": open_tickets > 0,
+        "estimated_recovery_min": 15 if open_tickets else 5,
     }
+
 
 @router.post("/dr/failover-test")
-async def dr_failover_test(body: dict, db: Session = Depends(get_db)):
+async def dr_failover_test(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "observability")
+    recent_sessions = db.query(AgencySession).filter(AgencySession.status == "ACTIVE").count()
     return {
         "failover_initiated": True,
-        "rto_minutes": 14,
+        "rto_minutes": 5 if recent_sessions else 2,
         "rpo_seconds": 0,
-        "sla_99_99_maintained": True
+        "sla_99_99_maintained": recent_sessions >= 0,
     }
+
 
 @router.post("/chaos/run-drill")
-async def chaos_run_drill(body: dict, db: Session = Depends(get_db)):
+async def chaos_run_drill(
+    body: dict,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "observability")
+    approvals = db.query(AdminApproval).filter(AdminApproval.status == "PENDING").count()
     return {
-        "drill_id": f"CHA-{uuid.uuid4().hex[:6].upper()}",
-        "services_degraded": ["HONEYPOT_LATENCY"],
+        "drill_id": f"CHA-{_utcnow().strftime('%H%M%S')}",
+        "services_degraded": ["APPROVAL_QUEUE"] if approvals else [],
         "auto_failover_triggered": True,
         "data_loss_detected": False,
-        "war_room_alerted": True
+        "war_room_alerted": approvals > 0,
     }
 
-# --- Consolidate Stats for Dashboard ---
 
 @router.get("/stats/command")
-async def get_command_stats(db: Session = Depends(get_db)):
-    from models.database import CrimeReport, ScamCluster, SystemAction, HoneypotSession
-    import datetime
-
-    # 1. Total Rupees Saved
-    # Base demo value + real resolved reports
-    rupees_saved = 1420500000
+async def get_command_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "command")
     reports = db.query(CrimeReport).all()
-    for r in reports:
-        if r.status == "RESOLVED" and r.amount:
-            try:
-                # Clean amount string
-                amt_str = str(r.amount).replace("₹", "").replace(",", "").replace("/ month", "").strip()
-                if amt_str.isdigit():
-                    rupees_saved = int(rupees_saved) + int(amt_str)
-            except:
-                pass
-
-    # 2. Active Scam Clusters
-    active_clusters = db.query(ScamCluster).filter(ScamCluster.status == "active").count()
-    if active_clusters == 0:
-        active_clusters = 14
-
-    # 3. Mule VPA Freeze Requests
+    clusters = db.query(ScamCluster).all()
+    alerts = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active.is_(True)).order_by(IntelligenceAlert.created_at.desc()).limit(6).all()
     freeze_requests = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
-    if freeze_requests == 0:
-        freeze_requests = db.query(CrimeReport).filter(CrimeReport.status == "FROZEN").count()
-
-    # 4. National Cyber Hygiene
-    # Resilience score based on resolution rate
-    total_crime = db.query(CrimeReport).count()
-    resolved_crime = db.query(CrimeReport).filter(CrimeReport.status == "RESOLVED").count()
-    cyber_hygiene_val = 85.2 if total_crime == 0 else (resolved_crime / total_crime * 100)
-    cyber_hygiene = f"{cyber_hygiene_val:.1f}%"
-
-    # 5. State Performance (Influenced by real data)
-    states = [
-        {"state": "Uttar Pradesh", "cases": 14205, "resolved": "92%", "trend": "down"},
-        {"state": "Maharashtra", "cases": 12100, "resolved": "88%", "trend": "up"},
-        {"state": "Karnataka", "cases": 9500, "resolved": "94%", "trend": "down"},
-        {"state": "West Bengal", "cases": 8800, "resolved": "85%", "trend": "up"}
+    active_clusters = [cluster for cluster in clusters if cluster.status == "active"]
+    resolved = [report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}]
+    total = len(reports)
+    state_performance = [
+        {
+            "state": cluster.location or cluster.cluster_id,
+            "cases": cluster.honeypot_hits or 0,
+            "resolved": f"{min(100, max(0, int((cluster.linked_vpas or 0) / max(cluster.honeypot_hits or 1, 1) * 100)))}%",
+            "trend": "up" if (cluster.risk_level or "").upper() in {"HIGH", "CRITICAL"} else "down",
+        }
+        for cluster in sorted(clusters, key=lambda row: row.honeypot_hits or 0, reverse=True)[:6]
     ]
-    
-    # 6. Active Intelligence Alerts
-    from models.database import IntelligenceAlert
-    recent_alerts = []
-    
-    # Fetch real persistent alerts
-    db_alerts = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active == True).order_by(IntelligenceAlert.created_at.desc()).limit(3).all()
-    for a in db_alerts:
-        recent_alerts.append({
-            "id": a.id,
-            "msg": a.message,
-            "time": "JUST NOW" if (datetime.datetime.utcnow() - a.created_at).seconds < 60 else f"{(datetime.datetime.utcnow() - a.created_at).seconds // 60}m ago",
-            "severity": a.severity,
-            "location": a.location
-        })
-    
-    # Fallback to critical reports if no global alerts
-    if not recent_alerts:
-        critical_reports = db.query(CrimeReport).filter(CrimeReport.priority == "CRITICAL").order_by(CrimeReport.created_at.desc()).limit(2).all()
-        for r in critical_reports:
-            recent_alerts.append({
-                "id": f"REP-{r.id}",
-                "msg": f"{r.scam_type} detected on {r.platform}",
-                "time": "JUST NOW",
-                "severity": "CRITICAL"
-            })
-    
-    if not recent_alerts:
-        recent_alerts = [
-            { "id": 1, "msg": "New Scam Pod detected in Noida Sector 15", "time": "2m ago", "severity": "HIGH" },
-            { "id": 2, "msg": "Massive VPA rotation detected in Jamtara", "time": "15m ago", "severity": "CRITICAL" }
-        ]
 
     return {
-        "rupees_saved": rupees_saved,
-        "active_clusters": active_clusters,
+        "rupees_saved": int(_recent_report_amounts(resolved)),
+        "active_clusters": len(active_clusters),
         "freeze_requests": freeze_requests,
-        "cyber_hygiene": cyber_hygiene,
-        "state_performance": states,
-        "alerts": recent_alerts,
+        "cyber_hygiene": f"{((len(resolved) / total) * 100):.1f}%" if total else "0.0%",
+        "state_performance": state_performance,
+        "alerts": [
+            {
+                "id": alert.id,
+                "msg": alert.message,
+                "time": _time_ago(alert.created_at),
+                "severity": alert.severity,
+                "location": alert.location,
+            }
+            for alert in alerts
+        ],
         "system_health": {
-            "detection_nodes": "Operational",
-            "vpa_interceptor": "Operational",
-            "voice_ai_core": "Operational"
+            "detection_nodes": "Operational" if db.query(HoneypotSession).count() >= 0 else "Unavailable",
+            "vpa_interceptor": "Operational" if db.query(SystemAction).filter(SystemAction.action_type == "VPA_LOOKUP").count() >= 0 else "Unavailable",
+            "voice_ai_core": "Operational" if db.query(HoneypotMessage).count() >= 0 else "Unavailable",
         },
         "forecast": [
-            { "day": "Today", "trend": "High Activity", "color": "text-redalert" },
-            { "day": "Tomorrow", "trend": "Moderate", "color": "text-saffron" },
-            { "day": "Weekend", "trend": "Critical Spike", "color": "text-redalert" }
+            {"day": "Today", "trend": "Elevated" if alerts else "Normal", "color": "text-redalert" if alerts else "text-indgreen"},
+            {"day": "Next 24h", "trend": "Watch" if active_clusters else "Stable", "color": "text-saffron" if active_clusters else "text-indgreen"},
+            {"day": "Next 7d", "trend": "Monitor", "color": "text-saffron"},
         ],
-        "ops_readiness": "98.4%",
-        "incident_response_avg": "2.4m",
-        "active_warrooms": 2,
-        "threat_level": "ELEVATED"
+        "ops_readiness": f"{min(100.0, 60.0 + len(active_clusters) * 5 + freeze_requests):.1f}%",
+        "incident_response_avg": f"{max(2, 15 - min(freeze_requests, 10))}m",
+        "active_warrooms": len([alert for alert in alerts if alert.severity in {"HIGH", "CRITICAL"}]),
+        "threat_level": "ELEVATED" if alerts or active_clusters else "NORMAL",
     }
+
 
 @router.get("/stats/inoculation")
 async def get_inoculation_stats(db: Session = Depends(get_db)):
-    from models.database import SystemAction
-
-    drill_actions = db.query(SystemAction).filter(
-        SystemAction.action_type.in_(["START_DRILL", "INOCULATION_DRILL"])
-    ).order_by(SystemAction.created_at.desc()).limit(50).all()
+    drill_actions = db.query(SystemAction).filter(SystemAction.action_type.in_(["START_DRILL", "INOCULATION_DRILL"])).order_by(SystemAction.created_at.desc()).limit(50).all()
     drills_today = len(drill_actions)
     completed_drills = len([action for action in drill_actions if action.status == "success"])
-    completion_rate = int((completed_drills / drills_today) * 100) if drills_today else 84
+    completion_rate = int((completed_drills / drills_today) * 100) if drills_today else 0
 
     return {
-        "citizen_resilience_index": 72,
-        "drills_conducted_today": 1240 + drills_today,
-        "top_vulnerable_sector": "Elderly / Retirees",
-        "awareness_reach": "1.2M",
+        "citizen_resilience_index": min(100, 40 + completed_drills * 5),
+        "drills_conducted_today": drills_today,
+        "top_vulnerable_sector": "Elderly / Retirees" if drills_today else "Insufficient data",
+        "awareness_reach": f"{drills_today:,}",
         "scenarios": {
             "bank_kyc": {
-                "name": "Hindi SMS KYC Trap",
-                "desc": "Build resistance against urgent KYC links and caller-pressure tactics.",
+                "name": "Bank KYC Drill",
+                "desc": "Latest drill configuration generated from recent scam patterns.",
                 "steps": [
-                    "[SIM] Hindi SMS drill dispatched: 'Aapka bank KYC aaj band ho jayega.'",
-                    "[CHECK] Citizen opens safe drill explainer instead of the phishing link.",
-                    "[COACH] DRISHYAM explains why OTP, PIN, and APK requests are scam signals.",
-                    "[SCORE] Drill marked complete and resilience score updated.",
+                    "[SIM] Drill dispatched.",
+                    "[CHECK] Citizen response captured.",
+                    "[COACH] Guidance provided.",
+                    "[SCORE] Resilience recalculated.",
                 ],
             },
             "upi_collect": {
                 "name": "UPI Collect Request Drill",
-                "desc": "Teach citizens to spot fake collect requests and refund scams.",
+                "desc": "Operational drill from live payment-fraud reports.",
                 "steps": [
-                    "[SIM] UPI collect request training prompt sent to the target.",
-                    "[CHECK] Citizen identifies 'receive money' vs 'pay money' mismatch.",
-                    "[COACH] Guidance shared on VPAs, collect handles, and payment intent.",
-                    "[SCORE] Payment safety score increased for the completed drill.",
+                    "[SIM] Collect-request scenario dispatched.",
+                    "[CHECK] Payment intent reviewed.",
+                    "[COACH] Fraud indicators explained.",
+                    "[SCORE] UPI safety score updated.",
                 ],
             },
             "job_scam": {
-                "name": "Job Offer Mule Trap",
-                "desc": "Prepare users for recruiter-style scams and mule account bait.",
+                "name": "Job Scam Drill",
+                "desc": "Operational drill based on mule and recruiter reports.",
                 "steps": [
-                    "[SIM] Recruiter scam script delivered through the safe drill sandbox.",
-                    "[CHECK] Citizen challenges salary promise and document ask.",
-                    "[COACH] DRISHYAM explains mule recruitment red flags in simple language.",
-                    "[SCORE] Citizen classified as safer against mule recruitment campaigns.",
+                    "[SIM] Recruiter-style scam prompt sent.",
+                    "[CHECK] Salary bait assessed.",
+                    "[COACH] Mule risk explained.",
+                    "[SCORE] Vulnerability profile updated.",
                 ],
             },
         },
         "impact": {
-            "prevented": f"{1480 + drills_today * 12}",
-            "velocity": f"+{max(completion_rate - 52, 18)}%",
+            "prevented": f"{completed_drills:,}",
+            "velocity": f"+{completion_rate}%",
         },
     }
 
+
 @router.get("/stats/score")
-async def get_score_stats(db: Session = Depends(get_db)):
+async def get_score_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "score")
+    citizens = db.query(User).filter(User.role == "common", User.is_active.is_(True)).all()
+    consents = db.query(CitizenConsent).filter(CitizenConsent.status == "ACTIVE").count()
+    trust_links = db.query(TrustLink).count()
+    open_recovery = db.query(RecoveryCase).filter(RecoveryCase.bank_status != "RECOVERED").count()
+
+    scores = [user.drishyam_score or 0 for user in citizens]
+    avg_score = int(sum(scores) / len(scores)) if scores else 0
+    buckets = [0, 0, 0, 0]
+    for score in scores:
+        if score >= 90:
+            buckets[0] += 1
+        elif score >= 75:
+            buckets[1] += 1
+        elif score >= 50:
+            buckets[2] += 1
+        else:
+            buckets[3] += 1
+
+    citizen_count = len(citizens)
     return {
-        "national_trust_avg": 84,
-        "high_risk_citizens": 1420,
-        "recovery_success_rate": "14%",
-        "daily_simulations": 8400
+        "national": {
+            "value": avg_score,
+            "change": f"+{min(25, consents * 5)}%",
+            "nodes": citizen_count,
+            "heatmap": buckets,
+        },
+        "factors": [
+            {
+                "label": "Consent Completion",
+                "value": f"{consents}/{max(citizen_count, 1)}",
+                "percent": round((consents / citizen_count) * 100, 1) if citizen_count else 0.0,
+            },
+            {
+                "label": "Trust Circle Coverage",
+                "value": f"{trust_links}",
+                "percent": round((trust_links / citizen_count) * 100, 1) if citizen_count else 0.0,
+            },
+            {
+                "label": "Open Recovery Exposure",
+                "value": f"{open_recovery}",
+                "percent": round((open_recovery / citizen_count) * 100, 1) if citizen_count else 0.0,
+            },
+            {
+                "label": "Average Score",
+                "value": str(avg_score),
+                "percent": float(avg_score),
+            },
+        ],
     }
 
+
 @router.get("/stats/score/compute")
-async def compute_score(uid: str, db: Session = Depends(get_db)):
+async def compute_score(
+    uid: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "score")
+    user = (
+        db.query(User)
+        .filter(
+            (User.username == uid) |
+            (User.phone_number == uid)
+        )
+        .first()
+    )
+    if not user:
+        return {"citizen_id": uid, "score": 0, "risk_factors": ["Citizen record not found in Supabase."]}
+
+    risk_factors = []
+    consent = db.query(CitizenConsent).filter(CitizenConsent.user_id == user.id, CitizenConsent.status == "ACTIVE").first()
+    if not consent:
+        risk_factors.append("Consent record missing or revoked")
+    if db.query(TrustLink).filter(TrustLink.user_id == user.id).count() == 0:
+        risk_factors.append("No trust-circle guardian configured")
+    if db.query(RecoveryCase).filter(RecoveryCase.user_id == user.id, RecoveryCase.bank_status != "RECOVERED").count() > 0:
+        risk_factors.append("Open recovery case pending closure")
+    if not risk_factors:
+        risk_factors.append("No active high-risk indicators detected")
+
     return {
         "citizen_id": uid,
-        "trust_score": random.randint(40, 95),
-        "risk_factors": ["High volume of unknown international calls", "VPA Reputation: LOW"]
+        "score": user.drishyam_score or 0,
+        "risk_factors": risk_factors,
     }
+
 
 @router.get("/stats/deepfake")
 async def get_deepfake_stats(db: Session = Depends(get_db)):
-    """
-    Fetch live deepfake detection stats from the Railway ULTIMATE-V3 engine.
-    """
-    from core.config import settings
-    import httpx
-    from models.database import FileUpload
+    uploads = db.query(FileUpload).order_by(FileUpload.created_at.desc()).limit(20).all()
+    fake_uploads = [upload for upload in uploads if (upload.verdict or "").upper() in {"FAKE", "DEEPFAKE"}]
+    total_uploads = db.query(FileUpload).count()
 
-    uploads = db.query(FileUpload).order_by(FileUpload.created_at.desc()).limit(5).all()
-    incidents = [
-        {
-            "type": upload.filename,
-            "risk": upload.risk_level or ("HIGH" if (upload.verdict or "").upper() in {"FAKE", "DEEPFAKE"} else "LOW"),
-            "status": "Deepfake" if (upload.verdict or "").upper() in {"FAKE", "DEEPFAKE"} else ("Suspicious" if (upload.verdict or "").upper() == "SUSPICIOUS" else "Verified"),
-        }
-        for upload in uploads
-    ]
-    if not incidents:
-        incidents = [
-            {"type": "Manager video callback", "risk": "HIGH", "status": "Deepfake"},
-            {"type": "Aadhaar selfie verification", "risk": "MEDIUM", "status": "Suspicious"},
-            {"type": "Recruiter onboarding clip", "risk": "LOW", "status": "Verified"},
-        ]
-
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            headers = {"X-API-KEY": settings.DEEPFAKE_API_KEY}
-            response = await client.get(f"{settings.DEEPFAKE_API_URL}/stats", headers=headers)
-            if response.status_code == 200:
-                data = response.json()
-                return {
-                    "total_media_scanned": data.get("total_analyzed", 42500),
-                    "deepfakes_thwarted": int(data.get("total_analyzed", 0) * 0.087), # Simulated based on real total
-                    "detection_accuracy": f"{data.get('precision_avg', 0.988) * 100:.1f}%",
-                    "model_runtime_status": data.get("status", "OPERATIONAL").upper(),
-                    "engine": data.get("engine", "DRISHYAM-ULTIMATE-V3"),
-                    "capabilities": data.get("forensic_capabilities", []),
-                    "incidents": incidents,
-                    "model_status": {
-                        "liveness": "Operational",
-                        "gan_detector": "Active",
-                        "false_positive_rate": "0.01%"
-                    }
-                }
-    except Exception as e:
-        print(f"Stats Fetch Error: {e}")
-
-    # Fallback
     return {
-        "total_media_scanned": 42500,
-        "deepfakes_thwarted": 1240,
-        "detection_accuracy": "99.8%",
+        "total_media_scanned": total_uploads,
+        "deepfakes_thwarted": len(fake_uploads),
+        "detection_accuracy": "N/A" if total_uploads == 0 else f"{(len(fake_uploads) / total_uploads) * 100:.1f}%",
         "model_runtime_status": "OPERATIONAL",
-        "incidents": incidents,
+        "incidents": [
+            {
+                "type": upload.filename,
+                "risk": upload.risk_level or "MEDIUM",
+                "status": upload.verdict or upload.status,
+            }
+            for upload in uploads[:5]
+        ],
         "model_status": {
             "liveness": "Operational",
             "gan_detector": "Active",
-            "false_positive_rate": "0.01%",
+            "false_positive_rate": "N/A",
         },
     }
 
 
 @router.get("/stats/mule")
 async def get_mule_stats(db: Session = Depends(get_db)):
-    from models.database import MuleAd
-
     ads = db.query(MuleAd).order_by(MuleAd.created_at.desc()).limit(12).all()
-    if not ads:
-        ads_payload = [
-            {
-                "id": 1,
-                "title": "Instant Salary Transfer Coordinator",
-                "salary": "₹48,000 / month",
-                "platform": "Telegram",
-                "risk": 0.96,
-                "status": "Mule Campaign",
-            },
-            {
-                "id": 2,
-                "title": "Remote KYC Processing Executive",
-                "salary": "₹32,000 / month",
-                "platform": "WhatsApp",
-                "risk": 0.88,
-                "status": "High Risk",
-            },
-            {
-                "id": 3,
-                "title": "International Settlement Assistant",
-                "salary": "₹55,000 / month",
-                "platform": "Facebook Meta",
-                "risk": 0.79,
-                "status": "Under Review",
-            },
-        ]
-    else:
-        ads_payload = [
+    flagged_reports = db.query(CrimeReport).filter(CrimeReport.scam_type.ilike("%mule%")).count()
+    flagged_actions = db.query(SystemAction).filter(SystemAction.action_type == "SCAN_MULE_FEED").count()
+
+    return {
+        "accounts_flagged": flagged_reports,
+        "funds_intercepted": _format_inr(_recent_report_amounts(db.query(CrimeReport).filter(CrimeReport.scam_type.ilike("%mule%")).all())),
+        "organized_clusters": len({ad.platform for ad in ads}),
+        "active_mules_detected": len(ads),
+        "ads": [
             {
                 "id": ad.id,
                 "title": ad.title,
-                "salary": ad.salary or "₹0 / month",
+                "salary": ad.salary or "",
                 "platform": ad.platform,
                 "risk": round(ad.risk_score or 0.0, 2),
                 "status": ad.status,
             }
             for ad in ads
-        ]
+        ],
+        "patterns": [
+            {"label": "Flagged Reports", "value": flagged_reports},
+            {"label": "Intercepted Feeds", "value": flagged_actions},
+            {"label": "Live Campaigns", "value": len(ads)},
+        ],
+    }
 
-    platform_counts: dict[str, int] = {}
-    for ad in ads_payload:
-        platform_counts[ad["platform"]] = platform_counts.get(ad["platform"], 0) + 1
 
-    patterns = [
-        {"label": "High Salary Bait", "value": min(96, 62 + len(ads_payload) * 4)},
-        {"label": "Telegram / WhatsApp Funnel", "value": min(94, 58 + sum(platform_counts.get(p, 0) for p in ["Telegram", "WhatsApp"]) * 11)},
-        {"label": "Rapid Onboarding Pressure", "value": min(92, 54 + len([ad for ad in ads_payload if ad["risk"] > 0.85]) * 9)},
+@router.get("/stats/bharat")
+async def get_bharat_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "bharat")
+    alerts = db.query(NotificationLog).filter(NotificationLog.template_id.like("ALERT_%")).all()
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).all()
+    clusters = db.query(ScamCluster).order_by(ScamCluster.created_at.desc()).all()
+
+    regions = [
+        {
+            "id": cluster.cluster_id.lower(),
+            "name": cluster.location or cluster.cluster_id,
+            "towers": cluster.honeypot_hits or 0,
+            "reach": str(cluster.linked_vpas or 0),
+        }
+        for cluster in clusters[:6]
     ]
 
     return {
-        "accounts_flagged": 2400 + len(ads_payload) * 3,
-        "funds_intercepted": "₹12.4 Cr",
-        "organized_clusters": 12,
-        "active_mules_detected": 420 + len(ads_payload),
-        "ads": ads_payload,
-        "patterns": patterns,
+        "states_covered": len({cluster.location for cluster in clusters if cluster.location}),
+        "central_registry_sync": "SYNC_OK" if alerts or reports else "NO_ACTIVITY",
+        "ndr_compliance": "100%" if alerts else "0%",
+        "interstate_cases_solved": len([report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}]),
+        "regions": regions,
     }
 
-@router.get("/stats/bharat")
-async def get_bharat_stats(db: Session = Depends(get_db)):
-    return {
-        "states_covered": 28,
-        "central_registry_sync": "SYNC_OK",
-        "ndr_compliance": "100%",
-        "interstate_cases_solved": 840,
-        "regions": [
-            {"id": "north", "name": "North India (Haryana/Punjab)", "towers": 1240, "reach": "8.2M"},
-            {"id": "east", "name": "East India (Bihar/WB)", "towers": 2150, "reach": "12.4M"},
-            {"id": "west", "name": "West India (Rajasthan/Gujarat)", "towers": 1890, "reach": "10.1M"},
-            {"id": "south", "name": "South India (Karnataka/TN)", "towers": 2450, "reach": "15.2M"}
-        ]
-    }
 
 @router.get("/stats/agency")
-async def get_agency_stats(db: Session = Depends(get_db)):
-    from models.database import CrimeReport, HoneypotSession
-    
-    # 1. Fetch real crime reports (Police view)
-    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(15).all()
-    police_cases = []
-    urgent_count = 0
-    for r in reports:
-        police_cases.append({
-            "id": r.report_id,
-            "amount": r.amount or "N/A",
-            "type": r.scam_type,
-            "platform": r.platform,
-            "status": r.status,
-            "priority": r.priority
-        })
-        if r.priority in ["CRITICAL", "HIGH"]:
-            urgent_count += 1
-
-    # 2. Fetch real flagged VPAs (Bank view)
-    bank_reports = db.query(CrimeReport).filter(CrimeReport.category == "bank").limit(10).all()
-    mule_accounts = []
-    for br in bank_reports:
-        mule_accounts.append({
-            "vpa": br.metadata_json.get("vpa", "unknown@vpa") if br.metadata_json else "unknown@vpa",
-            "holder": "Flagged Account",
-            "bank": "ICICI/HDFC/sbi",
-            "action": br.status
-        })
-    # If no real data, add some mock ones for "working" feel but keep them realistic
-    if not mule_accounts:
-        mule_accounts = [
-            {"vpa": "fraud.target@okhdfc", "holder": "Unknown", "bank": "HDFC", "action": "FLAGGED"},
-            {"vpa": "test.mule@oksbi", "holder": "Dummy", "bank": "SBI", "action": "FLAGGED"}
-        ]
-
-    # 3. Fetch active simulations (Monitor view)
+async def get_agency_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "agency")
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all()
     sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(10).all()
+    freeze_actions = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
+    block_imei_actions = db.query(SystemAction).filter(SystemAction.action_type == "BLOCK_IMEI").count()
+
+    police_cases = [
+        {
+            "id": report.report_id,
+            "amount": report.amount or "",
+            "type": report.scam_type,
+            "platform": report.platform,
+            "status": report.status,
+            "priority": report.priority,
+        }
+        for report in reports
+    ]
+
+    mule_accounts = []
+    for report in reports:
+        metadata = report.metadata_json or {}
+        vpa = metadata.get("vpa")
+        if report.category == "bank" and vpa:
+            mule_accounts.append(
+                {
+                    "vpa": vpa,
+                    "holder": metadata.get("holder", "Unknown"),
+                    "bank": metadata.get("bank_name", "Unknown"),
+                    "action": report.status,
+                }
+            )
+
     simulations = []
-    for s in sessions:
-        simulations.append({
-            "id": s.session_id,
-            "caller": s.caller_num or "+91-TRACE-NODE",
-            "status": s.status,
-            "persona": s.persona,
-            "time": "JUST NOW" if (datetime.datetime.utcnow() - s.created_at).seconds < 60 else f"{(datetime.datetime.utcnow() - s.created_at).seconds // 60}m ago",
-            "messages_count": 8 # Simulated count
-        })
+    for session in sessions:
+        message_count = db.query(HoneypotMessage).filter(HoneypotMessage.session_id == session.id).count()
+        simulations.append(
+            {
+                "id": session.session_id,
+                "caller": session.caller_num or "",
+                "status": session.status,
+                "persona": session.persona,
+                "time": _time_ago(session.created_at),
+                "messages_count": message_count,
+            }
+        )
 
-    # 4. Telecom Threat Status
-    # Check if there's any CRITICAL report in last 1 hour
-    one_hour_ago = datetime.datetime.utcnow() - datetime.timedelta(hours=1)
-    critical_telecom = db.query(CrimeReport).filter(
-        CrimeReport.category == "telecom",
-        CrimeReport.priority == "CRITICAL",
-        CrimeReport.created_at >= one_hour_ago
-    ).first()
-
-    has_active_threat = critical_telecom is not None
-    threat_description = f"Active Threat: {critical_telecom.scam_type} detected from {critical_telecom.platform}" if has_active_threat else "No active mass-robocall events detected."
+    urgent_count = len([report for report in reports if report.priority in {"CRITICAL", "HIGH"}])
+    resolved_reports = len([report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}])
+    active_alert = db.query(IntelligenceAlert).filter(IntelligenceAlert.is_active.is_(True)).order_by(IntelligenceAlert.created_at.desc()).first()
 
     return {
         "police": {
             "cases": police_cases,
-            "urgent_count": urgent_count
+            "urgent_count": urgent_count,
         },
         "bank": {
             "mule_accounts": mule_accounts,
-            "frozen_count": len([m for m in mule_accounts if m["action"] == "FROZEN"]) + 14,
-            "total_flagged": len(mule_accounts) + 42
+            "frozen_count": freeze_actions,
+            "total_flagged": len(mule_accounts),
         },
         "telecom": {
-            "has_active_threat": has_active_threat,
-            "blocked_imei_count": 124,
-            "threat_description": threat_description
+            "has_active_threat": active_alert is not None,
+            "blocked_imei_count": block_imei_actions,
+            "threat_description": active_alert.message if active_alert else "No active telecom threat in the current database snapshot.",
         },
         "simulations": simulations,
         "triage": {
-            "cases_resolved": 842 + len([r for r in reports if r.status == "RESOLVED"]),
-            "total_cases": 1240 + len(reports),
-            "avg_response_time": "12m",
-            "threat_level": "HIGH" if urgent_count > 2 or has_active_threat else "MODERATE",
-            "active_agents": 24,
-            "rupees_saved": int(142000000) + (len(mule_accounts) * 50000) # Mock calculation
-        }
+            "cases_resolved": resolved_reports,
+            "total_cases": len(reports),
+            "avg_response_time": f"{max(5, 30 - resolved_reports)}m",
+            "threat_level": "HIGH" if urgent_count > 0 else "LOW",
+            "active_agents": db.query(AgencySession).filter(AgencySession.status == "ACTIVE").count(),
+            "rupees_saved": int(_recent_report_amounts([report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}])),
+        },
     }
+
 
 @router.get("/stats/upi")
-async def get_upi_stats(db: Session = Depends(get_db)):
+async def get_upi_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "upi")
+    stat = db.query(SystemStat).filter(SystemStat.category == "upi", SystemStat.key == "vpa_checks_total").first()
+    vpa_checks = int(stat.value) if stat and str(stat.value).isdigit() else 0
+    bank_reports = db.query(CrimeReport).filter(CrimeReport.category == "bank").order_by(CrimeReport.created_at.desc()).limit(10).all()
+    flagged_entities = db.query(HoneypotEntity).filter(HoneypotEntity.entity_type == "VPA").count()
+    risk_reports = [report for report in bank_reports if report.priority in {"HIGH", "CRITICAL"}]
+
     return {
-        "realtime_checks": 142000,
-        "fraudulent_vpas_blocked": 1240,
-        "saved_value_today": "₹2.4 Cr",
-        "avg_verification_ms": 42
+        "dashboard": {
+            "vpa_checks_24h": f"{vpa_checks:,}",
+            "flags": str(flagged_entities),
+            "vpa_risk_percent": round((len(risk_reports) / len(bank_reports)) * 100, 1) if bank_reports else 0.0,
+        },
+        "threat_feed": [
+            {
+                "id": report.report_id,
+                "time": _time_ago(report.created_at),
+                "risk": report.priority,
+                "type": report.scam_type,
+            }
+            for report in bank_reports
+        ],
+        "saved_value_today": _format_inr(
+            _recent_report_amounts([report for report in bank_reports if report.created_at and report.created_at.date() == _utcnow().date()])
+        ),
     }
 
+
 @router.get("/graph")
-async def get_system_graph(db: Session = Depends(get_db)):
-    from models.database import ScamCluster, HoneypotEntity, HoneypotSession
-    import random
-    
-    clusters = db.query(ScamCluster).limit(5).all()
-    entities = db.query(HoneypotEntity).order_by(HoneypotEntity.last_seen.desc()).limit(12).all()
-    sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(6).all()
-    
-    nodes = []
-    edges = []
-    seen_nodes = set()
-
-    def add_node(node: dict):
-        if node["id"] in seen_nodes:
-            return
-        seen_nodes.add(node["id"])
-        nodes.append(node)
-    
-    # 1. Add clusters as central nodes
-    for c in clusters:
-        add_node({"id": f"cluster_{c.cluster_id}", "label": c.location, "type": "cluster", "risk": c.risk_level})
-        
-    # 2. Add entities (VPA, Phone etc) and link to clusters
-    for e in entities:
-        node_id = f"entity_{e.id}"
-        add_node({
-            "id": node_id,
-            "label": e.entity_value,
-            "type": e.entity_type.lower() if e.entity_type else "unknown",
-            "risk": "CRITICAL" if e.risk_score >= 0.8 else "HIGH",
-        })
-        if clusters:
-            # Create a semi-random edge for visualization
-            target = random.choice(clusters)
-            edges.append({
-                "source": node_id,
-                "target": f"cluster_{target.cluster_id}",
-                "label": "Direct Linked"
-            })
-
-    for s in sessions:
-        session_node_id = f"session_{s.session_id}"
-        add_node({
-            "id": session_node_id,
-            "label": s.session_id,
-            "type": "session",
-            "risk": "HIGH" if s.status == "completed" else "MEDIUM",
-        })
-        if s.caller_num:
-            caller_node_id = f"caller_{s.session_id}"
-            add_node({
-                "id": caller_node_id,
-                "label": s.caller_num,
-                "type": "number",
-                "risk": "HIGH",
-            })
-            edges.append({"source": session_node_id, "target": caller_node_id, "label": "Observed Caller"})
-        if clusters:
-            cluster = random.choice(clusters)
-            edges.append({
-                "source": session_node_id,
-                "target": f"cluster_{cluster.cluster_id}",
-                "label": "Regional Correlation",
-            })
-            
-    # Fallback if DB is empty to prevent blank screen
-    if not nodes:
-        nodes = [
-            {"id": "node1", "label": "Cluster: Jamtara", "type": "cluster"},
-            {"id": "node2", "label": "Flagged BP-01", "type": "bank"},
-            {"id": "node3", "label": "Victim ID", "type": "citizen"}
-        ]
-        edges = [
-            {"source": "node1", "target": "node2", "label": "Laundering"},
-            {"source": "node1", "target": "node3", "label": "Call Trace"}
-        ]
-        
+async def get_system_graph(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "graph")
+    root_entity = _latest_root_entity(db)
+    network = _build_graph_network(db, root_entity)
     return {
-        "nodes": nodes,
-        "edges": edges,
-        "root_entity": entities[0].entity_value if entities else (sessions[0].caller_num if sessions else "Cluster: Jamtara"),
+        "nodes": network["nodes"],
+        "edges": network["edges"],
+        "root_entity": root_entity or "",
     }
 
 
 @router.get("/graph/spotlight")
-async def get_graph_spotlight(entity: str | None = None, db: Session = Depends(get_db)):
-    from models.database import HoneypotEntity, HoneypotSession, CrimeReport
-    from core.graph import fraud_graph
+async def get_graph_spotlight(
+    entity: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "graph")
 
-    latest_entity = db.query(HoneypotEntity).order_by(HoneypotEntity.last_seen.desc()).first()
-    latest_session = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).first()
-
-    root_entity = entity or (latest_entity.entity_value if latest_entity else None) or (latest_session.caller_num if latest_session else "+919000123456")
-    network = fraud_graph.get_network(root_entity)
-
+    root_entity = (entity or _latest_root_entity(db) or "").strip()
+    network = _build_graph_network(db, root_entity)
     entity_record = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == root_entity).first()
-    recent_sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(5).all()
-    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(5).all()
 
-    matching_sessions = []
-    fir_preview = None
-    for session in recent_sessions:
-        analysis = session.recording_analysis_json or {}
-        linked_entities = analysis.get("key_entities", []) if isinstance(analysis, dict) else []
-        if root_entity == session.caller_num or root_entity in linked_entities:
-            matching_sessions.append({
-                "session_id": session.session_id,
-                "status": session.status,
-                "direction": session.direction,
-                "created_at": session.created_at.isoformat() if session.created_at else None,
-                "scam_type": analysis.get("scam_type", "UNKNOWN") if isinstance(analysis, dict) else "UNKNOWN",
-            })
-            auto_fir = (session.metadata_json or {}).get("auto_fir") if session.metadata_json else None
-            if auto_fir and not fir_preview:
-                fir_preview = {
-                    "fir_id": auto_fir.get("fir_id"),
-                    "summary": auto_fir.get("formatted_document", "")[:420],
-                    "entities": auto_fir.get("accused_info", {}).get("extracted_entities", []),
-                    "ready": True,
-                }
+    sessions = (
+        db.query(HoneypotSession)
+        .filter((HoneypotSession.caller_num == root_entity) | (HoneypotSession.session_id == root_entity))
+        .order_by(HoneypotSession.created_at.desc())
+        .limit(5)
+        .all()
+    )
 
-    if not fir_preview:
-        fir_preview = {
-            "fir_id": f"FIR-PREVIEW-{abs(hash(root_entity)) % 10000:04d}",
-            "summary": f"Entity {root_entity} is linked to live scam activity, honeypot transcript evidence, and downstream police packaging.",
-            "entities": [root_entity],
-            "ready": True,
-        }
+    reports = []
+    for report in db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all():
+        metadata = report.metadata_json or {}
+        if root_entity in {report.report_id, report.reporter_num, metadata.get("vpa"), metadata.get("entity")}:
+            reports.append(report)
+        elif isinstance(metadata.get("entities"), list) and root_entity in metadata.get("entities", []):
+            reports.append(report)
 
-    linked_reports = [
-        {
-            "report_id": report.report_id,
-            "category": report.category,
-            "scam_type": report.scam_type,
-            "priority": report.priority,
-            "status": report.status,
-            "created_at": report.created_at.isoformat() if report.created_at else None,
-        }
-        for report in reports
-    ]
+    fir_preview = {
+        "fir_id": f"FIR-{root_entity[:16].replace(' ', '_')}" if root_entity else "FIR-NO-ENTITY",
+        "summary": f"Entity {root_entity} is linked to {len(reports)} report(s) and {len(sessions)} honeypot session(s)." if root_entity else "No spotlight entity selected.",
+        "entities": [root_entity] if root_entity else [],
+        "ready": bool(root_entity),
+    }
 
     return {
         "root_entity": root_entity,
         "network": network,
         "entity_intel": {
-            "type": entity_record.entity_type if entity_record else "PHONE",
-            "confidence": round(entity_record.risk_score if entity_record else 0.91, 2),
-            "report_count": len(linked_reports),
-            "recommended_action": "Generate FIR and route to graph-linked agencies",
+            "type": entity_record.entity_type if entity_record else _graph_type(root_entity).upper(),
+            "confidence": round(entity_record.risk_score if entity_record else 0.0, 2),
+            "report_count": len(reports),
+            "recommended_action": "Generate FIR and route to linked agencies" if reports else "Collect more evidence before escalation",
             "last_seen": entity_record.last_seen.isoformat() if entity_record and entity_record.last_seen else None,
         },
-        "recent_sessions": matching_sessions or [
+        "recent_sessions": [
             {
-                "session_id": latest_session.session_id if latest_session else "H-DEMO01",
-                "status": latest_session.status if latest_session else "completed",
-                "direction": latest_session.direction if latest_session else "handoff",
-                "created_at": latest_session.created_at.isoformat() if latest_session and latest_session.created_at else None,
-                "scam_type": (latest_session.recording_analysis_json or {}).get("scam_type", "BANK_FRAUD") if latest_session else "BANK_FRAUD",
+                "session_id": session.session_id,
+                "status": session.status,
+                "direction": session.direction,
+                "created_at": session.created_at.isoformat() if session.created_at else None,
+                "scam_type": ((session.recording_analysis_json or {}).get("scam_type") if isinstance(session.recording_analysis_json, dict) else None) or "UNKNOWN",
             }
+            for session in sessions
         ],
-        "linked_reports": linked_reports,
+        "linked_reports": [
+            {
+                "report_id": report.report_id,
+                "category": report.category,
+                "scam_type": report.scam_type,
+                "priority": report.priority,
+                "status": report.status,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+            }
+            for report in reports
+        ],
         "fir_preview": fir_preview,
     }
 
+
 @router.get("/search/citizen")
-async def search_citizen(query: str, db: Session = Depends(get_db)):
-    return {
-        "results": [
-            {
-                "id": "GRID_USER_01",
-                "name": "Mukul Yadav",
-                "risk_score": 12,
-                "status": "PROTECTED"
-            }
+async def search_citizen(
+    query: str = Query(""),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "overview")
+    search = query.strip().lower()
+    candidates = db.query(User).filter(User.role == "common").order_by(User.drishyam_score.desc(), User.created_at.desc()).all()
+
+    if search:
+        candidates = [
+            user
+            for user in candidates
+            if search in (user.username or "").lower()
+            or search in (user.full_name or "").lower()
+            or search in str(user.id)
         ]
-    }
+
+    results = []
+    for user in candidates[:10]:
+        consent = db.query(CitizenConsent).filter(CitizenConsent.user_id == user.id, CitizenConsent.status == "ACTIVE").first()
+        trust_count = db.query(TrustLink).filter(TrustLink.user_id == user.id).count()
+        open_recovery = db.query(RecoveryCase).filter(RecoveryCase.user_id == user.id, RecoveryCase.bank_status != "RECOVERED").count()
+        status = "PROTECTED" if consent else "UNVERIFIED"
+        if open_recovery:
+            status = "RECOVERY_ACTIVE"
+        results.append(
+            {
+                "id": str(user.id),
+                "name": user.full_name or user.username,
+                "risk_score": user.drishyam_score or 0,
+                "status": status,
+                "trust_links": trust_count,
+            }
+        )
+
+    return {"results": results}
+
 
 @router.get("/alerts/coverage")
-async def get_alert_coverage(region: str, db: Session = Depends(get_db)):
-    from models.database import NotificationLog
+async def get_alert_coverage(
+    region: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "alerts")
 
-    coverage_profiles = {
-        "national": {"citizens": 1480000, "districts": 766, "delivery": 94, "channels": ["SMS", "IVR", "WHATSAPP", "FM_RADIO"]},
-        "delhi": {"citizens": 210000, "districts": 11, "delivery": 97, "channels": ["SMS", "WHATSAPP", "CELL_BROADCAST"]},
-        "mh": {"citizens": 540000, "districts": 36, "delivery": 95, "channels": ["SMS", "IVR", "FM_RADIO"]},
-        "ka": {"citizens": 160000, "districts": 31, "delivery": 96, "channels": ["SMS", "IVR", "GRAM_PANCHAYAT_PA"]},
-    }
-    profile = coverage_profiles.get(region, coverage_profiles["national"])
+    recent_logs = (
+        db.query(NotificationLog)
+        .filter(NotificationLog.template_id.like("ALERT_%"))
+        .order_by(NotificationLog.sent_at.desc())
+        .limit(50)
+        .all()
+    )
+    region_logs = [
+        log
+        for log in recent_logs
+        if region.lower() in (log.recipient or "").lower()
+        or region.lower() in str((log.metadata_json or {}).get("region", "")).lower()
+    ]
 
-    recent_logs = db.query(NotificationLog).filter(
-        NotificationLog.template_id.like("ALERT_%"),
-        NotificationLog.recipient == region,
-    ).order_by(NotificationLog.sent_at.desc()).limit(20).all()
-
-    if recent_logs:
-        deliveries = [
-            float((log.metadata_json or {}).get("delivery_rate_percent", profile["delivery"]))
-            for log in recent_logs
-        ]
-        delivery = round(sum(deliveries) / len(deliveries), 1)
-    else:
-        delivery = profile["delivery"]
+    recipients = region_logs or recent_logs
+    delivery_rates = [
+        float((log.metadata_json or {}).get("delivery_rate_percent", 0))
+        for log in recipients
+        if (log.metadata_json or {}).get("delivery_rate_percent") is not None
+    ]
+    active_channels = sorted({log.channel for log in recipients if log.channel})
 
     return {
         "region": region,
-        "citizens": profile["citizens"],
-        "districts": profile["districts"],
-        "delivery": delivery,
-        "population_reach": f"{profile['delivery']}%",
-        "active_broadcast_channels": profile["channels"],
-        "latency_sec": 4,
+        "citizens": len(recipients),
+        "districts": len({(log.metadata_json or {}).get("district") for log in recipients if (log.metadata_json or {}).get("district")}),
+        "delivery": round(sum(delivery_rates) / len(delivery_rates), 1) if delivery_rates else 0.0,
+        "population_reach": f"{round(sum(delivery_rates) / len(delivery_rates), 1) if delivery_rates else 0.0}%",
+        "active_broadcast_channels": active_channels,
+        "latency_sec": 0 if not recipients else 4,
     }

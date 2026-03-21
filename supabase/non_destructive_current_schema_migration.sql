@@ -844,4 +844,127 @@ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
+CREATE TABLE IF NOT EXISTS partner_integrations (
+    id BIGSERIAL PRIMARY KEY,
+    partner_name VARCHAR NOT NULL UNIQUE,
+    segment VARCHAR NOT NULL,
+    owner VARCHAR NOT NULL,
+    region_scope VARCHAR DEFAULT 'INDIA',
+    mou_status VARCHAR DEFAULT 'DRAFT',
+    sandbox_access_status VARCHAR DEFAULT 'REQUESTED',
+    production_access_status VARCHAR DEFAULT 'PLANNED',
+    api_access_status VARCHAR DEFAULT 'PENDING',
+    credential_status VARCHAR DEFAULT 'NOT_ISSUED',
+    sla_status VARCHAR DEFAULT 'IN_NEGOTIATION',
+    escalation_contact VARCHAR,
+    next_milestone VARCHAR,
+    status VARCHAR DEFAULT 'ON_TRACK',
+    last_checked_at TIMESTAMP DEFAULT NOW(),
+    metadata_json JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_partner_integrations_segment ON partner_integrations(segment);
+CREATE INDEX IF NOT EXISTS idx_partner_integrations_status ON partner_integrations(status);
+CREATE INDEX IF NOT EXISTS idx_partner_integrations_api_access_status ON partner_integrations(api_access_status);
+
+CREATE TABLE IF NOT EXISTS agency_access_policies (
+    id BIGSERIAL PRIMARY KEY,
+    policy_id VARCHAR NOT NULL UNIQUE,
+    name VARCHAR NOT NULL,
+    role_scope VARCHAR NOT NULL,
+    resource_scope VARCHAR DEFAULT '*',
+    action_scope VARCHAR DEFAULT '*',
+    region_scope VARCHAR DEFAULT '*',
+    effect VARCHAR DEFAULT 'ALLOW',
+    active BOOLEAN DEFAULT TRUE,
+    conditions_json JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_agency_access_policies_role_scope ON agency_access_policies(role_scope);
+CREATE INDEX IF NOT EXISTS idx_agency_access_policies_active ON agency_access_policies(active);
+
+CREATE TABLE IF NOT EXISTS agency_sessions (
+    id BIGSERIAL PRIMARY KEY,
+    session_uid VARCHAR NOT NULL UNIQUE,
+    user_id BIGINT NOT NULL,
+    device_label VARCHAR NOT NULL,
+    device_type VARCHAR DEFAULT 'WEB',
+    ip_address VARCHAR,
+    network_zone VARCHAR,
+    auth_stage VARCHAR DEFAULT 'PASSWORD_ONLY',
+    risk_level VARCHAR DEFAULT 'LOW',
+    status VARCHAR DEFAULT 'ACTIVE',
+    last_seen_at TIMESTAMP DEFAULT NOW(),
+    verified_at TIMESTAMP,
+    revoked_at TIMESTAMP,
+    metadata_json JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_agency_sessions_user_id ON agency_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_agency_sessions_status ON agency_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_agency_sessions_risk_level ON agency_sessions(risk_level);
+
+CREATE TABLE IF NOT EXISTS admin_approvals (
+    id BIGSERIAL PRIMARY KEY,
+    approval_id VARCHAR NOT NULL UNIQUE,
+    requested_by_user_id BIGINT NOT NULL,
+    approver_user_id BIGINT,
+    action_type VARCHAR NOT NULL,
+    resource VARCHAR NOT NULL,
+    risk_level VARCHAR DEFAULT 'HIGH',
+    justification TEXT NOT NULL,
+    status VARCHAR DEFAULT 'PENDING',
+    expires_at TIMESTAMP,
+    decided_at TIMESTAMP,
+    metadata_json JSONB,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_admin_approvals_requested_by_user_id ON admin_approvals(requested_by_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_approvals_approver_user_id ON admin_approvals(approver_user_id);
+CREATE INDEX IF NOT EXISTS idx_admin_approvals_status ON admin_approvals(status);
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_agency_sessions_user_id'
+    ) THEN
+        ALTER TABLE agency_sessions
+        ADD CONSTRAINT fk_agency_sessions_user_id
+        FOREIGN KEY (user_id) REFERENCES users(id);
+    END IF;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_admin_approvals_requested_by_user_id'
+    ) THEN
+        ALTER TABLE admin_approvals
+        ADD CONSTRAINT fk_admin_approvals_requested_by_user_id
+        FOREIGN KEY (requested_by_user_id) REFERENCES users(id);
+    END IF;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_admin_approvals_approver_user_id'
+    ) THEN
+        ALTER TABLE admin_approvals
+        ADD CONSTRAINT fk_admin_approvals_approver_user_id
+        FOREIGN KEY (approver_user_id) REFERENCES users(id);
+    END IF;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
 COMMIT;

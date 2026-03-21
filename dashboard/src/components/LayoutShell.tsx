@@ -8,6 +8,8 @@ import AuthGate from "@/components/AuthGate";
 import Sidebar from "@/components/Sidebar";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 function InnerShell({ children }: { children: React.ReactNode }) {
     const { isAuthenticated, isMfaPending } = useAuth();
@@ -34,9 +36,19 @@ function InnerShell({ children }: { children: React.ReactNode }) {
                     >
                         <Menu size={22} />
                     </button>
-                    <h1 className="text-sm font-bold tracking-tighter">
-                        <span className="text-saffron">DRISHYAM</span><sub className="text-xs ml-0.5">AI</sub>
-                    </h1>
+                    <Link href="/" className="flex items-center gap-2">
+                        <div className="relative w-7 h-7 overflow-hidden rounded-lg border border-saffron/30">
+                            <Image 
+                                src="/logo.png" 
+                                alt="Logo" 
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                        <h1 className="text-sm font-bold tracking-tighter">
+                            <span className="text-saffron">DRISHYAM</span><sub className="text-xs ml-0.5">AI</sub>
+                        </h1>
+                    </Link>
                 </div>
 
                 <main className="flex-1 lg:ml-64 p-4 pt-18 lg:p-8 lg:pt-8 min-w-0">

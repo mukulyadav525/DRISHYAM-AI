@@ -7,7 +7,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from core.config import settings
 from core.database import get_db
-from models.database import User
+from models.database import AgencySession, User
 
 # Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -15,6 +15,10 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 # OAuth2 scheme
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
 PRIVILEGED_ROLES = {"admin", "police", "bank", "government", "telecom", "court"}
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -58,6 +62,30 @@ async def get_current_user(
         raise credentials_exception
     if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+
+    session_uid = payload.get("session_uid")
+    if session_uid:
+        session_row = (
+            db.query(AgencySession)
+            .filter(
+                AgencySession.session_uid == session_uid,
+                AgencySession.user_id == user.id,
+            )
+            .first()
+        )
+        if not session_row or session_row.status != "ACTIVE":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Session is no longer active",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+
+        session_row.last_seen_at = _utcnow()
+        if payload.get("mfa_verified", False) and session_row.auth_stage != "MFA_VERIFIED":
+            session_row.auth_stage = "MFA_VERIFIED"
+            session_row.verified_at = session_row.verified_at or _utcnow()
+        db.commit()
+
     return user
 
 

@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 from core.auth import get_password_hash  # noqa: E402
 from core.database import SessionLocal, engine, ensure_schema_compliance  # noqa: E402
 from main import app  # noqa: E402
-from models.database import Base, User, UserRole  # noqa: E402
+from models.database import Base, MuleAd, User, UserRole  # noqa: E402
 
 
 def expect_status(name, response, status_code=200):
@@ -31,16 +31,39 @@ def prepare_runtime():
 
     db = SessionLocal()
     try:
-        admin = db.query(User).filter(User.username == "admin").first()
-        if not admin:
-            admin = User(
-                username="admin",
-                hashed_password=get_password_hash("password123"),
-                full_name="System Administrator",
-                role=UserRole.ADMIN.value,
-                is_active=True,
+        seed_users = [
+            ("admin", "System Administrator", UserRole.ADMIN.value),
+            ("bankops", "Bank Operations Lead", UserRole.BANK.value),
+        ]
+        created = False
+        for username, full_name, role in seed_users:
+            existing = db.query(User).filter(User.username == username).first()
+            if existing:
+                continue
+            db.add(
+                User(
+                    username=username,
+                    hashed_password=get_password_hash("password123"),
+                    full_name=full_name,
+                    role=role,
+                    is_active=True,
+                )
             )
-            db.add(admin)
+            created = True
+        if created:
+            db.commit()
+
+        if db.query(MuleAd).count() == 0:
+            db.add(
+                MuleAd(
+                    title="Earn Rs. 50,000 by receiving and forwarding payments",
+                    salary="₹50,000",
+                    platform="Telegram",
+                    risk_score=0.96,
+                    status="Mule Campaign",
+                    recruiter_id="SMOKE-OPS-01",
+                )
+            )
             db.commit()
     finally:
         db.close()
@@ -49,6 +72,24 @@ def prepare_runtime():
 def main():
     prepare_runtime()
     client = TestClient(app)
+
+    initial_login = expect_status(
+        "initial login",
+        client.post(
+            "/api/v1/auth/login",
+            data={"username": "admin", "password": "password123"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        ),
+    )
+    initial_verify = expect_status(
+        "initial mfa verify",
+        client.post(
+            "/api/v1/auth/mfa/verify",
+            json={"otp": "19301930"},
+            headers={"Authorization": f"Bearer {initial_login['access_token']}"},
+        ),
+    )
+    protected_headers = {"Authorization": f"Bearer {initial_verify['access_token']}"}
 
     consent_record = expect_status(
         "consent record",
@@ -89,7 +130,11 @@ def main():
         "simulation request",
         client.post("/api/v1/auth/simulation/request", json={"phone_number": "9876500011"}),
     )
-    expect(simulation_request.get("status") == "pending", "simulation request", "expected pending simulation request")
+    expect(
+        simulation_request.get("status") in {"pending", "approved"},
+        "simulation request",
+        "expected pending or previously approved simulation request",
+    )
 
     telecom_sandbox = expect_status("telecom sandbox", client.get("/api/v1/telecom/sandbox/status"))
     expect(telecom_sandbox.get("configured") is True, "telecom sandbox", "expected telecom sandbox readiness")
@@ -171,12 +216,12 @@ def main():
         "expected extracted entities",
     )
 
-    graph = expect_status("system graph", client.get("/api/v1/system/graph"))
+    graph = expect_status("system graph", client.get("/api/v1/system/graph", headers=protected_headers))
     expect(len(graph.get("nodes", [])) > 0, "system graph", "expected graph nodes")
 
     graph_spotlight = expect_status(
         "graph spotlight",
-        client.get("/api/v1/system/graph/spotlight?root_entity=%2B919876540000"),
+        client.get("/api/v1/system/graph/spotlight?entity=%2B919876540000", headers=protected_headers),
     )
     expect("fir_preview" in graph_spotlight, "graph spotlight", "expected FIR preview payload")
 
@@ -196,7 +241,7 @@ def main():
     expect(hindi_sms.get("language") == "hi", "bharat sms hindi", "expected Hindi SMS template")
     expect(english_sms.get("language") == "en", "bharat sms english", "expected English SMS template")
 
-    command_stats = expect_status("command stats", client.get("/api/v1/system/stats/command"))
+    command_stats = expect_status("command stats", client.get("/api/v1/system/stats/command", headers=protected_headers))
     expect("rupees_saved" in command_stats, "command stats", "missing rupees saved")
     expect(len(command_stats.get("alerts", [])) > 0, "command stats", "expected command alerts")
 
@@ -261,12 +306,229 @@ def main():
         client.get("/api/v1/auth/session", headers={"Authorization": f"Bearer {verified_token}"}),
     )
     expect(session.get("mfa_verified") is True, "session status", "expected verified session")
+    expect(bool(session.get("session_id")), "session status", "expected session id on verified token")
+
+    simulation_requests = expect_status(
+        "simulation requests",
+        client.get("/api/v1/auth/simulation/list", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    citizen_request = next((item for item in simulation_requests if item.get("phone_number") == "9876500011"), None)
+    expect(citizen_request is not None, "simulation requests", "expected citizen simulation request to exist")
+
+    if citizen_request.get("status") != "approved":
+        simulation_approval = expect_status(
+            "simulation approval",
+            client.post(
+                f"/api/v1/auth/simulation/approve/{citizen_request['id']}?approve=true",
+                headers={"Authorization": f"Bearer {verified_token}"},
+            ),
+        )
+        expect("approved" in simulation_approval.get("message", ""), "simulation approval", "expected approval message")
+
+    citizen_status = expect_status(
+        "citizen simulation status",
+        client.get("/api/v1/auth/simulation/status/9876500011"),
+    )
+    expect(citizen_status.get("status") == "approved", "citizen simulation status", "expected approved citizen session")
+    expect(bool(citizen_status.get("access_token")), "citizen simulation status", "expected citizen access token")
+    citizen_token = citizen_status["access_token"]
+
+    citizen_home = expect_status(
+        "citizen app home",
+        client.get("/api/v1/citizen/app-home", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(citizen_home.get("profile", {}).get("citizen_id", "").startswith("CIT-"), "citizen app home", "expected citizen id")
+    expect(len(citizen_home.get("alerts", [])) >= 1, "citizen app home", "expected seeded alert feed")
+    expect(citizen_home.get("score", {}).get("computed_locally") is True, "citizen app home", "expected local score state")
+
+    citizen_preferences = expect_status(
+        "citizen preferences",
+        client.post(
+            "/api/v1/citizen/preferences",
+            json={
+                "district": "Delhi NCR",
+                "language": "hi",
+                "senior_mode": True,
+                "low_bandwidth": True,
+                "segment": "senior",
+                "onboarding_step": "alerts_ready",
+            },
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    expect(citizen_preferences.get("senior_mode") is True, "citizen preferences", "expected senior mode enablement")
+    expect(citizen_preferences.get("low_bandwidth") is True, "citizen preferences", "expected low-bandwidth enablement")
+
+    citizen_trust_link = expect_status(
+        "citizen trust circle create",
+        client.post(
+            "/api/v1/citizen/trust-circle",
+            json={
+                "guardian_name": "Asha Sharma",
+                "guardian_phone": "9811100022",
+                "relation_type": "Caregiver",
+            },
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    expect(bool(citizen_trust_link.get("id")), "citizen trust circle create", "expected trust-circle record id")
+
+    citizen_trust_circle = expect_status(
+        "citizen trust circle list",
+        client.get("/api/v1/citizen/trust-circle", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(
+        len(citizen_trust_circle.get("trust_circle", [])) >= 1,
+        "citizen trust circle list",
+        "expected trust-circle entries",
+    )
+
+    citizen_trust_notify = expect_status(
+        "citizen trust circle notify",
+        client.post(
+            "/api/v1/citizen/trust-circle/notify",
+            json={"trust_link_id": citizen_trust_link["id"]},
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    expect(citizen_trust_notify.get("status") == "DELIVERED", "citizen trust circle notify", "expected caregiver alert")
+
+    first_alert = citizen_home.get("alerts", [{}])[0].get("id")
+    if first_alert:
+        citizen_alert_ack = expect_status(
+            "citizen alert acknowledge",
+            client.post(
+                f"/api/v1/citizen/alerts/{first_alert}/acknowledge",
+                headers={"Authorization": f"Bearer {citizen_token}"},
+            ),
+        )
+        expect(citizen_alert_ack.get("acknowledged") is True, "citizen alert acknowledge", "expected alert acknowledgement")
+
+    citizen_score = expect_status(
+        "citizen score compute",
+        client.post(
+            "/api/v1/citizen/drishyam-score/compute",
+            json={
+                "suspicious_links_avoided": 5,
+                "drills_completed": 1,
+                "alerts_acknowledged": 1,
+                "trust_circle_contacts": 1,
+                "recovery_preparedness": 65,
+            },
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    expect(citizen_score.get("computed_locally") is True, "citizen score compute", "expected local score computation")
+    expect(citizen_score.get("score", 0) >= 60, "citizen score compute", "expected practical readiness score")
+
+    citizen_habit = expect_status(
+        "citizen habit enrol",
+        client.post(
+            "/api/v1/citizen/habit-breaker/enrol",
+            json={"channel": "simulation"},
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    expect(citizen_habit.get("enrolled") is True, "citizen habit enrol", "expected enrolled habit breaker")
+
+    citizen_habit_status = expect_status(
+        "citizen habit status",
+        client.get("/api/v1/citizen/habit-breaker/status", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(citizen_habit_status.get("reward_points", 0) >= 25, "citizen habit status", "expected habit points")
+
+    citizen_recovery_bundle = expect_status(
+        "citizen recovery bundle",
+        client.post(
+            "/api/v1/actions/perform",
+            json={"action_type": "GENERATE_RECOVERY_BUNDLE"},
+            headers={"Authorization": f"Bearer {citizen_token}"},
+        ),
+    )
+    bundle_id = citizen_recovery_bundle.get("detail", {}).get("bundle_id")
+    expect(bool(bundle_id), "citizen recovery bundle", "expected generated recovery incident id")
+
+    citizen_recovery = expect_status(
+        "citizen recovery companion",
+        client.get("/api/v1/citizen/recovery-companion", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(citizen_recovery.get("latest_case_id") == bundle_id, "citizen recovery companion", "expected latest bundle tracking")
+
+    citizen_case_status = expect_status(
+        "citizen case status",
+        client.get(f"/api/v1/recovery/case/status?incident_id={bundle_id}"),
+    )
+    expect(
+        citizen_case_status.get("bank_dispute_status") == "INVESTIGATING",
+        "citizen case status",
+        "expected active recovery investigation",
+    )
+
+    citizen_drill_send = expect_status(
+        "citizen drill send",
+        client.post("/api/v1/inoculation/drill/send", json={"phone": "9876500011", "scenario": "bank_kyc"}),
+    )
+    expect(citizen_drill_send.get("message_sent") is True, "citizen drill send", "expected citizen drill dispatch")
+
+    citizen_drill_center = expect_status(
+        "citizen drill center",
+        client.get("/api/v1/citizen/drill-center", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(len(citizen_drill_center.get("recent", [])) >= 1, "citizen drill center", "expected recent drill history")
+    expect(len(citizen_drill_center.get("scenarios", [])) >= 3, "citizen drill center", "expected scenario menu")
+
+    citizen_home_refreshed = expect_status(
+        "citizen app home refreshed",
+        client.get("/api/v1/citizen/app-home", headers={"Authorization": f"Bearer {citizen_token}"}),
+    )
+    expect(
+        citizen_home_refreshed.get("recovery", {}).get("latest_case_id") == bundle_id,
+        "citizen app home refreshed",
+        "expected recovery summary on refreshed citizen home",
+    )
+    expect(
+        citizen_home_refreshed.get("analytics", {}).get("sessions_opened", 0) >= 2,
+        "citizen app home refreshed",
+        "expected citizen analytics instrumentation",
+    )
 
     audit_logs = expect_status(
         "audit logs",
         client.get("/api/v1/security/audit/logs?limit=10", headers={"Authorization": f"Bearer {verified_token}"}),
     )
     expect(len(audit_logs) > 0, "audit logs", "expected audit log entries")
+
+    security_center = expect_status(
+        "security control center",
+        client.get("/api/v1/security/control-center", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(
+        security_center.get("access", {}).get("summary", {}).get("policies", 0) >= 6,
+        "security control center",
+        "expected agency access policies",
+    )
+
+    agency_sessions = expect_status(
+        "agency sessions",
+        client.get("/api/v1/security/sessions", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(agency_sessions.get("summary", {}).get("active", 0) >= 1, "agency sessions", "expected active sessions")
+
+    abac_eval = expect_status(
+        "abac evaluate",
+        client.post(
+            "/api/v1/security/agency-access/evaluate",
+            json={
+                "action": "WRITE",
+                "resource": "partner_registry",
+                "segment": "B2G",
+                "region": "INDIA",
+                "sensitivity": "HIGH",
+            },
+            headers={"Authorization": f"Bearer {verified_token}"},
+        ),
+    )
+    expect(abac_eval.get("allowed") is True, "abac evaluate", "expected admin policy allow decision")
 
     consent_summary = expect_status(
         "consent summary",
@@ -471,6 +733,27 @@ def main():
     expect(len(support.get("channels", [])) >= 4, "support summary", "expected support channels")
     expect(len(support.get("tickets", [])) >= 1, "support summary", "expected support tickets")
 
+    partners = expect_status(
+        "partner summary",
+        client.get("/api/v1/program-office/partners", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(partners.get("summary", {}).get("tracked", 0) >= 4, "partner summary", "expected tracked partner integrations")
+
+    partner_update = expect_status(
+        "partner status update",
+        client.post(
+            "/api/v1/program-office/partners/Airtel%20National%20Scam%20Shield/status",
+            json={
+                "api_access_status": "ACTIVE",
+                "credential_status": "ISSUED",
+                "status": "LIVE",
+                "note": "Advanced during smoke verification.",
+            },
+            headers={"Authorization": f"Bearer {verified_token}"},
+        ),
+    )
+    expect(partner_update.get("api_access_status") == "ACTIVE", "partner status update", "expected updated API status")
+
     documentation = expect_status(
         "documentation summary",
         client.get("/api/v1/program-office/documentation", headers={"Authorization": f"Bearer {verified_token}"}),
@@ -513,6 +796,30 @@ def main():
     )
     expect(len(continuous_improvement.get("tasks", [])) == 20, "continuous improvement", "expected CI41 task set")
 
+    observability_overview = expect_status(
+        "observability overview",
+        client.get("/api/v1/observability/overview", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(observability_overview.get("summary", {}).get("traces_live") is True, "observability overview", "expected traces live")
+
+    observability_traces = expect_status(
+        "observability traces",
+        client.get("/api/v1/observability/traces", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(observability_traces.get("summary", {}).get("count", 0) >= 1, "observability traces", "expected trace rows")
+
+    observability_models = expect_status(
+        "observability models",
+        client.get("/api/v1/observability/models", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(observability_models.get("summary", {}).get("models", 0) >= 4, "observability models", "expected model scorecards")
+
+    observability_errors = expect_status(
+        "observability errors",
+        client.get("/api/v1/observability/errors", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
+    expect(observability_errors.get("summary", {}).get("open", 0) >= 1, "observability errors", "expected issue tracking rows")
+
     fir_action = expect_status(
         "fir action",
         client.post(
@@ -550,7 +857,10 @@ def main():
     )
     expect(npci_block.get("status") == "SUCCESS", "npci direct block", "expected NPCI block acceptance")
 
-    alert_coverage = expect_status("alert coverage", client.get("/api/v1/system/alerts/coverage?region=delhi"))
+    alert_coverage = expect_status(
+        "alert coverage",
+        client.get("/api/v1/system/alerts/coverage?region=delhi", headers={"Authorization": f"Bearer {verified_token}"}),
+    )
     expect(alert_coverage.get("citizens", 0) > 0, "alert coverage", "expected covered citizens")
 
     alert_dispatch = expect_status(
@@ -582,25 +892,100 @@ def main():
     if deepfake_scan.get("status") != "PENDING":
         expect("risk_level" in deepfake_scan, "deepfake analyze", "missing risk level")
 
+    bank_login = expect_status(
+        "bank login",
+        client.post(
+            "/api/v1/auth/login",
+            data={"username": "bankops", "password": "password123"},
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+        ),
+    )
+    expect(bank_login.get("mfa_required") is True, "bank login", "expected bank MFA requirement")
+
+    bank_verify = expect_status(
+        "bank mfa verify",
+        client.post(
+            "/api/v1/auth/mfa/verify",
+            json={"otp": "19301930"},
+            headers={"Authorization": f"Bearer {bank_login['access_token']}"},
+        ),
+    )
+    bank_token = bank_verify["access_token"]
+
+    blocked_freeze = client.post(
+        "/api/v1/actions/perform",
+        json={"action_type": "FREEZE_VPA", "target_id": "testscammer@paytm"},
+        headers={"Authorization": f"Bearer {bank_token}"},
+    )
+    expect(blocked_freeze.status_code == 403, "approval guard", "expected critical action without approval to be blocked")
+
+    bank_approval = expect_status(
+        "bank approval request",
+        client.post(
+            "/api/v1/security/approvals",
+            json={
+                "action_type": "FREEZE_VPA",
+                "resource": "testscammer@paytm",
+                "resource_domain": "recovery",
+                "justification": "Bank ops needs sign-off to execute a demo VPA freeze action.",
+                "risk_level": "HIGH",
+                "metadata": {"segment": "BANK", "region": "INDIA"},
+            },
+            headers={"Authorization": f"Bearer {bank_token}"},
+        ),
+    )
+    expect(bank_approval.get("status") == "PENDING", "bank approval request", "expected pending approval")
+
+    approval_decision = expect_status(
+        "approval decision",
+        client.post(
+            f"/api/v1/security/approvals/{bank_approval['approval_id']}/decision",
+            json={"status": "APPROVED", "note": "Approved during smoke verification."},
+            headers={"Authorization": f"Bearer {verified_token}"},
+        ),
+    )
+    expect(approval_decision.get("status") == "APPROVED", "approval decision", "expected approved request")
+
+    approved_freeze = expect_status(
+        "approved freeze action",
+        client.post(
+            "/api/v1/actions/perform",
+            json={
+                "action_type": "FREEZE_VPA",
+                "target_id": "testscammer@paytm",
+                "metadata": {"approval_id": bank_approval["approval_id"]},
+            },
+            headers={"Authorization": f"Bearer {bank_token}"},
+        ),
+    )
+    expect(approved_freeze.get("status") == "success", "approved freeze action", "expected approved critical action success")
+
     print("[PASS] Backend smoke checks completed.")
     print(f"  Active consents: {consent_summary.get('totals', {}).get('active')}")
     print(f"  Telecom sandbox mode: {telecom_sandbox.get('mode')}")
     print(f"  Telecom FRI score: {telecom_score.get('fri_score')}")
     print(f"  Honeypot personas: {len(persona_list)}")
     print(f"  Honeypot transcript rows: {len(honeypot_summary.get('transcript', []))}")
+    print(f"  Citizen score: {citizen_score.get('score')}")
+    print(f"  Citizen trust-circle size: {len(citizen_trust_circle.get('trust_circle', []))}")
+    print(f"  Citizen recovery bundle: {bundle_id}")
+    print(f"  Citizen drill readiness score: {citizen_drill_send.get('scorecard', {}).get('readiness_score')}")
     print(f"  Detection rows: {len(detection_calls)}")
     print(f"  Bharat languages: {len(bharat_languages.get('languages', []))}")
     print(f"  Bank integration mode: {bank_integration.get('mode')}")
     print(f"  Pilot readiness: {pilot_readiness.get('readiness', {}).get('progress_percent')}%")
     print(f"  National rollout waves: {len(national_scale.get('rollout_waves', []))}")
     print(f"  Business billing rows: {len(business.get('billing', {}).get('records', []))}")
+    print(f"  Partner integrations tracked: {partners.get('summary', {}).get('tracked')}")
     print(f"  Documentation coverage: {documentation.get('summary', {}).get('coverage_percent')}%")
     print(f"  Launch readiness green: {launch_readiness.get('readiness', {}).get('ready_for_go_live')}")
+    print(f"  Observability traces: {observability_traces.get('summary', {}).get('count')}")
     print(f"  Command alerts: {len(command_stats.get('alerts', []))}")
     print(f"  Mule ads: {len(mule_stats.get('ads', []))}")
     print(f"  Deepfake incidents: {len(deepfake_stats.get('incidents', []))}")
     print(f"  Drill readiness score: {drill.get('scorecard', {}).get('readiness_score')}")
     print(f"  Audit log rows: {len(audit_logs)}")
+    print(f"  Approval queue pending after flow: {security_center.get('approvals', {}).get('summary', {}).get('pending')}")
     print(f"  Alert dispatch id: {alert_dispatch.get('alert_id')}")
     print(f"  Deepfake fallback verdict: {deepfake_scan.get('verdict')}")
 

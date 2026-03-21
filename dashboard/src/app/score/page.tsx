@@ -102,7 +102,7 @@ export default function ScorePage() {
                     </button>
                     <div className="bg-white p-3 rounded-2xl border border-silver/10 shadow-sm flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-indgreen animate-ping" />
-                        <p className="text-[10px] font-bold text-indblue uppercase">Live Score Nodes: {(data?.national?.nodes || 4520).toLocaleString()}</p>
+                        <p className="text-[10px] font-bold text-indblue uppercase">Live Score Nodes: {(data?.national?.nodes || 0).toLocaleString()}</p>
                     </div>
                 </div>
             </div>
@@ -131,7 +131,7 @@ export default function ScorePage() {
                             <div className="z-10 text-center">
                                 <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-4">Regional Distribution</p>
                                 <div className="flex gap-4 items-end h-32">
-                                    {(data?.national?.heatmap && Array.isArray(data.national.heatmap) ? data.national.heatmap : [45, 62, 38, 55, 72, 48]).map((h, i) => (
+                                    {(data?.national?.heatmap && Array.isArray(data.national.heatmap) ? data.national.heatmap : []).map((h, i) => (
                                         <div key={i} className="w-8 bg-indblue rounded-t-lg transition-all duration-700 hover:bg-saffron cursor-help" style={{ height: `${h}%` }} />
                                     ))}
                                 </div>
@@ -220,16 +220,16 @@ export default function ScorePage() {
                                 </div>
                             )}
 
-                            {shownScore && (
+                            {shownScore !== null && (
                                 <div className="p-6 bg-boxbg rounded-2xl border border-silver/10 text-center animate-in zoom-in-95 duration-500">
                                     <p className="text-[10px] font-bold text-silver uppercase">Computed Score</p>
-                                    <h5 className={`text-5xl font-black my-2 tracking-tighter ${shownScore > 700 ? 'text-indgreen' : 'text-redalert'}`}>
+                                    <h5 className={`text-5xl font-black my-2 tracking-tighter ${shownScore >= 75 ? 'text-indgreen' : 'text-redalert'}`}>
                                         {shownScore}
                                     </h5>
                                     <div className="flex items-center justify-center gap-2">
-                                        <ShieldCheck className={shownScore > 700 ? 'text-indgreen' : 'text-redalert'} size={14} />
+                                        <ShieldCheck className={shownScore >= 75 ? 'text-indgreen' : 'text-redalert'} size={14} />
                                         <p className="text-[10px] font-bold text-charcoal uppercase">
-                                            Verdict: {shownScore > 700 ? 'Level 1 Trust' : 'Requires Inoculation'}
+                                            Verdict: {shownScore >= 75 ? 'Protected' : 'Requires Inoculation'}
                                         </p>
                                     </div>
                                 </div>

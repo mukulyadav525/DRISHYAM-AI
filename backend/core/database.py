@@ -25,6 +25,12 @@ def _resolve_engine():
         logger.info("Database connectivity check succeeded for configured development database.")
         return engine
     except Exception as exc:
+        if not settings.ALLOW_DATABASE_FALLBACK:
+            logger.error(
+                "Configured database is unreachable and fallback is disabled. Refusing to switch to SQLite. Error: %s",
+                exc,
+            )
+            raise
         fallback_uri = "sqlite:///./drishyam.db"
         logger.warning(
             "Configured development database is unreachable. Falling back to local SQLite at %s. Error: %s",

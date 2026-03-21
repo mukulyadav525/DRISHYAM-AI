@@ -30,6 +30,7 @@ from api.whatsapp import router as whatsapp_router
 from api.security import router as security_router
 from api.pilot import router as pilot_router
 from api.program_office import router as program_office_router
+from api.observability import router as observability_router
 from api.ai import router as ai_router
 
 from core.security import security_logging_middleware
@@ -77,7 +78,7 @@ logger = logging.getLogger("drishyam.main")
 async def lifespan(app: FastAPI):
     # Startup: Database Setup
     from core.database import engine, SessionLocal
-    from models.database import Base, User, UserRole
+    from models.database import Base
     
     logger.info("[STARTUP] Initializing database...")
     try:
@@ -88,81 +89,29 @@ async def lifespan(app: FastAPI):
         # 1. Ensure Schema Compliance (migrations for existing tables)
         from core.database import ensure_schema_compliance
         ensure_schema_compliance()
-        
-        # Seed Admin
-        db = SessionLocal()
-        try:
-            admin = db.query(User).filter(User.username == "admin").first()
-            if not admin:
-                from core.auth import get_password_hash
-                admin = User(
-                    username="admin",
-                    hashed_password=get_password_hash("password123"),
-                    full_name="System Administrator",
-                    role=UserRole.ADMIN.value,
-                    is_active=True,
+        if settings.ENABLE_BOOTSTRAP_DATA:
+            logger.warning("[STARTUP] Bootstrap data mode is enabled. Seeding development records.")
+            db = SessionLocal()
+            try:
+                from api.program_office import (
+                    _seed_billing,
+                    _seed_governance,
+                    _seed_partner_integrations,
+                    _seed_pipeline,
+                    _seed_support,
                 )
-                db.add(admin)
-                db.commit()
-                logger.info("[STARTUP] Default admin user created (admin / password123)")
-            else:
-                logger.info("[STARTUP] Admin user already exists.")
-            
-            # Seed Agency Portal data if empty
-            from models.database import CrimeReport, HoneypotSession
-            if db.query(CrimeReport).count() == 0:
-                logger.info("[STARTUP] Seeding initial crime reports for Agency Portal...")
-                reports = [
-                    CrimeReport(report_id="REQ-8821", category="police", scam_type="KYC_EXTORTION", amount="₹45,000", platform="WhatsApp", priority="CRITICAL", status="PENDING"),
-                    CrimeReport(report_id="REQ-8822", category="police", scam_type="PART_TIME_JOB", amount="₹1.2L", platform="Telegram", priority="HIGH", status="RESOLVED"),
-                    CrimeReport(report_id="REQ-8823", category="bank", scam_type="UPI_COLLECT", amount="₹5,000", platform="GPay", priority="MEDIUM", status="PENDING", metadata_json={"vpa": "scammer.node@oksbi"}),
-                    CrimeReport(report_id="REQ-8824", category="telecom", scam_type="MASS_ROBOCALL", amount="N/A", platform="GSM_TOWER_72", priority="CRITICAL", status="PENDING")
-                ]
-                db.add_all(reports)
-                db.commit()
-            
-            if db.query(HoneypotSession).count() == 0:
-                logger.info("[STARTUP] Seeding initial honeypot sessions...")
-                sessions = [
-                    HoneypotSession(session_id="H-99881", caller_num="+91-9821-XXX", persona="ELDERLY_UNCLE", status="active"),
-                    HoneypotSession(session_id="H-99882", caller_num="+91-7722-XXX", persona="HELPLESS_GRANDMA", status="active")
-                ]
-                db.add_all(sessions)
-                db.commit()
+                from core.access_control import seed_access_policies
 
-            from models.database import ScamCluster
-            if db.query(ScamCluster).count() == 0:
-                logger.info("[STARTUP] Seeding initial scam clusters map...")
-                clusters = [
-                    ScamCluster(cluster_id="CLS-991", risk_level="CRITICAL", location="Jamtara, JH", lat=24.21, lng=86.64, linked_vpas=42, honeypot_hits=156),
-                    ScamCluster(cluster_id="CLS-992", risk_level="HIGH", location="Mewat, HR", lat=28.14, lng=77.01, linked_vpas=28, honeypot_hits=89),
-                    ScamCluster(cluster_id="CLS-993", risk_level="MEDIUM", location="Noida, UP", lat=28.53, lng=77.39, linked_vpas=15, honeypot_hits=45)
-                ]
-                db.add_all(clusters)
-                db.commit()
-
-            from models.database import BankNodeRule
-            if db.query(BankNodeRule).count() == 0:
-                logger.info("[STARTUP] Seeding initial fraud mitigation rules...")
-                rules = [
-                    BankNodeRule(bank_name="HDFC Bank", rule_type="AMOUNT_THRESHOLD", threshold=100000.0, action="FLAG"),
-                    BankNodeRule(bank_name="SBI", rule_type="VELOCITY", threshold=5.0, action="FREEZE"),
-                    BankNodeRule(bank_name="ALL", rule_type="PII_ACCESS", threshold=1.0, action="AUDIT")
-                ]
-                db.add_all(rules)
-                db.commit()
-
-            from models.database import IntelligenceAlert
-            if db.query(IntelligenceAlert).count() == 0:
-                logger.info("[STARTUP] Seeding initial intelligence alerts...")
-                alerts = [
-                    IntelligenceAlert(severity="HIGH", message="New Scam Pod detected in Noida Sector 15", category="SCAM_POD", location="Noida"),
-                    IntelligenceAlert(severity="CRITICAL", message="Massive VPA rotation detected in Jamtara", category="VPA_ROTATION", location="Jamtara")
-                ]
-                db.add_all(alerts)
-                db.commit()
-        finally:
-            db.close()
+                seed_access_policies(db)
+                _seed_pipeline(db)
+                _seed_billing(db)
+                _seed_support(db)
+                _seed_partner_integrations(db)
+                _seed_governance(db)
+            finally:
+                db.close()
+        else:
+            logger.info("[STARTUP] Bootstrap data is disabled. Using only persisted database records.")
             
     except Exception as e:
         logger.error(f"[STARTUP] Database initialization failed: {e}")
@@ -236,6 +185,7 @@ app.include_router(intelligence_router, prefix="/api/v1/intelligence", tags=["in
 app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["notifications"])
 app.include_router(pilot_router, prefix="/api/v1/pilot", tags=["pilot"])
 app.include_router(program_office_router, prefix="/api/v1/program-office", tags=["program-office"])
+app.include_router(observability_router, prefix="/api/v1/observability", tags=["observability"])
 app.include_router(citizen_router, prefix="/api/v1/citizen", tags=["citizen"])
 app.include_router(recovery_router, prefix="/api/v1/recovery", tags=["recovery"])
 app.include_router(modules_router, prefix="/api/v1/modules", tags=["modules"])

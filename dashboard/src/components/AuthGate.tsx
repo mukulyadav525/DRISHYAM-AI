@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuth, ROLE_ACCESS } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -44,7 +44,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
     // Role-based page access check
     const role = user?.role || "common";
-    const allowedPages = ROLE_ACCESS[role] || ROLE_ACCESS["common"];
+    const allowedPages = user?.access?.allowed_pages || [];
     
     // Normalize path for comparison
     const normalizedPath = pathname;
@@ -59,7 +59,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
                     </div>
                     <h2 className="text-2xl font-bold text-indblue mb-2">Access Denied</h2>
                     <p className="text-silver mb-6">
-                        Your role <span className="font-bold text-redalert uppercase">({role})</span> does not have permission to access this page.
+                        Your role <span className="font-bold text-redalert uppercase">({user?.access?.role_label || role})</span> does not have permission to access this page.
                     </p>
                     <button
                         onClick={() => router.push("/")}

@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.auth import get_current_verified_user
-from models.database import User, SystemAction
+from models.database import AdminApproval, SystemAction, User
 import logging
 import traceback
 import base64
@@ -19,6 +19,14 @@ import uuid
 logger = logging.getLogger("drishyam.actions")
 
 router = APIRouter()
+
+CRITICAL_APPROVAL_ACTIONS = {
+    "BLOCK_NUMBER",
+    "FREEZE_VPA",
+    "BLOCK_IMEI",
+    "BROADCAST_EMERGENCY",
+    "DEPLOY_BHARAT_ALERT",
+}
 
 class ActionRequest(BaseModel):
     action_type: str
@@ -36,6 +44,30 @@ async def perform_action(
     """
     try:
         logger.info(f"User {current_user.username} (ID: {current_user.id}) performing action: {req.action_type}")
+        action_type = req.action_type.upper()
+
+        approval = None
+        if action_type in CRITICAL_APPROVAL_ACTIONS and current_user.role != "admin":
+            approval_id = (req.metadata or {}).get("approval_id")
+            if not approval_id:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"Action {action_type} requires an approved admin workflow for non-admin operators.",
+                )
+
+            approval = (
+                db.query(AdminApproval)
+                .filter(AdminApproval.approval_id == approval_id)
+                .first()
+            )
+            if not approval or approval.requested_by_user_id != current_user.id:
+                raise HTTPException(status_code=403, detail="Approval request is invalid for this operator.")
+            if approval.status != "APPROVED":
+                raise HTTPException(status_code=403, detail="Approval request has not been approved yet.")
+            if approval.expires_at and approval.expires_at < datetime.datetime.utcnow():
+                approval.status = "EXPIRED"
+                db.commit()
+                raise HTTPException(status_code=403, detail="Approval request has expired.")
         
         # Generic to User-Friendly mapping
         messages = {
@@ -77,7 +109,7 @@ async def perform_action(
         # Rich Metadata for UI feedback
         detail_data = {}
         
-        if req.action_type.upper() == "SCAN_MULE_FEED":
+        if action_type == "SCAN_MULE_FEED":
             # Simulate Intercepting new Ads
             from models.database import MuleAd
             import random
@@ -103,7 +135,6 @@ async def perform_action(
 
             # Also create a CrimeReport for centralized tracking
             from models.database import CrimeReport
-            import uuid
             new_report = CrimeReport(
                 report_id=f"MLE-{uuid.uuid4().hex[:6].upper()}",
                 category="police",
@@ -117,7 +148,7 @@ async def perform_action(
             )
             db.add(new_report)
 
-        elif req.action_type.upper() == "VPA_LOOKUP" and req.target_id:
+        elif action_type == "VPA_LOOKUP" and req.target_id:
             from models.database import HoneypotEntity
             vpa = req.target_id.lower()
             entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
@@ -131,7 +162,7 @@ async def perform_action(
             }
             user_msg = f"VPA Analysis for {vpa} Complete. Risk: {'HIGH' if is_flagged else 'LOW'}"
 
-        elif req.action_type.upper() == "DECOMPILE_AGENT":
+        elif action_type == "DECOMPILE_AGENT":
             # Simulated forensic attribution
             detail_data = {
                 "attribution": "Shadow_Mule_Network",
@@ -141,7 +172,7 @@ async def perform_action(
             }
             user_msg = f"Forensic Attribution for {req.target_id or 'Agent'} Complete."
 
-        elif req.action_type.upper() in ["VIEW_FEED_DETAIL", "VIEW_DETAIL", "VIEW_INCIDENT"]:
+        elif action_type in ["VIEW_FEED_DETAIL", "VIEW_DETAIL", "VIEW_INCIDENT"]:
             detail_data = {
                 "id": req.target_id,
                 "victim_id": f"V-{req.target_id}09",
@@ -155,7 +186,7 @@ async def perform_action(
                 ],
                 "location": req.metadata.get("location", "Unknown Sector") if req.metadata else "Unknown Sector"
             }
-        elif req.action_type.upper() == "GENERATE_RECOVERY_BUNDLE":
+        elif action_type == "GENERATE_RECOVERY_BUNDLE":
             from models.database import RecoveryCase
             inc_id = f"INC-{uuid.uuid4().hex[:6].upper()}"
             
@@ -175,7 +206,7 @@ async def perform_action(
                 "download_url": f"/api/v1/actions/download-file?filename=RECOVERY_BUNDLE.pdf&category=RESTITUTION_BUNDLE"
             }
             user_msg = f"Legal Restitution Bundle Generated (ID: {inc_id}). Tracking activated."
-        elif req.action_type.upper() == "CONNECT_TICKER":
+        elif action_type == "CONNECT_TICKER":
             detail_data = {
                 "ticker_items": [
                     "[ALERT] Surge in UPI traps detected in Noida Sector-62",
@@ -188,7 +219,7 @@ async def perform_action(
 
         new_action = SystemAction(
             user_id=current_user.id,
-            action_type=req.action_type.upper(),
+            action_type=action_type,
             target_id=req.target_id,
             metadata_json=req.metadata,
             status="success"
@@ -196,7 +227,7 @@ async def perform_action(
         
         # [AC-M7-05] Increment DRISHYAM Score for Active Defense
         active_defense_actions = ["SCAN_VIDEO", "GENERATE_FIR", "FREEZE_VPA", "BLOCK_IMEI", "REPORT_INCIDENT", "SCAN_MULE_FEED"]
-        if req.action_type.upper() in active_defense_actions:
+        if action_type in active_defense_actions:
             current_user.drishyam_score = (current_user.drishyam_score or 100) + 5
             logger.info(f"User {current_user.username} DRISHYAM Score increased to {current_user.drishyam_score}")
         
@@ -208,10 +239,19 @@ async def perform_action(
         log_audit(
             db=db,
             user_id=current_user.id,
-            action=req.action_type.upper(),
+            action=action_type,
             resource=req.target_id,
             metadata=req.metadata
         )
+
+        if approval:
+            approval.status = "EXECUTED"
+            approval.metadata_json = {
+                **(approval.metadata_json or {}),
+                "executed_action_id": new_action.id,
+                "executed_at": datetime.datetime.utcnow().isoformat(),
+            }
+            db.commit()
         
         return {
             "status": "success",
@@ -219,6 +259,9 @@ async def perform_action(
             "action_id": new_action.id,
             "detail": detail_data
         }
+    except HTTPException:
+        db.rollback()
+        raise
     except Exception as e:
         db.rollback()
         logger.error(f"Action failed: {str(e)}")

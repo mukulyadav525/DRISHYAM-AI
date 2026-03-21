@@ -1,5 +1,7 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError
 from sqlalchemy.orm import Session
@@ -18,7 +20,8 @@ from core.auth import (
     PRIVILEGED_ROLES,
 )
 from core.audit import log_audit
-from models.database import User, UserRole
+from core.access_control import build_access_manifest
+from models.database import AgencySession, User, UserRole
 
 router = APIRouter()
 
@@ -32,6 +35,8 @@ class Token(BaseModel):
     full_name: Optional[str] = None
     mfa_required: bool = False
     mfa_verified: bool = False
+    session_id: Optional[str] = None
+    access: dict
 
 
 class UserCreate(BaseModel):
@@ -64,11 +69,62 @@ class SessionStatus(BaseModel):
     mfa_required: bool
     mfa_verified: bool
     expires_at: Optional[str] = None
+    session_id: Optional[str] = None
+    device_label: Optional[str] = None
+    device_type: Optional[str] = None
+    auth_stage: Optional[str] = None
+    risk_level: Optional[str] = None
+    last_seen_at: Optional[str] = None
+    access: dict
+
+
+class UserRoleUpdateRequest(BaseModel):
+    role: str
+    is_active: Optional[bool] = None
+
+
+def _utcnow() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def _infer_device_context(request: Request) -> dict:
+    user_agent = (request.headers.get("user-agent") or "unknown").lower()
+    ip_address = request.client.host if request.client else "unknown"
+
+    if "mobile" in user_agent or "android" in user_agent or "iphone" in user_agent:
+        device_type = "MOBILE"
+        device_label = "Field Mobile Device"
+    elif "codex" in user_agent:
+        device_type = "DESKTOP"
+        device_label = "Codex Desktop Console"
+    elif "testclient" in user_agent:
+        device_type = "AUTOMATION"
+        device_label = "Automated Test Client"
+    else:
+        device_type = "WEB"
+        device_label = "Agency Web Console"
+
+    trusted_hosts = {"127.0.0.1", "localhost", "testclient"}
+    network_zone = "LOCAL_TRUSTED" if ip_address in trusted_hosts else "PARTNER_EDGE"
+    risk_level = "LOW" if network_zone == "LOCAL_TRUSTED" and device_type != "MOBILE" else "MEDIUM"
+
+    return {
+        "device_label": device_label,
+        "device_type": device_type,
+        "ip_address": ip_address,
+        "network_zone": network_zone,
+        "risk_level": risk_level,
+        "user_agent": request.headers.get("user-agent"),
+    }
 
 
 # ─── Endpoints ──────────────────────────────────────────────────────────
 @router.post("/login", response_model=Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(
+    request: Request,
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: Session = Depends(get_db),
+):
     user = db.query(User).filter(User.username == form_data.username).first()
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
@@ -77,15 +133,46 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # MFA requirement for Agency roles (T6)
-    requires_mfa = user.role in [UserRole.ADMIN, UserRole.POLICE, UserRole.BANK, UserRole.GOVERNMENT, UserRole.TELECOM]
-    
+    requires_mfa = user.role in PRIVILEGED_ROLES
+    session_uid = f"SES-{uuid.uuid4().hex[:10].upper()}"
+    device_context = _infer_device_context(request)
+
+    agency_session = AgencySession(
+        session_uid=session_uid,
+        user_id=user.id,
+        device_label=device_context["device_label"],
+        device_type=device_context["device_type"],
+        ip_address=device_context["ip_address"],
+        network_zone=device_context["network_zone"],
+        auth_stage="PASSWORD_ONLY" if requires_mfa else "MFA_VERIFIED",
+        risk_level=device_context["risk_level"],
+        status="ACTIVE",
+        last_seen_at=_utcnow(),
+        verified_at=None if requires_mfa else _utcnow(),
+        metadata_json={"user_agent": device_context["user_agent"]},
+    )
+    db.add(agency_session)
+    db.commit()
+
     access_token = create_access_token(data={
-        "sub": user.username, 
+        "sub": user.username,
         "role": user.role,
-        "mfa_verified": not requires_mfa # Citizens pass, Agency needs step 2
+        "mfa_verified": not requires_mfa,
+        "session_uid": session_uid,
     })
-    log_audit(db, user.id, "LOGIN_SUCCESS", user.username, metadata={"mfa_required": requires_mfa})
+
+    log_audit(
+        db,
+        user.id,
+        "LOGIN_SUCCESS",
+        user.username,
+        metadata={
+            "mfa_required": requires_mfa,
+            "session_uid": session_uid,
+            "device_type": device_context["device_type"],
+            "risk_level": device_context["risk_level"],
+        },
+    )
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -94,22 +181,52 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "full_name": user.full_name,
         "mfa_required": requires_mfa,
         "mfa_verified": not requires_mfa,
+        "session_id": session_uid,
+        "access": build_access_manifest(db, user),
     }
 
 @router.post("/mfa/verify", response_model=Token)
 def verify_mfa(
     body: MFAVerifyRequest,
+    token: str = Depends(oauth2_scheme),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     """Simulated MFA verification for Agency roles."""
     if body.otp == "19301930": # Static demo OTP
+        payload = decode_access_token(token)
+        session_uid = payload.get("session_uid")
+        agency_session = None
+        if session_uid:
+            agency_session = (
+                db.query(AgencySession)
+                .filter(
+                    AgencySession.session_uid == session_uid,
+                    AgencySession.user_id == current_user.id,
+                )
+                .first()
+            )
+            if not agency_session or agency_session.status != "ACTIVE":
+                raise HTTPException(status_code=401, detail="Session is no longer active")
+
+            agency_session.auth_stage = "MFA_VERIFIED"
+            agency_session.verified_at = _utcnow()
+            agency_session.last_seen_at = _utcnow()
+            db.commit()
+
         access_token = create_access_token(data={
-            "sub": current_user.username, 
+            "sub": current_user.username,
             "role": current_user.role,
-            "mfa_verified": True
+            "mfa_verified": True,
+            "session_uid": session_uid,
         })
-        log_audit(db, current_user.id, "MFA_VERIFIED", current_user.username)
+        log_audit(
+            db,
+            current_user.id,
+            "MFA_VERIFIED",
+            current_user.username,
+            metadata={"session_uid": session_uid},
+        )
         return {
             "access_token": access_token,
             "token_type": "bearer",
@@ -118,6 +235,8 @@ def verify_mfa(
             "full_name": current_user.full_name,
             "mfa_required": current_user.role in PRIVILEGED_ROLES,
             "mfa_verified": True,
+            "session_id": session_uid,
+            "access": build_access_manifest(db, current_user),
         }
     raise HTTPException(status_code=400, detail="Invalid MFA OTP")
 
@@ -181,9 +300,45 @@ def list_users(
     return users
 
 
+@router.patch("/users/{user_id}/role", response_model=UserOut)
+def update_user_role(
+    user_id: int,
+    body: UserRoleUpdateRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_role("admin")),
+):
+    valid_roles = [r.value for r in UserRole]
+    if body.role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {valid_roles}")
+
+    target = db.query(User).filter(User.id == user_id).first()
+    if not target:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    target.role = body.role
+    if body.is_active is not None:
+        target.is_active = body.is_active
+    db.commit()
+    db.refresh(target)
+
+    log_audit(
+        db,
+        current_user.id,
+        "USER_ROLE_UPDATED",
+        resource=target.username,
+        metadata={"role": target.role, "is_active": target.is_active},
+    )
+
+    from core.security_utils import decrypt_pii
+    target.phone_number = decrypt_pii(target.phone_number)
+    target.email = decrypt_pii(target.email)
+    return target
+
+
 @router.get("/session", response_model=SessionStatus)
 def get_session_status(
     token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
@@ -200,6 +355,18 @@ def get_session_status(
     if exp:
         expires_at = datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()
 
+    session_uid = payload.get("session_uid")
+    agency_session = None
+    if session_uid:
+        agency_session = (
+            db.query(AgencySession)
+            .filter(
+                AgencySession.session_uid == session_uid,
+                AgencySession.user_id == current_user.id,
+            )
+            .first()
+        )
+
     return {
         "username": current_user.username,
         "role": current_user.role,
@@ -207,4 +374,11 @@ def get_session_status(
         "mfa_required": current_user.role in PRIVILEGED_ROLES,
         "mfa_verified": bool(payload.get("mfa_verified", False)),
         "expires_at": expires_at,
+        "session_id": session_uid,
+        "device_label": agency_session.device_label if agency_session else None,
+        "device_type": agency_session.device_type if agency_session else None,
+        "auth_stage": agency_session.auth_stage if agency_session else None,
+        "risk_level": agency_session.risk_level if agency_session else None,
+        "last_seen_at": agency_session.last_seen_at.isoformat() if agency_session and agency_session.last_seen_at else None,
+        "access": build_access_manifest(db, current_user),
     }

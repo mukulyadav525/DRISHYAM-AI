@@ -2,18 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { ShieldCheck, X } from "lucide-react";
+import Image from "next/image";
 import { API_BASE } from "@/config/api";
 import { Toaster, toast } from "react-hot-toast";
 import { useActions } from "@/hooks/useActions";
+import { getStoredAuth } from "@/lib/auth";
 import FeedModal from "@/components/FeedModal";
 
 // Modular Components
 import AuthScreen from "@/components/simulation/AuthScreen";
-import FeatureHub from "@/components/simulation/FeatureHub";
+import CitizenHome from "@/components/simulation/CitizenHome";
 import ChatModule from "@/components/simulation/ChatModule";
 import DeepfakeModule from "@/components/simulation/DeepfakeModule";
 import UpiModule from "@/components/simulation/UpiModule";
 import BharatModule from "@/components/simulation/BharatModule";
+import RecoveryModule from "@/components/simulation/RecoveryModule";
+import DrillModule from "@/components/simulation/DrillModule";
 
 interface Persona {
   id: string;
@@ -21,16 +25,29 @@ interface Persona {
   lang: string;
 }
 
+type ActiveFeature = "home" | "chat" | "deepfake" | "upi" | "bharat" | "recovery" | "drills" | null;
+
 export default function SimulationPortal() {
   const [authStatus, setAuthStatus] = useState<"login" | "pending" | "approved">("login");
   const [customerId, setCustomerId] = useState<string>("");
-  const [activeFeature, setActiveFeature] = useState<"chat" | "deepfake" | "upi" | "bharat" | null>(null);
+  const [activeFeature, setActiveFeature] = useState<ActiveFeature>(null);
   const [personas, setPersonas] = useState<Persona[]>([]);
   const [selectedPersona, setSelectedPersona] = useState<Persona | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { performAction } = useActions();
+
+  useEffect(() => {
+    const existingAuth = getStoredAuth();
+    if (!existingAuth?.token || existingAuth.role !== "common") {
+      return;
+    }
+
+    setCustomerId(existingAuth.username || "");
+    setAuthStatus("approved");
+    setActiveFeature("home");
+  }, []);
 
   // Fetch Personas for Chat
   useEffect(() => {
@@ -72,6 +89,7 @@ export default function SimulationPortal() {
             const data = await res.json();
             if (data.status === 'approved') {
               setAuthStatus('approved');
+              setActiveFeature('home');
               if (data.access_token) {
                 localStorage.setItem('drishyam_auth', JSON.stringify({
                   token: data.access_token,
@@ -95,6 +113,36 @@ export default function SimulationPortal() {
     return () => clearInterval(interval);
   }, [authStatus, customerId]);
 
+  useEffect(() => {
+    if (authStatus !== "approved") {
+      setActiveFeature(null);
+      return;
+    }
+    setActiveFeature((current) => current ?? "home");
+  }, [authStatus]);
+
+  const endSession = () => {
+    localStorage.removeItem("drishyam_auth");
+    setAuthStatus("login");
+    setCustomerId("");
+    setActiveFeature(null);
+    toast.success("Citizen session closed.");
+  };
+
+  const featureNodeLabel = activeFeature === "chat"
+    ? "Voice_INT"
+    : activeFeature === "deepfake"
+      ? "Visual_DF"
+      : activeFeature === "upi"
+        ? "Fin_Sec"
+        : activeFeature === "bharat"
+          ? "Bharat_Lite"
+          : activeFeature === "recovery"
+            ? "Recovery_Ops"
+            : activeFeature === "drills"
+              ? "Resilience_Lab"
+              : "Citizen_Core";
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-boxbg overflow-x-hidden p-4 selection:bg-indblue/10 selection:text-indblue">
       <Toaster position="top-center" />
@@ -109,33 +157,46 @@ export default function SimulationPortal() {
         />
       )}
 
-      {/* Feature Selection Hub */}
-      {authStatus === "approved" && !activeFeature && (
-        <FeatureHub 
-            setActiveFeature={setActiveFeature} 
-            setAuthStatus={setAuthStatus} 
+      {/* Citizen Home */}
+      {authStatus === "approved" && activeFeature === "home" && (
+        <CitizenHome
+          customerId={customerId}
+          setActiveFeature={setActiveFeature}
+          endSession={endSession}
         />
       )}
 
       {/* Active Feature View */}
-      {authStatus === "approved" && activeFeature && (
+      {authStatus === "approved" && activeFeature && activeFeature !== "home" && (
         <div className="flex flex-col items-center w-full max-w-6xl h-full py-2 fade-in overflow-y-auto">
           {/* Module Header */}
           <div className="text-center mb-4 w-full relative shrink-0 px-2">
             <button
-              onClick={() => setActiveFeature(null)}
+              onClick={() => setActiveFeature("home")}
               className="sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 mb-2 sm:mb-0 text-[10px] font-black text-indblue uppercase tracking-widest flex items-center gap-1 hover:text-saffron transition-colors"
             >
-              <X size={14} /> Back to Hub
+              <X size={14} /> Back to Safety Center
             </button>
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-indblue/10 text-indblue rounded-full text-[10px] font-bold tracking-widest uppercase mb-1">
-              <ShieldCheck size={12} /> Active Node: {activeFeature === 'chat' ? 'Voice_INT' : activeFeature === 'deepfake' ? 'Visual_DF' : 'Fin_Sec'}
+            <div className="flex items-center justify-center gap-3 mb-2">
+              <div className="relative w-8 h-8 overflow-hidden rounded-lg border border-saffron/30">
+                <Image 
+                    src="/logo.png" 
+                    alt="Logo" 
+                    fill
+                    className="object-cover"
+                />
+              </div>
+              <div className="inline-flex items-center gap-2 px-3 py-1 bg-indblue/10 text-indblue rounded-full text-[10px] font-bold tracking-widest uppercase">
+                <ShieldCheck size={12} /> Active Node: {featureNodeLabel}
+              </div>
             </div>
             <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-indblue tracking-tight">
-              {activeFeature === 'chat' && "DRISHYAM Voice/Video Trace"}
-              {activeFeature === 'deepfake' && "DRISHYAM Deepfake Defense"}
-              {activeFeature === 'upi' && "DRISHYAM UPI Armor"}
-              {activeFeature === 'bharat' && "DRISHYAM Bharat Layer"}
+              {activeFeature === "chat" && "DRISHYAM Voice/Video Trace"}
+              {activeFeature === "deepfake" && "DRISHYAM Deepfake Defense"}
+              {activeFeature === "upi" && "DRISHYAM UPI Armor"}
+              {activeFeature === "bharat" && "DRISHYAM Bharat Layer"}
+              {activeFeature === "recovery" && "DRISHYAM Recovery Companion"}
+              {activeFeature === "drills" && "DRISHYAM Drill Center"}
             </h2>
           </div>
 
@@ -162,6 +223,14 @@ export default function SimulationPortal() {
 
           {activeFeature === 'bharat' && (
             <BharatModule customerId={customerId} />
+          )}
+
+          {activeFeature === 'recovery' && (
+            <RecoveryModule customerId={customerId} />
+          )}
+
+          {activeFeature === 'drills' && (
+            <DrillModule customerId={customerId} />
           )}
 
           {/* Global Footer */}
