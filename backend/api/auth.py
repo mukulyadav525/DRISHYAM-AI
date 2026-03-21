@@ -1,5 +1,7 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from typing import Optional
@@ -8,9 +10,14 @@ from core.auth import (
     verify_password,
     get_password_hash,
     create_access_token,
+    decode_access_token,
     get_current_user,
+    get_current_verified_user,
     require_role,
+    oauth2_scheme,
+    PRIVILEGED_ROLES,
 )
+from core.audit import log_audit
 from models.database import User, UserRole
 
 router = APIRouter()
@@ -23,6 +30,8 @@ class Token(BaseModel):
     role: str
     username: str
     full_name: Optional[str] = None
+    mfa_required: bool = False
+    mfa_verified: bool = False
 
 
 class UserCreate(BaseModel):
@@ -44,6 +53,19 @@ class UserOut(BaseModel):
     is_active: bool
 
 
+class MFAVerifyRequest(BaseModel):
+    otp: str
+
+
+class SessionStatus(BaseModel):
+    username: str
+    role: str
+    full_name: Optional[str] = None
+    mfa_required: bool
+    mfa_verified: bool
+    expires_at: Optional[str] = None
+
+
 # ─── Endpoints ──────────────────────────────────────────────────────────
 @router.post("/login", response_model=Token)
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
@@ -63,25 +85,40 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "role": user.role,
         "mfa_verified": not requires_mfa # Citizens pass, Agency needs step 2
     })
+    log_audit(db, user.id, "LOGIN_SUCCESS", user.username, metadata={"mfa_required": requires_mfa})
     return {
         "access_token": access_token,
         "token_type": "bearer",
         "role": user.role,
         "username": user.username,
         "full_name": user.full_name,
-        "mfa_required": requires_mfa
+        "mfa_required": requires_mfa,
+        "mfa_verified": not requires_mfa,
     }
 
-@router.post("/mfa/verify")
-def verify_mfa(otp: str, current_user: User = Depends(get_current_user)):
+@router.post("/mfa/verify", response_model=Token)
+def verify_mfa(
+    body: MFAVerifyRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Simulated MFA verification for Agency roles."""
-    if otp == "19301930": # Static demo OTP
+    if body.otp == "19301930": # Static demo OTP
         access_token = create_access_token(data={
             "sub": current_user.username, 
             "role": current_user.role,
             "mfa_verified": True
         })
-        return {"access_token": access_token, "status": "verified"}
+        log_audit(db, current_user.id, "MFA_VERIFIED", current_user.username)
+        return {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "role": current_user.role,
+            "username": current_user.username,
+            "full_name": current_user.full_name,
+            "mfa_required": current_user.role in PRIVILEGED_ROLES,
+            "mfa_verified": True,
+        }
     raise HTTPException(status_code=400, detail="Invalid MFA OTP")
 
 
@@ -123,7 +160,7 @@ def register_user(
 
 
 @router.get("/me", response_model=UserOut)
-def get_me(current_user: User = Depends(get_current_user)):
+def get_me(current_user: User = Depends(get_current_verified_user)):
     from core.security_utils import decrypt_pii
     current_user.phone_number = decrypt_pii(current_user.phone_number)
     current_user.email = decrypt_pii(current_user.email)
@@ -143,3 +180,31 @@ def list_users(
         u.email = decrypt_pii(u.email)
     return users
 
+
+@router.get("/session", response_model=SessionStatus)
+def get_session_status(
+    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        payload = decode_access_token(token)
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    exp = payload.get("exp")
+    expires_at = None
+    if exp:
+        expires_at = datetime.fromtimestamp(exp, tz=timezone.utc).isoformat()
+
+    return {
+        "username": current_user.username,
+        "role": current_user.role,
+        "full_name": current_user.full_name,
+        "mfa_required": current_user.role in PRIVILEGED_ROLES,
+        "mfa_verified": bool(payload.get("mfa_verified", False)),
+        "expires_at": expires_at,
+    }

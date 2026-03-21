@@ -25,6 +25,9 @@ import {
     LogOut,
     User,
     Menu,
+    Globe,
+    Scale,
+    AlertTriangle,
     X,
 } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
@@ -59,6 +62,10 @@ export default function Sidebar({ isOpen = false, onToggle }: SidebarProps) {
         { name: t("command_center"), icon: Landmark, href: "/command" },
         { name: t("agency_portal"), icon: Building2, href: "/agency" },
         { name: t("launch_control"), icon: Rocket, href: "/launch" },
+        { name: t("national_scale"), icon: Globe, href: "/national" },
+        { name: t("business_ops"), icon: Briefcase, href: "/business" },
+        { name: t("support_ops"), icon: AlertTriangle, href: "/ops" },
+        { name: t("governance"), icon: Scale, href: "/governance" },
         { name: t("bharat_layer"), icon: Smartphone, href: "/bharat" },
         { name: t("recovery"), icon: RotateCcw, href: "/recovery" },
     ];

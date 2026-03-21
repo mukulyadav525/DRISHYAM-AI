@@ -34,7 +34,7 @@ async def get_case_status(incident_id: str, db: Session = Depends(get_db)):
     case = db.query(RecoveryCase).filter(RecoveryCase.incident_id == incident_id).first()
     
     if not case:
-        log_audit(db, 0, "CASE_LOOKUP_FAILED", incident_id) # Using 0 as system/anonymous for now
+        log_audit(db, None, "CASE_LOOKUP_FAILED", incident_id) # Using None for anonymous system actions
         return {
             "police_fir_status": "NOT_FOUND",
             "bank_dispute_status": "NOT_FOUND",

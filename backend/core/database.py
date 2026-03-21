@@ -1,15 +1,40 @@
-from sqlalchemy import create_engine
+import logging
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from core.config import settings
 
-# Connect args required for SQLite to handle multi-threaded requests
-db_uri = settings.SQLALCHEMY_DATABASE_URI
-if db_uri.startswith("sqlite"):
-    connect_args = {"check_same_thread": False}
-else:
-    connect_args = {"connect_timeout": 10}
+logger = logging.getLogger("drishyam.database")
 
-engine = create_engine(db_uri, connect_args=connect_args)
+
+def _create_engine(db_uri: str):
+    if db_uri.startswith("sqlite"):
+        return create_engine(db_uri, connect_args={"check_same_thread": False})
+    return create_engine(db_uri, connect_args={"connect_timeout": 10})
+
+
+def _resolve_engine():
+    primary_uri = settings.SQLALCHEMY_DATABASE_URI
+    engine = _create_engine(primary_uri)
+
+    if settings.ENV == "prod" or primary_uri.startswith("sqlite"):
+        return engine
+
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        logger.info("Database connectivity check succeeded for configured development database.")
+        return engine
+    except Exception as exc:
+        fallback_uri = "sqlite:///./drishyam.db"
+        logger.warning(
+            "Configured development database is unreachable. Falling back to local SQLite at %s. Error: %s",
+            fallback_uri,
+            exc,
+        )
+        return _create_engine(fallback_uri)
+
+
+engine = _resolve_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():

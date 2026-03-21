@@ -1,6 +1,7 @@
 import httpx
 import json
 import logging
+import re
 from typing import List, Dict
 from core.config import settings
 
@@ -107,8 +108,6 @@ class SarvamHoneypot:
             
         system_prompt = self.get_master_prompt(persona)
 
-        system_prompt = self.get_master_prompt(persona)
-
         # Prepare messages in OpenAI format
         messages = [
             {"role": "system", "content": system_prompt}
@@ -156,7 +155,6 @@ class SarvamHoneypot:
             ai_text = data["choices"][0]["message"]["content"]
             
             # ─── STRIP THINKING BLOCKS (Exhaustive) ───
-            import re
             # Removes both closed <think>...</think> and unclosed <think>... blocks
             ai_text = re.sub(r'<think>.*?(?:</think>|$)', '', ai_text, flags=re.DOTALL).strip()
             
@@ -170,12 +168,15 @@ class SarvamHoneypot:
 
         except Exception as e:
             logger.error(f"AI: Generation failed: {e}")
-            return await self.generate_with_gemini(messages)
+            gemini_or_local = await self.generate_with_gemini(messages)
+            if gemini_or_local:
+                return gemini_or_local
+            return self.generate_local_response(persona, message)
 
     async def generate_with_gemini(self, messages: List[Dict[str, str]]) -> str:
         """Fallback to Google Gemini if Sarvam quota is reached."""
         if not settings.GEMINI_API_KEY:
-            return "⚠️ System: AI Engine failure (Quota exceeded & No fallback)."
+            return ""
         
         logger.info("AI: Using Gemini Fallback...")
         try:
@@ -200,10 +201,93 @@ class SarvamHoneypot:
                 text = data['candidates'][0]['content']['parts'][0]['text']
                 return text.strip()
             
-            return "⚠️ System: AI Fallback Engine failed."
+            return ""
         except Exception as e:
             logger.error(f"Gemini fallback failed: {e}")
-            return "⚠️ System: AI Critical Failure."
+            return ""
+
+    def generate_local_response(self, persona: str, message: str) -> str:
+        """Offline-safe local fallback so the simulation still behaves like a honeypot."""
+        lowered = (message or "").lower()
+
+        if any(token in lowered for token in ["otp", "kyc", "bank", "verify", "account"]):
+            return "Acha beta, bank se ho kya? Ek minute ruko, message aa raha hai. Aap apna employee ID aur branch ka naam phir se batao."
+        if any(token in lowered for token in ["upi", "collect", "qr", "payment", "refund"]):
+            return "Haan haan, payment kar deta hoon, lekin mera UPI thoda atak raha hai. Tum apna VPA dheere dheere bolo, main likh raha hoon."
+        if any(token in lowered for token in ["job", "salary", "telegram", "whatsapp", "interview"]):
+            return "Beta package to theek lag raha hai, lekin company ka naam aur HR ka WhatsApp number bhejo. Main bete se confirm karke turant batata hoon."
+        if any(token in lowered for token in ["police", "court", "arrest", "legal", "customs"]):
+            return "Arre baba itna tension mat do. Notice number aur officer ka naam batao, main chashma pehen ke likhta hoon."
+        if persona == "College Student":
+            return "Bro ek sec, network glitch aa gaya. Tum exact app ka naam aur referral code bol do."
+        if persona == "Rural Farmer":
+            return "Thoda dheere bolo ji, network kamzor hai. Aap number aur daftar ka naam dubara bata do."
+        if persona == "Housewife":
+            return "Ek second, cooker chal raha hai. Aap branch ka naam aur kis baat ka charge hai, woh clearly bataiye."
+        return "Haan beta, awaaz aa rahi hai. Thoda dheere bolo aur jo number ya ID bol rahe ho woh dubara bata do."
+
+    def analyze_scam_locally(self, history: List[Dict[str, str]]) -> Dict:
+        """Heuristic forensic fallback for offline/dev use."""
+        user_text = "\n".join(
+            msg.get("content", "")
+            for msg in history
+            if msg.get("role") == "user" and msg.get("content")
+        )
+        lowered = user_text.lower()
+
+        scam_type = "UNKNOWN"
+        if any(token in lowered for token in ["upi", "collect", "qr", "refund"]):
+            scam_type = "UPI_SCAM"
+        elif any(token in lowered for token in ["job", "salary", "telegram", "interview"]):
+            scam_type = "JOB_FRAUD"
+        elif any(token in lowered for token in ["customer care", "support", "screen share", "anydesk"]):
+            scam_type = "CUSTOMER_SUPPORT_SCAM"
+        elif any(token in lowered for token in ["bank", "kyc", "otp", "account", "card"]):
+            scam_type = "BANK_FRAUD"
+
+        bank_name = "UNKNOWN"
+        for candidate in ["State Bank of India", "HDFC Bank", "ICICI Bank", "Axis Bank", "Kotak Mahindra Bank"]:
+            if candidate.lower().split()[0] in lowered:
+                bank_name = candidate
+                break
+
+        urgency_level = "HIGH" if any(token in lowered for token in ["urgent", "immediately", "suspend", "block", "arrest", "kyc"]) else "MEDIUM"
+        key_entities = self.extract_entities(user_text)
+
+        detail_lines = []
+        if "otp" in lowered:
+            detail_lines.append("Caller requested OTP or verification code.")
+        if any(token in lowered for token in ["upi", "collect", "qr"]):
+            detail_lines.append("Caller pushed a UPI, collect, or QR-based payment flow.")
+        if any(token in lowered for token in ["job", "salary", "interview"]):
+            detail_lines.append("Caller used employment or earnings bait.")
+        if any(token in lowered for token in ["arrest", "police", "court"]):
+            detail_lines.append("Caller used legal intimidation language.")
+        if not detail_lines:
+            detail_lines.append("Suspicious coercive conversation captured by honeypot.")
+
+        risk_score = 0.9 if scam_type != "UNKNOWN" else 0.55
+        if key_entities:
+            risk_score = min(0.97, risk_score + 0.05)
+
+        return {
+            "scam_type": scam_type,
+            "bank_name": bank_name,
+            "urgency_level": urgency_level,
+            "details": " ".join(detail_lines),
+            "risk_score": risk_score,
+            "key_entities": key_entities,
+        }
+
+    def extract_entities(self, text: str) -> List[str]:
+        entities = set()
+        for match in re.findall(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+", text):
+            entities.add(match)
+        for match in re.findall(r"(?:\+91[- ]?)?\d{10}", text):
+            entities.add(match)
+        for match in re.findall(r"\b\d{11,18}\b", text):
+            entities.add(match)
+        return sorted(entities)
 
     async def analyze_scam(self, history: List[Dict[str, str]]) -> Dict:
         """Analyze a finished conversation to extract scam intelligence."""
@@ -230,13 +314,7 @@ class SarvamHoneypot:
 
         if not self.api_key:
             logger.warning("AI: Using mock analysis fallback")
-            return {
-                "scam_type": "BANK_FRAUD",
-                "bank_name": "HDFC Bank",
-                "urgency_level": "HIGH",
-                "details": "Scammer requesting UPI transfer for account verification.",
-                "confidence_score": 0.95
-            }
+            return self.analyze_scam_locally(history)
 
         try:
             response = await self.client.post(
@@ -254,8 +332,6 @@ class SarvamHoneypot:
             )
             if response.status_code == 200:
                 data = response.json()
-                import json
-                import re
                 content = data["choices"][0]["message"]["content"]
                 match = re.search(r'\{.*\}', content, re.DOTALL)
                 if match:
@@ -263,12 +339,11 @@ class SarvamHoneypot:
                 return {"raw_analysis": content}
             
             logger.error(f"AI Analysis: Sarvam API Error ({response.status_code})")
-            return {"scam_type": "ANALYSIS_FAILED", "risk": "UNKNOWN"}
+            return self.analyze_scam_locally(history)
 
         except Exception as e:
             logger.error(f"AI Analysis: Failed: {e}")
-            return {"scam_type": "ERROR", "error": str(e)}
+            return self.analyze_scam_locally(history)
 
 
 honeypot_ai = SarvamHoneypot()
-

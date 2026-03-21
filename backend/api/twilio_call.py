@@ -12,7 +12,7 @@ from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from core.database import get_db
-from core.auth import get_current_user
+from core.auth import get_current_user, get_current_verified_user
 from core.twilio_engine import twilio_engine
 from models.database import User, SystemAction, HoneypotSession
 import uuid
@@ -283,7 +283,7 @@ async def twilio_incoming_sms(
 @router.post("/handoff")
 async def call_handoff(
     req: HandoffCallRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db),
 ):
     """
@@ -419,7 +419,7 @@ async def media_stream_websocket(websocket: WebSocket):
 @router.get("/status")
 async def get_call_status(
     stream_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
 ):
     """
     Get status of active and recent calls.
@@ -441,7 +441,7 @@ async def get_call_status(
 @router.post("/end")
 async def end_call(
     req: EndCallRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db),
 ):
     """Terminate an active call."""
@@ -465,7 +465,7 @@ async def end_call(
 @router.post("/sms")
 async def send_sms(
     req: SendSMSRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db),
 ):
     """Send a manual SMS via Twilio."""

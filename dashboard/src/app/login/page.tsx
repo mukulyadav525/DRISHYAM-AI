@@ -6,22 +6,23 @@ import { useRouter } from "next/navigation";
 import { ShieldCheck, Loader2, AlertTriangle, Eye, EyeOff, Lock, User } from "lucide-react";
 
 export default function LoginPage() {
-    const { login, isAuthenticated } = useAuth();
+    const { login, verifyMfa, logout, isAuthenticated, isMfaPending, user } = useAuth();
     const router = useRouter();
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [otp, setOtp] = useState("");
     const [error, setError] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // Redirect if already logged in
     useEffect(() => {
-        if (isAuthenticated) {
+        if (isAuthenticated && !isMfaPending) {
             router.replace("/");
         }
-    }, [isAuthenticated, router]);
+    }, [isAuthenticated, isMfaPending, router]);
 
-    if (isAuthenticated) {
+    if (isAuthenticated && !isMfaPending) {
         return null;
     }
 
@@ -31,10 +32,27 @@ export default function LoginPage() {
         setIsSubmitting(true);
 
         try {
-            await login(username, password);
-            router.replace("/");
+            const authUser = await login(username, password);
+            if (!authUser.mfaRequired || authUser.mfaVerified) {
+                router.replace("/");
+            }
         } catch (err: any) {
             setError(err.message || "Authentication failed");
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleMfaSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError("");
+        setIsSubmitting(true);
+
+        try {
+            await verifyMfa(otp);
+            router.replace("/");
+        } catch (err: any) {
+            setError(err.message || "MFA verification failed");
         } finally {
             setIsSubmitting(false);
         }
@@ -88,8 +106,14 @@ export default function LoginPage() {
 
                 {/* Glass Card */}
                 <div className="backdrop-blur-xl bg-white/5 border border-white/10 rounded-3xl p-8 shadow-2xl">
-                    <h2 className="text-xl font-bold text-white mb-1">Secure Login</h2>
-                    <p className="text-white/40 text-sm mb-8">Authenticate to access the Command Dashboard</p>
+                    <h2 className="text-xl font-bold text-white mb-1">
+                        {isMfaPending ? "Security Verification" : "Secure Login"}
+                    </h2>
+                    <p className="text-white/40 text-sm mb-8">
+                        {isMfaPending
+                            ? "Second-factor confirmation is required for privileged access."
+                            : "Authenticate to access the Command Dashboard"}
+                    </p>
 
                     {error && (
                         <div className="mb-6 p-4 bg-redalert/10 border border-redalert/30 rounded-xl flex items-center gap-3">
@@ -98,71 +122,130 @@ export default function LoginPage() {
                         </div>
                     )}
 
-                    <form onSubmit={handleSubmit} className="space-y-5">
-                        {/* Username */}
-                        <div>
-                            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
-                                Username
-                            </label>
-                            <div className="relative">
-                                <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                                <input
-                                    type="text"
-                                    value={username}
-                                    onChange={(e) => setUsername(e.target.value)}
-                                    className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium"
-                                    placeholder="Enter your username"
-                                    required
-                                    autoComplete="username"
-                                />
+                    {isMfaPending ? (
+                        <form onSubmit={handleMfaSubmit} className="space-y-5">
+                            <div className="p-4 rounded-xl bg-white/5 border border-white/10">
+                                <p className="text-[11px] text-white/70 font-semibold">Operator</p>
+                                <p className="text-sm text-white font-bold mt-1">{user?.full_name || user?.username}</p>
+                                <p className="text-[10px] text-saffron uppercase tracking-widest font-bold mt-2">
+                                    Step 2 of 2
+                                </p>
                             </div>
-                        </div>
 
-                        {/* Password */}
-                        <div>
-                            <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
-                                Password
-                            </label>
-                            <div className="relative">
-                                <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className="w-full pl-12 pr-12 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium"
-                                    placeholder="Enter your password"
-                                    required
-                                    autoComplete="current-password"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
-                                >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
+                            <div>
+                                <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+                                    One-Time Passcode
+                                </label>
+                                <div className="relative">
+                                    <ShieldCheck size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                                    <input
+                                        type="text"
+                                        value={otp}
+                                        onChange={(e) => setOtp(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium tracking-[0.35em]"
+                                        placeholder="19301930"
+                                        required
+                                        autoComplete="one-time-code"
+                                    />
+                                </div>
                             </div>
-                        </div>
 
-                        {/* Submit */}
-                        <button
-                            type="submit"
-                            disabled={isSubmitting || !username || !password}
-                            className="w-full py-4 bg-gradient-to-r from-saffron to-deeporange text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:shadow-lg hover:shadow-saffron/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
-                        >
-                            {isSubmitting ? (
-                                <>
-                                    <Loader2 size={18} className="animate-spin" />
-                                    Authenticating...
-                                </>
-                            ) : (
-                                <>
-                                    <ShieldCheck size={18} />
-                                    Authenticate
-                                </>
-                            )}
-                        </button>
-                    </form>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || !otp}
+                                className="w-full py-4 bg-gradient-to-r from-saffron to-deeporange text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:shadow-lg hover:shadow-saffron/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin" />
+                                        Verifying...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck size={18} />
+                                        Verify Access
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setOtp("");
+                                    setError("");
+                                    setPassword("");
+                                    setUsername("");
+                                    logout();
+                                }}
+                                className="w-full py-3 border border-white/10 rounded-xl text-white/70 text-xs font-bold uppercase tracking-wider hover:bg-white/5 transition-colors"
+                            >
+                                Clear Pending Session
+                            </button>
+                        </form>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            <div>
+                                <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+                                    Username
+                                </label>
+                                <div className="relative">
+                                    <User size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                                    <input
+                                        type="text"
+                                        value={username}
+                                        onChange={(e) => setUsername(e.target.value)}
+                                        className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium"
+                                        placeholder="Enter your username"
+                                        required
+                                        autoComplete="username"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold text-white/50 uppercase tracking-wider mb-2">
+                                    Password
+                                </label>
+                                <div className="relative">
+                                    <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30" />
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        className="w-full pl-12 pr-12 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/20 outline-none focus:border-saffron/50 focus:bg-white/8 transition-all text-sm font-medium"
+                                        placeholder="Enter your password"
+                                        required
+                                        autoComplete="current-password"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                                    >
+                                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || !username || !password}
+                                className="w-full py-4 bg-gradient-to-r from-saffron to-deeporange text-white rounded-xl font-bold text-sm uppercase tracking-wider hover:shadow-lg hover:shadow-saffron/25 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-300 flex items-center justify-center gap-2"
+                            >
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 size={18} className="animate-spin" />
+                                        Authenticating...
+                                    </>
+                                ) : (
+                                    <>
+                                        <ShieldCheck size={18} />
+                                        Authenticate
+                                    </>
+                                )}
+                            </button>
+                        </form>
+                    )}
 
                     {/* Separator */}
                     <div className="my-6 border-t border-white/5" />
@@ -186,6 +269,9 @@ export default function LoginPage() {
                         <div className="inline-block px-3 py-1.5 rounded-lg bg-white/5 border border-white/10">
                             <p className="text-[10px] text-white/40 font-mono">
                                 <span className="text-saffron/60">ID:</span> admin <span className="mx-2 opacity-30">|</span> <span className="text-saffron/60">Pass:</span> password123
+                            </p>
+                            <p className="text-[10px] text-white/30 font-mono mt-1">
+                                <span className="text-saffron/60">OTP:</span> 19301930
                             </p>
                         </div>
                     </div>

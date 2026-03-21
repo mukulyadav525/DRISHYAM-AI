@@ -1,10 +1,39 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
+from core.config import settings
 from core.database import get_db
 import uuid
 import datetime
 
 router = APIRouter()
+
+@router.get("/sandbox/status")
+async def telecom_sandbox_status(db: Session = Depends(get_db)):
+    twilio_credentials_loaded = all(
+        [
+            settings.TWILIO_ACCOUNT_SID,
+            settings.TWILIO_AUTH_TOKEN,
+            settings.TWILIO_PHONE_NUMBER,
+            settings.TWILIO_WEBHOOK_BASE_URL,
+        ]
+    )
+
+    return {
+        "provider": "TWILIO_SANDBOX" if twilio_credentials_loaded else "LOCAL_TELECOM_SANDBOX",
+        "mode": "live_sandbox" if twilio_credentials_loaded else "demo_sandbox",
+        "configured": True,
+        "external_credentials_loaded": twilio_credentials_loaded,
+        "voice_handoff": True,
+        "ivr": True,
+        "cell_broadcast": True,
+        "fri_scoring": True,
+        "capabilities": [
+            "FRI scam scoring",
+            "AI honeypot handoff",
+            "IVR callback simulation",
+            "Cell broadcast / BharatNet alerts",
+        ],
+    }
 
 @router.post("/call/score")
 async def get_call_score(body: dict, db: Session = Depends(get_db)):

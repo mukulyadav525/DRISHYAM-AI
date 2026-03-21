@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from core.database import get_db
+from models.database import NotificationLog
 import uuid
 import datetime
 
@@ -8,12 +9,95 @@ router = APIRouter()
 
 @router.post("/citizen/push-alert")
 async def citizen_push_alert(body: dict, db: Session = Depends(get_db)):
+    region = body.get("region", "national")
+    scenario_title = body.get("scenario_title", "General Scam Alert")
+    message = body.get("message", "DRISHYAM advisory: stay alert for scam activity in your area.")
+    channels = body.get("channels", ["PUSH", "SMS"])
+
+    coverage = {
+        "national": {"citizens": 1480000, "delivery": 94.0},
+        "delhi": {"citizens": 210000, "delivery": 97.0},
+        "mh": {"citizens": 540000, "delivery": 95.0},
+        "ka": {"citizens": 160000, "delivery": 96.0},
+    }.get(region, {"citizens": 125000, "delivery": 93.0})
+
+    alert_id = f"ALT-{uuid.uuid4().hex[:6].upper()}"
+    sent_at = datetime.datetime.utcnow()
+    for channel in channels:
+        db.add(
+            NotificationLog(
+                recipient=region,
+                channel=channel,
+                template_id=f"ALERT_{scenario_title.upper().replace(' ', '_')}",
+                status="DELIVERED",
+                sent_at=sent_at,
+                metadata_json={
+                    "alert_id": alert_id,
+                    "message": message,
+                    "region": region,
+                    "scenario_title": scenario_title,
+                    "citizens_notified": coverage["citizens"],
+                    "delivery_rate_percent": coverage["delivery"],
+                },
+            )
+        )
+    db.commit()
+
     return {
-        "alert_id": f"ALT-{uuid.uuid4().hex[:6].upper()}",
-        "citizens_notified": 45000,
-        "channels_dispatched": ["PUSH", "SMS"],
-        "delivery_rate_percent": 98.5
+        "alert_id": alert_id,
+        "citizens_notified": coverage["citizens"],
+        "channels_dispatched": channels,
+        "delivery_rate_percent": coverage["delivery"],
+        "region": region,
+        "scenario_title": scenario_title,
+        "message_preview": message,
     }
+
+
+@router.get("/history/recent")
+async def get_recent_alerts(
+    limit: int = Query(10, ge=1, le=50),
+    db: Session = Depends(get_db),
+):
+    logs = db.query(NotificationLog).filter(
+        NotificationLog.template_id.like("ALERT_%")
+    ).order_by(NotificationLog.sent_at.desc()).limit(limit * 3).all()
+
+    grouped: dict[str, dict] = {}
+    for log in logs:
+        metadata = log.metadata_json or {}
+        alert_id = metadata.get("alert_id") or f"ALT-{log.id}"
+        if alert_id not in grouped:
+            grouped[alert_id] = {
+                "id": alert_id,
+                "message": metadata.get("message", "DRISHYAM advisory sent."),
+                "region": metadata.get("region", log.recipient),
+                "scenario_title": metadata.get("scenario_title", "General Scam Alert"),
+                "citizens_notified": metadata.get("citizens_notified", 0),
+                "delivery_rate_percent": metadata.get("delivery_rate_percent", 0),
+                "status": log.status,
+                "sent_at": log.sent_at.isoformat() if log.sent_at else None,
+                "channels": [],
+            }
+        grouped[alert_id]["channels"].append(log.channel)
+
+    alerts = list(grouped.values())[:limit]
+    if not alerts:
+        alerts = [
+            {
+                "id": "ALT-DEMO01",
+                "message": "DRISHYAM advisory: OTP-sharing scam surge in Delhi-NCR.",
+                "region": "delhi",
+                "scenario_title": "KYC Verification Trap",
+                "citizens_notified": 210000,
+                "delivery_rate_percent": 97.0,
+                "status": "DELIVERED",
+                "sent_at": datetime.datetime.utcnow().isoformat(),
+                "channels": ["SMS", "PUSH"],
+            }
+        ]
+
+    return {"alerts": alerts}
 
 @router.post("/family-trust-circle/alert")
 async def family_trust_alert(body: dict, db: Session = Depends(get_db)):

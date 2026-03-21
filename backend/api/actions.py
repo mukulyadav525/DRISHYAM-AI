@@ -3,7 +3,7 @@ from typing import Optional, Dict, Any
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
-from core.auth import get_current_user
+from core.auth import get_current_verified_user
 from models.database import User, SystemAction
 import logging
 import traceback
@@ -28,7 +28,7 @@ class ActionRequest(BaseModel):
 @router.post("/perform")
 async def perform_action(
     req: ActionRequest,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -232,7 +232,7 @@ async def perform_action(
 async def get_download_file(
     filename: str,
     category: str = "report",
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -301,7 +301,7 @@ async def get_download_file(
 async def download_simulation(
     file_type: str = "pdf",
     category: str = "report",
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """

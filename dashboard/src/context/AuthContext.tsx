@@ -8,13 +8,17 @@ interface AuthUser {
     role: string;
     full_name: string | null;
     token: string;
+    mfaRequired: boolean;
+    mfaVerified: boolean;
 }
 
 interface AuthContextType {
     user: AuthUser | null;
     isAuthenticated: boolean;
+    isMfaPending: boolean;
     isLoading: boolean;
-    login: (username: string, password: string) => Promise<void>;
+    login: (username: string, password: string) => Promise<AuthUser>;
+    verifyMfa: (otp: string) => Promise<void>;
     logout: () => void;
 }
 
@@ -25,27 +29,32 @@ export const ROLE_ACCESS: Record<string, string[]> = {
     admin: [
         "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
         "/mule", "/inoculation", "/upi", "/score", "/profiling", "/command",
-        "/agency", "/launch", "/shield", "/bharat", "/recovery", "/settings",
+        "/agency", "/launch", "/national", "/business", "/ops", "/governance",
+        "/shield", "/bharat", "/recovery", "/settings",
     ],
     police: [
         "/", "/detection", "/honeypot", "/graph", "/alerts", "/deepfake", "/history",
         "/mule", "/inoculation", "/score", "/profiling", "/command",
-        "/agency", "/shield", "/bharat", "/recovery",
+        "/agency", "/national", "/business", "/ops", "/governance",
+        "/shield", "/bharat", "/recovery",
     ],
     bank: [
         "/", "/graph", "/alerts", "/mule", "/inoculation", "/upi",
-        "/score", "/agency", "/bharat", "/recovery",
+        "/score", "/agency", "/national", "/business", "/ops", "/governance",
+        "/bharat", "/recovery",
     ],
     government: [
         "/", "/detection", "/graph", "/alerts", "/deepfake", "/history", "/inoculation",
-        "/upi", "/score", "/command", "/agency", "/launch", "/shield", "/bharat",
+        "/upi", "/score", "/command", "/agency", "/launch", "/national",
+        "/business", "/ops", "/governance", "/shield", "/bharat",
     ],
     telecom: [
-        "/", "/detection", "/alerts", "/inoculation", "/agency", "/shield", "/bharat",
+        "/", "/detection", "/alerts", "/inoculation", "/agency", "/national",
+        "/business", "/ops", "/governance", "/shield", "/bharat",
     ],
     court: [
         "/", "/graph", "/deepfake", "/history", "/mule", "/score", "/profiling",
-        "/agency", "/bharat", "/recovery",
+        "/agency", "/national", "/business", "/ops", "/governance", "/bharat", "/recovery",
     ],
     common: [
         "/", "/alerts", "/inoculation", "/upi", "/score", "/shield",
@@ -63,6 +72,23 @@ export const ROLE_LABELS: Record<string, string> = {
     common: "Citizen",
 };
 
+const PRIVILEGED_ROLES = new Set(["admin", "police", "bank", "government", "telecom", "court"]);
+
+function normalizeStoredUser(parsed: any): AuthUser {
+    const role = parsed?.role || "common";
+    const mfaRequired = parsed?.mfaRequired ?? PRIVILEGED_ROLES.has(role);
+    const mfaVerified = parsed?.mfaVerified ?? !mfaRequired;
+
+    return {
+        username: parsed?.username || "",
+        role,
+        full_name: parsed?.full_name ?? null,
+        token: parsed?.token || "",
+        mfaRequired,
+        mfaVerified,
+    };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -73,7 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (stored) {
             try {
                 const parsed = JSON.parse(stored);
-                setUser(parsed);
+                setUser(normalizeStoredUser(parsed));
             } catch {
                 localStorage.removeItem("drishyam_auth");
             }
@@ -117,28 +143,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 role: data.role,
                 full_name: data.full_name,
                 token: data.access_token,
+                mfaRequired: Boolean(data.mfa_required),
+                mfaVerified: Boolean(data.mfa_verified),
             };
 
             setUser(authUser);
             localStorage.setItem("drishyam_auth", JSON.stringify(authUser));
+            return authUser;
         } catch (error: any) {
             console.error("Login request failed:", error);
             throw error;
         }
     }, []);
 
+    const verifyMfa = useCallback(async (otp: string) => {
+        if (!user?.token) {
+            throw new Error("Session expired. Please log in again.");
+        }
+
+        const res = await fetch(`${API_BASE}/auth/mfa/verify`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${user.token}`,
+            },
+            body: JSON.stringify({ otp }),
+        });
+
+        const contentType = res.headers.get("content-type");
+        const isJson = contentType && contentType.includes("application/json");
+
+        if (!res.ok) {
+            if (isJson) {
+                const err = await res.json();
+                throw new Error(err.detail || "MFA verification failed");
+            }
+            throw new Error(`MFA verification failed (${res.status})`);
+        }
+
+        if (!isJson) {
+            throw new Error("Invalid MFA response from server");
+        }
+
+        const data = await res.json();
+        const authUser: AuthUser = {
+            username: data.username,
+            role: data.role,
+            full_name: data.full_name,
+            token: data.access_token,
+            mfaRequired: Boolean(data.mfa_required),
+            mfaVerified: Boolean(data.mfa_verified),
+        };
+
+        setUser(authUser);
+        localStorage.setItem("drishyam_auth", JSON.stringify(authUser));
+    }, [user]);
+
     const logout = useCallback(() => {
         setUser(null);
         localStorage.removeItem("drishyam_auth");
     }, []);
+
+    const isMfaPending = !!user && user.mfaRequired && !user.mfaVerified;
 
     return (
         <AuthContext.Provider
             value={{
                 user,
                 isAuthenticated: !!user,
+                isMfaPending,
                 isLoading,
                 login,
+                verifyMfa,
                 logout,
             }}
         >

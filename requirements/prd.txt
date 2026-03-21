@@ -1,0 +1,1789 @@
+TABLE OF CONTENTS
+-----------------
+1.  Product Overview
+2.  Phase 0  — Founding Decisions
+3.  Phase 1  — Requirements Freeze
+4.  Phase 2  — System Decomposition
+5.  Phase 3  — Repository, Engineering & Delivery Setup
+6.  Phase 4  — Legal, Policy & Compliance Foundations
+7.  Phase 5  — Data Design
+8.  Phase 6  — Data Acquisition & Datasets
+9.  Phase 7  — Telecom Integration Foundation
+10. Phase 8  — Module 1: Real-Time Telecom Detection Grid
+11. Phase 9  — Module 2: Agentic AI Honeypot Engine
+12. Phase 10 — Module 3: Fraud Intelligence Graph Engine
+13. Phase 11 — Module 4: UPI & WhatsApp Scam Shield
+14. Phase 12 — Module 5: Bharat Feature Phone Layer
+15. Phase 13 — Module 6: National Command Intelligence Dashboard
+16. Phase 14 — Module 7: Citizen Early Warning & Public Alert Engine
+17. Phase 15 — Module 8: Population Segment Protection
+18. Phase 16 — Module 9: Privacy-First AI Layer (DPDP Compliant)
+19. Phase 17 — Module 10: Operations Command Centre & Disaster Recovery
+20. Phase 18 — Module 11: Scammer Reverse Profiling Engine
+21. Phase 19 — Module 12: Deepfake Video Call Defense
+22. Phase 20 — Module 13: AI Scam Inoculation & Simulation Engine
+23. Phase 21 — Module 14: Mule Recruitment Interceptor
+24. Phase 22 — Module 15: Post-Scam Recovery Companion
+25. Phase 23 — AI/ML Modeling Stack
+26. Phase 24 — Multilingual & Localization Layer
+27. Phase 25 — Frontend Build
+28. Phase 26 — Mobile App Build
+29. Phase 27 — Backend Platform Build
+30. Phase 28 — Databases, Storage & Cache
+31. Phase 29 — External Partnership Implementations
+32. Phase 30 — Security Engineering
+33. Phase 31 — Testing & QA
+34. Phase 32 — Observability, Analytics & Monitoring
+35. Phase 33 — MVP Delivery
+36. Phase 34 — Pilot Launch
+37. Phase 35 — National Scale Preparation
+38. Phase 36 — Business Model & Revenue Operations
+39. Phase 37 — Operations & Support
+40. Phase 38 — Documentation
+41. Phase 39 — Impact, KPI & Governance
+42. Phase 40 — Launch Readiness Checklist
+43. Phase 41 — Post-Launch Continuous Improvement
+44. MVP Priority Checklist
+45. Appendix: Module Summary Table
+
+================================================================================
+SECTION 1 — PRODUCT OVERVIEW
+================================================================================
+
+One-Line Positioning: India's first end-to-end AI anti-scam operating system —
+                     from detection to recovery, for every citizen on every device.
+
+Target Users
+------------
+  - Citizens (smartphone + feature phone + no-device)
+  - Telecom operators (Jio, Airtel, Vi, BSNL)
+  - Banks and NBFCs
+  - Police and cyber cells (state + national)
+  - Government agencies (MHA, DoT, RBI, NPCI, CERT-In, SEBI)
+  - Insurers
+  - Job platforms
+  - NGOs and legal aid bodies
+
+Non-Negotiables
+---------------
+  - Privacy-first architecture (DPDP Act compliant)
+  - Feature phone and 2G support
+  - Support for all 22 scheduled Indian languages
+  - No illegal surveillance
+  - No forced interception
+  - No non-consensual data resale
+
+Versioning
+----------
+  - Module versioning: M<N>-v<X>.<Y>
+  - Release versioning: SENTINEL-<YEAR>.<SPRINT>.<PATCH>
+  - Document versioning: PRD-v<X>.<Y>
+  
+
+================================================================================
+SECTION 3 — PHASE 1: REQUIREMENTS FREEZE
+================================================================================
+Objective: Convert concept into formal specifications before any design or code.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+R1-01  | Convert concept note into formal product requirements doc  
+R1-02  | Break 15 modules into epics                               
+R1-03  | Break each module into features                            
+R1-04  | Break each feature into user stories                       
+R1-05  | Define stakeholders for each module                        
+R1-06  | Define dependencies between modules                        
+R1-07  | Mark modules requiring external partnerships               
+R1-08  | Mark modules that can be built standalone                  
+R1-09  | Define required languages for MVP                          
+R1-10  | Define full 22-language rollout plan                       
+R1-11  | Define device coverage requirements                        
+R1-12  | Define smartphone feature set                              
+R1-13  | Define feature phone feature set                           
+R1-14  | Define web dashboard feature set                           
+R1-15  | Define mobile app feature set                              
+R1-16  | Define OCC feature set                                     
+R1-17  | Define government dashboard feature set                    
+R1-18  | Define police workflow requirements                        
+R1-19  | Define bank workflow requirements                          
+R1-20  | Define telecom workflow requirements                       
+R1-21  | Define citizen consent workflow requirements               
+R1-22  | Define evidence packaging requirements                     
+R1-23  | Define reporting workflow requirements                     
+R1-24  | Define alerting workflow requirements                      
+R1-25  | Define scam classification taxonomy                        
+R1-26  | Define threat severity taxonomy                            
+R1-27  | Define fraud risk score definitions                        
+R1-28  | Define response SLA for each severity band                 
+R1-29  | Define evidence retention requirements                     
+R1-30  | Define transcript retention requirements                   
+R1-31  | Define call audio/video retention requirements             
+R1-32  | Define data deletion workflow                              
+R1-33  | Define opt-in and opt-out flows                            
+R1-34  | Define caregiver / family trust circle flow                
+R1-35  | Define senior citizen mode requirements                    
+R1-36  | Define district heatmap requirements                       
+R1-37  | Define FIR packet output format                            
+R1-38  | Define agency access matrix                                
+R1-39  | Define role-based access control matrix                    
+R1-40  | Define admin approval workflow                             
+R1-41  | Define audit log requirements                              
+R1-42  | Define analytics dashboard requirements                    
+R1-43  | Define citizen notification types                          
+R1-44  | Define tower / cell broadcast use cases                    
+R1-45  | Define scam inoculation drill requirements                 
+R1-46  | Define job portal surveillance requirements                
+R1-47  | Define mule recruitment detection requirements             
+R1-48  | Define post-scam recovery flow                             
+R1-49  | Define legal aid referral flow                             
+R1-50  | Define mental health referral flow                         
+R1-51  | Define B2B monetization requirements                       
+R1-52  | Define institution billing requirements                    
+R1-53  | Define KPI dashboard requirements                          
+
+================================================================================
+SECTION 4 — PHASE 2: SYSTEM DECOMPOSITION
+================================================================================
+Objective: All architecture decisions finalized before any code is written.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+SD2-01 | Split system into core domains                             
+SD2-02 | Create domain list:                                        
+       |   - Telecom detection                                      |
+       |   - Honeypot AI                                            |
+       |   - Fraud graph                                            |
+       |   - Payments shield                                        |
+       |   - Feature phone layer                                    |
+       |   - Dashboards                                             |
+       |   - Public alert engine                                    |
+       |   - Segment protection                                     |
+       |   - Privacy layer                                          |
+       |   - OCC                                                    |
+       |   - Reverse profiling                                      |
+       |   - Deepfake defense                                       |
+       |   - Inoculation engine                                     |
+       |   - Mule interceptor                                       |
+       |   - Recovery companion                                     |
+SD2-03 | Decide microservices vs modular monolith approach          
+SD2-04 | Decide real-time vs batch components                       
+SD2-05 | Identify latency-critical services                         
+SD2-06 | Identify high-storage services                             
+SD2-07 | Identify compliance-sensitive services                     
+SD2-08 | Identify GPU-dependent services                            
+SD2-09 | Identify external-integration-dependent services           
+SD2-10 | Define internal service boundaries                         
+SD2-11 | Define service communication pattern                       
+SD2-12 | Define event-driven components                             
+SD2-13 | Define synchronous API components                          
+SD2-14 | Define failure isolation boundaries                        
+SD2-15 | Define tenancy model                                       
+SD2-16 | Define region model for India-wide deployment              
+SD2-17 | Define edge vs cloud computation split                     
+SD2-18 | Define telco-edge workloads                                
+SD2-19 | Define device-side workloads                               
+SD2-20 | Define server-side workloads                               
+SD2-21 | Define data residency architecture                         
+
+================================================================================
+SECTION 5 — PHASE 3: REPOSITORY, ENGINEERING & DELIVERY SETUP
+================================================================================
+Objective: Full engineering infrastructure in place before any feature build.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------    
+ENG3-02| Create repos: backend, frontend, mobile, ML, infra, docs  
+ENG3-03| Define branching strategy                                  
+ENG3-04| Define PR review policy                                    
+ENG3-05| Define commit conventions                                  
+ENG3-06| Define release tagging scheme                              
+ENG3-07| Set up issue tracking                                      
+ENG3-08| Set up project boards                                      
+ENG3-09| Set up sprint workflow                                     
+ENG3-10| Set up architecture decision record (ADR) template         
+ENG3-11| Set up code owners                                         
+ENG3-12| Set up secret management workflow                          
+ENG3-13| Set up environments: local, dev, staging, prod             
+ENG3-14| Set up shared config strategy                              
+ENG3-15| Set up .env handling policy                                
+ENG3-16| Set up code formatting                                     
+ENG3-17| Set up linting                                             
+ENG3-18| Set up type checking                                       
+ENG3-19| Set up pre-commit hooks                                    
+ENG3-20| Set up test framework per repo                             
+ENG3-21| Set up artifact storage                                    
+ENG3-22| Set up CI pipelines                                        
+ENG3-23| Set up CD pipelines                                        
+ENG3-24| Set up infrastructure-as-code repository                   
+ENG3-25| Set up changelog generation                                
+ENG3-26| Set up dependency vulnerability scanning                   
+ENG3-27| Set up license scanning                                    
+ENG3-28| Set up container registry                                  
+ENG3-29| Set up Docker base images                                  
+ENG3-30| Set up Kubernetes manifests / Helm charts                  
+ENG3-31| Set up observability baseline                              
+
+================================================================================
+SECTION 6 — PHASE 4: LEGAL, POLICY & COMPLIANCE FOUNDATIONS
+================================================================================
+Objective: All legal groundwork complete before any user data enters the system.
+CRITICAL: This phase must not be skipped or deferred.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+LEG4-01| Get legal review of full system concept                    
+LEG4-02| Map all modules against Indian law                         
+LEG4-03| Map lawful interception boundaries                         
+LEG4-04| Define telecom consent and handoff legality                
+LEG4-05| Define citizen consent model for AI handoff                
+LEG4-06| Define explicit consent text                               
+LEG4-07| Define privacy notice                                      
+LEG4-08| Define terms of use                                        
+LEG4-09| Define acceptable use policy                               
+LEG4-10| Define citizen grievance redressal process                 
+LEG4-11| Define law enforcement disclosure policy                   
+LEG4-12| Define evidence handling SOP                               
+LEG4-13| Define Section 65B evidence certification workflow         
+LEG4-14| Define DPDP compliance controls                            
+LEG4-15| Define purpose limitation controls                         
+LEG4-16| Define data minimization controls                          
+LEG4-17| Define right-to-erasure workflow                           
+LEG4-18| Define retention schedule by data type                     
+LEG4-19| Define cross-agency sharing rules                          
+LEG4-20| Define classified vs non-classified data classes           
+LEG4-21| Define public-interest data sharing boundaries             
+LEG4-22| Define child safety handling policy                        
+LEG4-23| Define mental health referral disclaimer policy            
+LEG4-24| Define bank dispute automation legal review                
+LEG4-25| Define ombudsman complaint automation legal review         
+LEG4-26| Define consumer court filing assistance legal review       
+LEG4-27| Define job portal surveillance legal review                
+LEG4-28| Define web scanning boundaries                             
+LEG4-29| Define mule recruitment monitoring legality                
+LEG4-30| Define deepfake analysis consent boundaries                
+LEG4-31| Define lawful logging requirements                         
+LEG4-32| Define auditability requirements                           
+LEG4-33| Define third-party vendor compliance requirements          
+LEG4-34| Define India-only hosting compliance strategy              
+LEG4-35| Plan third-party compliance audit                          
+LEG4-36| Plan VAPT program                                          
+LEG4-37| Plan bug bounty policy                                     
+LEG4-38| Draft MoU templates for agencies and partners              
+
+================================================================================
+SECTION 7 — PHASE 5: DATA DESIGN
+================================================================================
+Objective: Master data model defined before any database is created.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+DD5-01 | Design master data model                                   
+DD5-02 | Design entity model: citizens                              
+DD5-03 | Design entity model: scam calls                            
+DD5-04 | Design entity model: suspicious numbers                    
+DD5-05 | Design entity model: voice fingerprints                    
+DD5-06 | Design entity model: UPI IDs                               
+DD5-07 | Design entity model: bank accounts                         
+DD5-08 | Design entity model: mule recruiters                       
+DD5-09 | Design entity model: job ads                               
+DD5-10 | Design entity model: scam scripts                          
+DD5-11 | Design entity model: districts                             
+DD5-12 | Design entity model: scam events                           
+DD5-13 | Design entity model: alerts                                
+DD5-14 | Design entity model: agencies                              
+DD5-15 | Design entity model: cases                                 
+DD5-16 | Design entity model: FIR packets                           
+DD5-17 | Design entity model: deepfake video incidents              
+DD5-18 | Design entity model: inoculation drills                    
+DD5-19 | Design entity model: recovery journeys                     
+DD5-20 | Design entity model: Sentinel Score                        
+DD5-21 | Define canonical scam category taxonomy                    
+DD5-22 | Define canonical language codes                            
+DD5-23 | Define canonical district/state IDs                        
+DD5-24 | Define event schema: telecom metadata                      
+DD5-25 | Define event schema: honeypot transcripts                  
+DD5-26 | Define event schema: risk-scoring events                   
+DD5-27 | Define event schema: graph updates                         
+DD5-28 | Define event schema: alerts sent                           
+DD5-29 | Define event schema: user actions                          
+DD5-30 | Define audit event schema                                  
+DD5-31 | Define data lineage tracking                               
+DD5-32 | Define schema versioning policy                            
+DD5-33 | Define PII tagging framework                               
+DD5-34 | Define redaction rules                                     
+DD5-35 | Define encryption fields                                   
+DD5-36 | Define searchable vs non-searchable data classes           
+DD5-37 | Define graph schema in Neo4j                               
+DD5-38 | Define vector embedding schema                             
+DD5-39 | Define object storage folder structure                     
+DD5-40 | Define evidence package metadata schema                    
+
+================================================================================
+SECTION 8 — PHASE 6: DATA ACQUISITION & DATASETS
+================================================================================
+Objective: All training data sourced and labeled before model training begins.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+DA6-01 | Identify sources: scam transcript data                     
+DA6-02 | Identify sources: call metadata data                       
+DA6-03 | Identify sources: number reputation data                   
+DA6-04 | Identify sources: UPI fraud pattern data                   
+DA6-05 | Identify sources: fake job ad data                         
+DA6-06 | Identify sources: deepfake video datasets                  
+DA6-07 | Identify sources: deepfake audio datasets                  
+DA6-08 | Identify sources: Indian language scam samples             
+DA6-09 | Identify sources: WhatsApp scam message samples            
+DA6-10 | Identify sources: public fraud complaint patterns          
+DA6-11 | Identify government/public datasets for fraud              
+DA6-12 | Identify synthetic data generation needs                   
+DA6-13 | Build synthetic scam transcript generation pipeline        
+DA6-14 | Build synthetic telecom metadata pipeline                  
+DA6-15 | Build synthetic fraud graph pipeline                       
+DA6-16 | Build synthetic mule recruitment ad dataset                
+DA6-17 | Build synthetic deepfake verification benchmark            
+DA6-18 | Build labeled scam-type dataset                            
+DA6-19 | Build labeled urgency/fear/authority dataset               
+DA6-20 | Build labeled multilingual intent dataset                  
+DA6-21 | Build labeled job-scam dataset                             
+DA6-22 | Build labeled fake QR dataset                              
+DA6-23 | Build labeled fake payment screenshot dataset              
+DA6-24 | Build labeled impersonation business account dataset       
+DA6-25 | Build labeled deepfake video sample dataset                
+DA6-26 | Build labeled deepfake audio sample dataset                
+DA6-27 | Build labeled liveness dataset                             
+DA6-28 | Build labeled voice stress dataset                         
+DA6-29 | Define annotation guidelines                               
+DA6-30 | Train annotators / reviewers                               
+DA6-31 | Set up annotation tools                                    
+DA6-32 | Set up QA for labels                                       
+DA6-33 | Measure inter-annotator agreement                          
+DA6-34 | Set up dataset versioning                                  
+DA6-35 | Set up dataset access controls                             
+DA6-36 | Create train / validation / test splits                    
+DA6-37 | Create language-balanced evaluation set                    
+DA6-38 | Create rural/urban balanced evaluation set                 
+DA6-39 | Create low-resource language evaluation set                
+
+================================================================================
+SECTION 9 — PHASE 7: TELECOM INTEGRATION FOUNDATION
+================================================================================
+Objective: All telecom architecture decisions finalized — the critical infra layer.
+
+ID     | Task                                                        | Status
+-------|-------------------------------------------------------------|--------
+TI7-01 | Define telecom integration architecture                    
+TI7-02 | Define network-layer risk scoring input fields             
+TI7-03 | Define telco data ingestion API                            
+TI7-04 | Define SIP handoff workflow                                
+TI7-05 | Define AI takeover workflow                                
+TI7-06 | Define pre-ring warning workflow                           
+TI7-07 | Define risk threshold routing logic                        
+TI7-08 | Define FRI score generation logic                          
+TI7-09 | Define telco feedback loop from outcomes                   
+TI7-10 | Define STIR/SHAKEN validation flow                         
+TI7-11 | Define SIM swap anomaly detection workflow                 
+TI7-12 | Define bulk dialling anomaly detection workflow            
+TI7-13 | Define CLI spoofing detection workflow                     
+TI7-14 | Define high-velocity number detection workflow             
+TI7-15 | Define 2-hour sharing rule integration workflow            
+TI7-16 | Define DLT node integration requirements                   
+TI7-17 | Define USSD routing requirements                           
+TI7-18 | Define IVR routing requirements                            
+TI7-19 | Define cell broadcast trigger logic                        
+TI7-20 | Define surge-zone logic for geographic alerts              
+TI7-21 | Define telecom operator onboarding checklist               
+TI7-22 | Define API auth and key rotation for telecom partners      
+TI7-23 | Define telecom sandbox testing plan                        
+TI7-24 | Define telecom failover plan                               
+TI7-25 | Define telecom SLA monitoring                              
+TI7-26 | Define telecom event replay and recovery mechanism         
+
+================================================================================
+SECTION 10 — PHASE 8: MODULE 1 — REAL-TIME TELECOM DETECTION GRID
+================================================================================
+Objective: Live scoring of every incoming call before it rings through.
+
+FEATURE GROUP 1: Core Scoring Pipeline
+---------------------------------------
+ID     | Feature                                                     | Status
+-------|-------------------------------------------------------------|--------
+M1-01  | Call metadata ingestion service                            
+M1-02  | Risk feature extraction service                            
+M1-03  | Fraud Risk Index (FRI) model                               
+M1-04  | Number reputation service                                  
+M1-05  | Fraud cluster graph lookup for live calls                  
+
+FEATURE GROUP 2: Feature Engineering
+--------------------------------------
+M1-06  | SIM age scoring feature                                    
+M1-07  | Call velocity scoring feature                              
+M1-08  | Geographic anomaly scoring feature                         
+M1-09  | Spoofing likelihood scoring feature                        
+M1-10  | Prior complaint linkage feature                            
+M1-11  | Behavior anomaly scoring feature                           
+
+FEATURE GROUP 3: Routing & Delivery
+-------------------------------------
+M1-12  | FRI cache in Redis                                         
+M1-13  | Routing rule engine                                        
+M1-14  | Telco scoring API                                          
+M1-15  | Operator dashboard for flagged calls                       
+
+FEATURE GROUP 4: Predictive / Surge Intelligence
+-------------------------------------------------
+M1-16  | Scam weather forecast model                                
+M1-17  | Festival-date surge feature engineering                    
+M1-18  | ITR window surge feature engineering                       
+M1-19  | Salary-credit surge feature engineering                    
+M1-20  | Tower mesh alert trigger engine                            
+M1-21  | District-level surge alert generation rules                
+
+FEATURE GROUP 5: Operations & Quality
+--------------------------------------
+M1-22  | Logging and explainability for FRI scores                  
+M1-23  | Feedback loop from confirmed scam outcomes                 
+M1-24  | Evaluation benchmark for FRI model                         
+M1-25  | Target precision / recall / latency thresholds             
+M1-26  | Load test scoring system                                   
+M1-27  | Drift monitoring for fraud patterns                        
+
+Performance Requirements:
+  - FRI scoring latency: < 300ms per call
+  - Precision target: > 92%
+  - Recall target: > 88%
+  - Daily call throughput: capable of handling national-scale volume
+
+================================================================================
+SECTION 11 — PHASE 9: MODULE 2 — AGENTIC AI HONEYPOT ENGINE
+================================================================================
+Objective: AI takes over suspected scam calls, wastes scammer time, and extracts intel.
+
+FEATURE GROUP 1: Handoff & Orchestration
+------------------------------------------
+M2-01  | Handoff UX and backend flow                                
+M2-02  | One-tap "Let AI Handle" flow                               
+M2-03  | SIP transfer orchestration                                 
+
+FEATURE GROUP 2: Persona System
+---------------------------------
+M2-04  | Persona management system                                  
+M2-05  | Elderly uncle persona                                      
+M2-06  | Confused rural farmer persona                              
+M2-07  | Busy executive persona                                     
+M2-08  | College student persona                                    
+M2-09  | Housewife persona                                          
+M2-10  | Persona safety constraints                                 
+M2-11  | Persona memory model                                       
+
+FEATURE GROUP 3: ASR / TTS / Dialogue
+---------------------------------------
+M2-12  | Live ASR pipeline                                          
+M2-13  | Multilingual TTS pipeline                                  
+M2-14  | Dialogue orchestration engine                              
+M2-15  | Conversation memory store                                  
+M2-16  | Interruption handling                                      
+M2-17  | Persona switching logic                                    
+M2-18  | Strategy switching logic mid-call                          
+
+FEATURE GROUP 4: Intelligence Extraction
+-----------------------------------------
+M2-19  | Script-guided extraction prompts                           
+M2-20  | Entity extraction from ongoing calls                       
+M2-21  | Scammer fatigue measurement                                
+M2-22  | Confession trap flow (with legal review)                   
+M2-23  | Adversarial anti-detection behaviors                       
+M2-24  | Background audio feature extraction                        
+M2-25  | Pod detector based on noise patterns                       
+M2-26  | Voice cluster linkage                                      
+
+FEATURE GROUP 5: Extended Channels & Analysis
+----------------------------------------------
+M2-27  | WhatsApp honeypot persona flow                             
+M2-28  | Multi-day scam conversation memory                         
+M2-29  | Deepfake voice classifier integration                      
+M2-30  | Psychological exploitation index scoring                   
+M2-31  | Pre-call IVR whisper warnings                              
+
+FEATURE GROUP 6: Safety & Quality
+-----------------------------------
+M2-32  | Time-waste optimization policy                             
+M2-33  | Safe call termination rules                                
+M2-34  | Human analyst escalation triggers                          
+M2-35  | Transcript storage and indexing                            
+M2-36  | Quality review tool for honeypot sessions                  
+M2-37  | Evaluate realism of conversations                          
+M2-38  | Evaluate language coverage and accent handling             
+M2-39  | Evaluate latency and interruption robustness               
+
+Performance Requirements:
+  - AI response latency: < 1.5 seconds turn-around
+  - Minimum call engagement before scammer hangs up: target > 8 minutes avg.
+  - Language coverage for MVP: Hindi + English
+  - Language coverage for v1 national: 8 languages minimum
+
+================================================================================
+SECTION 12 — PHASE 10: MODULE 3 — FRAUD INTELLIGENCE GRAPH ENGINE
+================================================================================
+Objective: Build the living network map of every scammer, number, account, and script.
+
+FEATURE GROUP 1: Graph Infrastructure
+---------------------------------------
+M3-01  | Set up Neo4j cluster                                       
+M3-02  | Design fraud entity graph                                  
+
+FEATURE GROUP 2: Node Creation
+--------------------------------
+M3-03  | Create nodes: numbers, calls, UPI IDs                      
+M3-04  | Create nodes: bank accounts                                
+M3-05  | Create nodes: Telegram/WhatsApp handles                    
+M3-06  | Create nodes: scripts and devices                          
+M3-07  | Create nodes: job ads and recruiters                       
+M3-08  | Create nodes: districts and states                         
+M3-09  | Create graph relationships among all entities              
+
+FEATURE GROUP 3: Intelligence Pipelines
+-----------------------------------------
+M3-10  | Live entity extraction pipeline                            
+M3-11  | Multilingual NER pipeline                                  
+M3-12  | Voice fingerprint clustering linkage                       
+M3-13  | Repeated-voice cross-number detection                      
+M3-14  | Mule account correlation features                          
+M3-15  | Script evolution tracker                                   
+M3-16  | Script mutation detection                                  
+M3-17  | Retraining trigger when scripts drift                      
+M3-18  | Seasonal scam calendar engine                              
+M3-19  | Repeat offender confidence score                           
+M3-20  | Cross-border linkage fields                                
+
+FEATURE GROUP 4: APIs & Exports
+---------------------------------
+M3-21  | Graph query APIs                                           
+M3-22  | One-click FIR packet generator                             
+M3-23  | Graph visualization API for dashboard                      
+M3-24  | Police export bundle                                       
+M3-25  | Homomorphic encryption plan for graph queries              
+M3-26  | Access policies for graph search                           
+
+FEATURE GROUP 5: Health & Quality
+-----------------------------------
+M3-27  | Graph health monitoring                                    
+M3-28  | Graph deduplication jobs                                   
+M3-29  | Entity resolution pipeline                                 
+M3-30  | Fraud case prioritization score                            
+
+================================================================================
+SECTION 13 — PHASE 11: MODULE 4 — UPI & WHATSAPP SCAM SHIELD
+================================================================================
+Objective: Intercept payment fraud before money leaves a victim's account.
+
+FEATURE GROUP 1: UPI Risk & Detection
+---------------------------------------
+M4-01  | Define NPCI integration architecture                       
+M4-02  | Define collect request risk signals                        
+M4-03  | Build flagged UPI ID lookup service                        
+M4-04  | Build mule UPI pre-transaction risk scoring                
+M4-05  | Build QR code analysis service                             
+M4-06  | Build fake QR detection model                              
+M4-07  | Build fake payment screenshot detector                     
+M4-08  | Build impersonation account detector for business          
+       |   messaging                                                |
+M4-09  | Build suspicious link reputation engine                    
+M4-10  | Build "too-good-to-be-true" message classifier             
+M4-11  | Build fake payment app detection rules                     
+M4-12  | Build APK threat signature workflow                        
+
+FEATURE GROUP 2: Alerts & Actions
+-----------------------------------
+M4-13  | Build alert flow to citizens for suspicious payment reqs   
+M4-14  | Build bank alert generation flow                           
+M4-15  | Build mule freeze recommendation engine                    
+M4-16  | Build fintech/bank evidence push workflow                  
+
+FEATURE GROUP 3: WhatsApp Intelligence
+----------------------------------------
+M4-17  | Build WhatsApp scam message parser                         
+M4-18  | Build message classification pipeline                      
+M4-19  | Build image-based scam artifact analysis                   
+M4-20  | Build message-to-call correlation workflow                 
+M4-21  | Build evaluation pipeline for payment fraud detection      
+
+================================================================================
+SECTION 14 — PHASE 12: MODULE 5 — BHARAT FEATURE PHONE LAYER
+================================================================================
+Objective: Full scam protection for the 300M+ Indians without smartphones.
+
+FEATURE GROUP 1: USSD
+-----------------------
+M5-01  | Finalize *1930# USSD user journey                         
+M5-02  | Design USSD menu flows in key languages                    
+M5-03  | Build USSD backend service                                 
+M5-04  | Build low-bandwidth report submission pipeline             
+
+FEATURE GROUP 2: SMS & IVR
+----------------------------
+M5-05  | Build SMS reporting flow                                   
+M5-06  | Build IVR reporting flow                                   
+M5-07  | Build IVR in selected pilot languages                      
+M5-08  | Build voice menu prompts                                   
+M5-09  | Build low-literacy UX for IVR                              
+M5-10  | Build SMS alert scheduler                                  
+M5-11  | Build regional language message templates                  
+
+FEATURE GROUP 3: Broadcast & Rural Distribution
+-------------------------------------------------
+M5-12  | Build FM/radio alert content workflow                      
+M5-13  | Build CSC operator workflow                                
+M5-14  | Build Gram Panchayat alert workflow                        
+M5-15  | Build BharatNet priority routing coordination plan         
+M5-16  | Build Sarpanch update distribution system                  
+M5-17  | Build cell broadcast integration for feature phone users   
+
+FEATURE GROUP 4: Testing & Validation
+---------------------------------------
+M5-18  | Build no-internet reporting analytics                      
+M5-19  | Test on 2G / low-signal conditions                         
+M5-20  | Test on major feature phone models                         
+M5-21  | Test for non-literate user journeys                        
+
+================================================================================
+SECTION 15 — PHASE 13: MODULE 6 — NATIONAL COMMAND INTELLIGENCE DASHBOARD
+================================================================================
+Objective: Real-time war room for every government agency and police unit.
+
+FEATURE GROUP 1: Core UI & Access
+-----------------------------------
+M6-01  | Design role-based dashboard information architecture       
+M6-02  | Build login and MFA for agencies                           
+
+FEATURE GROUP 2: Maps & Intelligence Panels
+---------------------------------------------
+M6-03  | Build district heatmap view                                
+M6-04  | Build state heatmap view                                   
+M6-05  | Build fraud cluster graph view                             
+M6-06  | Build repeat offender panel                                
+M6-07  | Build live rupees-saved counter                            
+M6-08  | Build scam weather forecast panel                          
+M6-09  | Build government ROI counter                               
+M6-10  | Build predictive surge alert widget                        
+
+FEATURE GROUP 3: Law Enforcement Workflows
+--------------------------------------------
+M6-11  | Build FIR generator UI                                     
+M6-12  | Build case queue for police                                
+M6-13  | Build drill / training sandbox UI                          
+
+FEATURE GROUP 4: Agency Access Modules
+----------------------------------------
+M6-14  | Build access module for MHA                                
+M6-15  | Build access module for CERT-In                            
+M6-16  | Build access module for RBI                                
+M6-17  | Build access module for NPCI                               
+M6-18  | Build access module for banks                              
+M6-19  | Build access module for state cyber police                 
+M6-20  | Build access module for SEBI                               
+M6-21  | Build access module for DoT                                
+
+FEATURE GROUP 5: Reports & Audit
+----------------------------------
+M6-22  | Build scheduled daily war-room summary export              
+M6-23  | Build downloadable intelligence reports                    
+M6-24  | Build alert acknowledgment workflow                        
+M6-25  | Build case escalation workflow                             
+M6-26  | Build map performance optimization                         
+M6-27  | Build audit trail inside dashboard                         
+M6-28  | Conduct usability testing with intended stakeholders       
+
+================================================================================
+SECTION 16 — PHASE 14: MODULE 7 — CITIZEN EARLY WARNING & PUBLIC ALERT ENGINE
+================================================================================
+Objective: Real-time scam warnings to every citizen before they lose money.
+
+FEATURE GROUP 1: App Architecture & Alerts
+--------------------------------------------
+M7-01  | Design citizen mobile app information architecture         
+M7-02  | Design public alert feed                                   
+M7-03  | Build push notification service                            
+M7-04  | Build region-specific alert rules                          
+M7-05  | Build hyper-local scam alert engine                        
+M7-06  | Build mobile call shield UX                                
+M7-07  | Build one-tap AI handoff inside app                        
+
+FEATURE GROUP 2: Identity & Trust
+-----------------------------------
+M7-08  | Build DigiLocker document verification workflow            
+M7-09  | Build UMANG integration plan                               
+M7-10  | Build senior mode UI                                       
+M7-11  | Build caregiver notification flow                          
+M7-12  | Build Aadhaar-linked opt-in alert flow                     
+M7-13  | Build family trust circle creation flow                    
+
+FEATURE GROUP 3: Engagement & Behavioral
+------------------------------------------
+M7-14  | Build habit breaker challenge engine                       
+M7-15  | Build reward logic for gamified nudges                     
+M7-16  | Build Sentinel Score UX                                    
+M7-17  | Build privacy-preserving local score computation           
+M7-18  | Build neighborhood scam density display                    
+
+FEATURE GROUP 4: Broadcast & Release
+--------------------------------------
+M7-19  | Build TV / DD ticker content export workflow               
+M7-20  | Build app onboarding for citizens                          
+M7-21  | Build multilingual notification templates                  
+M7-22  | Build app analytics                                        
+M7-23  | Build app store compliance checklist                       
+M7-24  | Build Android and iOS release pipelines                    
+
+================================================================================
+SECTION 17 — PHASE 15: MODULE 8 — POPULATION SEGMENT PROTECTION
+================================================================================
+Objective: Tailored protection for India's most vulnerable citizen groups.
+
+ID     | Segment Guard / Feature                                    | Status
+-------|-------------------------------------------------------------|--------
+M8-01  | Jan Dhan Guard rules                                       
+M8-02  | Kisan Guard rules                                          
+M8-03  | Job scam interceptor rules                                 
+M8-04  | Education scam guard rules                                 
+M8-05  | SME GST Buster workflows                                   
+M8-06  | Women safety detection layer                               
+M8-07  | Senior-specific risk patterns                              
+M8-08  | College cyber patrol program workflow                      
+M8-09  | NRI / diaspora alert flow                                  
+M8-10  | Segment-based recommendation engine                        
+M8-11  | Segment-specific alert templates                           
+M8-12  | Segment-specific dashboards                                
+M8-13  | Segment-specific metrics                                   
+M8-14  | Validate segment classification logic                      
+M8-15  | Ensure segment handling does not violate privacy           
+
+================================================================================
+SECTION 18 — PHASE 16: MODULE 9 — PRIVACY-FIRST AI LAYER (DPDP COMPLIANT)
+================================================================================
+Objective: Every privacy control built into code — not an afterthought.
+
+FEATURE GROUP 1: Architecture & Design
+----------------------------------------
+M9-01  | Design privacy architecture                                
+M9-02  | Design federated learning strategy                         
+M9-03  | Design anonymization pipeline                              
+M9-04  | Design differential privacy configuration                  
+M9-05  | Design data retention policies in code                     
+M9-06  | Design consent ledger                                      
+M9-07  | Design encryption-at-rest and in-transit                   
+M9-08  | Design key management system                               
+M9-09  | Design immutable audit logs                                
+M9-10  | Design citizen data deletion service                       
+M9-11  | Design India-region storage enforcement                    
+M9-12  | Design field-level encryption for sensitive fields         
+
+FEATURE GROUP 2: Built Services
+---------------------------------
+M9-13  | Build local scoring for Sentinel Score                     
+M9-14  | Build privacy-preserving analytics aggregation             
+M9-15  | Build access logging and anomaly detection                 
+M9-16  | Build retention-based automatic deletion jobs              
+M9-17  | Build privacy admin dashboard                              
+
+FEATURE GROUP 3: Audit & Review
+---------------------------------
+M9-18  | Conduct privacy impact assessment                          
+M9-19  | Conduct legal review of deployed privacy controls          
+
+================================================================================
+SECTION 19 — PHASE 17: MODULE 10 — OPERATIONS COMMAND CENTRE (OCC) & DR
+================================================================================
+Objective: 24/7 human-AI operations backbone for the entire platform.
+
+FEATURE GROUP 1: OCC Operations
+---------------------------------
+M10-01 | Define OCC operating model                                 
+M10-02 | Define L1/L2/L3 support structure                          
+M10-03 | Define analyst runbooks                                    
+M10-04 | Define escalation matrices                                 
+M10-05 | Define 24/7 shift plan                                     
+M10-06 | Define war room trigger conditions                         
+
+FEATURE GROUP 2: Monitoring & Alerting
+----------------------------------------
+M10-07 | Build monitoring dashboards in Grafana                     
+M10-08 | Build PagerDuty alerting rules                             
+M10-09 | Build SLA breach alerts                                    
+M10-10 | Build honeypot quality threshold alerts                    
+M10-11 | Build retraining escalation workflows                      
+
+FEATURE GROUP 3: War Mode & Emergency
+---------------------------------------
+M10-12 | Build state OCC access paths                               
+M10-13 | Build war room automation                                  
+M10-14 | Build SMS capacity burst workflow                          
+M10-15 | Build backup provider failover                             
+M10-16 | Build emergency DD/AIR broadcast trigger workflow          
+M10-17 | Build cell broadcast war mode workflow                     
+M10-18 | Build panchayat PA activation workflow                     
+M10-19 | Build bulk FIR submission workflow                         
+
+FEATURE GROUP 4: Disaster Recovery
+------------------------------------
+M10-20 | Build multi-region disaster recovery architecture          
+M10-21 | Build backup and restore automation                        
+M10-22 | Build RPO/RTO validation drills                            
+M10-23 | Build chaos engineering scenarios                          
+M10-24 | Run outage simulation drills                               
+M10-25 | Run scam surge drills                                      
+M10-26 | Build incident postmortem template                         
+
+DR Targets:
+  - RPO (Recovery Point Objective): < 15 minutes
+  - RTO (Recovery Time Objective): < 30 minutes
+  - Uptime SLA: 99.95%
+
+================================================================================
+SECTION 20 — PHASE 18: MODULE 11 — SCAMMER REVERSE PROFILING ENGINE
+================================================================================
+Objective: Build psychological + operational profiles of scammers for prosecution.
+Access: Law-enforcement only — heavily access-controlled.
+
+FEATURE GROUP 1: Profiling Data Model
+---------------------------------------
+M11-01 | Define reverse profiling data model                        
+M11-02 | Define psychological indicators                            
+
+FEATURE GROUP 2: Voice & Behavioral Analysis
+---------------------------------------------
+M11-03 | Build voice stress analysis pipeline                       
+M11-04 | Build shift-change detection logic                         
+M11-05 | Build scammer career graph logic                           
+M11-06 | Build aggression index                                     
+M11-07 | Build urgency dependency score                             
+M11-08 | Build persuasion technique repertoire scoring              
+M11-09 | Build background fingerprinting for call centres           
+M11-10 | Build pod location inference heuristics                    
+
+FEATURE GROUP 3: Classification & Attribution
+----------------------------------------------
+M11-11 | Build skill-level classification model                     
+M11-12 | Build script source attribution model                      
+M11-13 | Build anti-AI-test detection logic                         
+M11-14 | Build prosecution readiness score                          
+M11-15 | Build economic damage report per operator                  
+
+FEATURE GROUP 4: Law Enforcement Interface
+--------------------------------------------
+M11-16 | Build profile review UI for analysts                       
+M11-17 | Build law-enforcement-only access controls                 
+M11-18 | Build Interpol export format                               
+M11-19 | Build safeguards against mislabeling innocent callers      
+M11-20 | Build profile confidence score and review loop             
+
+================================================================================
+SECTION 21 — PHASE 19: MODULE 12 — DEEPFAKE VIDEO CALL DEFENSE
+================================================================================
+Objective: Detect AI-generated video impersonation in real time during video calls.
+
+FEATURE GROUP 1: User Flow & Integration
+-----------------------------------------
+M12-01 | Define supported video platforms for MVP                   
+M12-02 | Define "Verify This Caller" user flow                      
+M12-03 | Build video ingestion SDK / plugin                         
+M12-04 | Build 3-second analysis workflow                           
+
+FEATURE GROUP 2: Detection Models
+-----------------------------------
+M12-05 | Build liveness detection model                             
+M12-06 | Build blink-frequency analysis                             
+M12-07 | Build micro-expression anomaly detection                   
+M12-08 | Build pupil response heuristics                            
+M12-09 | Build GAN artifact detector                                
+M12-10 | Build temporal consistency model                           
+M12-11 | Build audio-visual sync model                              
+M12-12 | Build background authenticity detector                     
+M12-13 | Build uniform and badge verification model                 
+
+FEATURE GROUP 3: Verdict & Evidence
+-------------------------------------
+M12-14 | Build classification verdict: REAL / SUSPECT / DEEPFAKE    
+M12-15 | Build family alert flow for elder users                    
+M12-16 | Build evidence frame preservation workflow                 
+M12-17 | Build deepfake incident dashboard                          
+
+FEATURE GROUP 4: Quality & Safety
+-----------------------------------
+M12-18 | Build retraining pipeline for confirmed incidents          
+M12-19 | Build device-performance fallback logic                    
+M12-20 | Build privacy controls for video processing                
+M12-21 | Build explainability layer for verdicts                    
+M12-22 | Evaluate false positives carefully                         
+M12-23 | Validate on poor bandwidth and low-light conditions        
+
+Performance Requirements:
+  - Analysis time: < 3 seconds
+  - Accuracy target: > 94% on benchmark set
+  - False positive rate: < 2%
+
+================================================================================
+SECTION 22 — PHASE 20: MODULE 13 — AI SCAM INOCULATION & SIMULATION ENGINE
+================================================================================
+Objective: Train every citizen to recognize and resist scams before they happen.
+
+FEATURE GROUP 1: Content & Scheduling
+---------------------------------------
+M13-01 | Define inoculation content strategy                        
+M13-02 | Define drill categories                                    
+M13-03 | Build monthly drill scheduler                              
+
+FEATURE GROUP 2: Drill Channels
+---------------------------------
+M13-04 | Build SMS-based drill flow                                 
+M13-05 | Build app-based drill flow                                 
+M13-06 | Build IVR drill flow                                       
+
+FEATURE GROUP 3: Scoring & Personalization
+--------------------------------------------
+M13-07 | Build scoring engine for drills                            
+M13-08 | Build personalized feedback engine                         
+M13-09 | Build vulnerability profiling logic                        
+M13-10 | Build contextual-bandit personalization                    
+M13-11 | Build leaderboard / gamification logic                     
+M13-12 | Build certification logic                                  
+M13-13 | Build post-incident drill workflow                         
+
+FEATURE GROUP 4: Content Variants
+-----------------------------------
+M13-14 | Build regional-language drill content                      
+M13-15 | Build school curriculum version                            
+M13-16 | Build DIKSHA-compatible content package                    
+M13-17 | Build corporate B2B training version                       
+M13-18 | Build HR dashboard for enterprises                         
+M13-19 | Build bank onboarding drill version                        
+
+FEATURE GROUP 5: Impact Measurement
+-------------------------------------
+M13-20 | Build Bharat Cyber Immunity Index calculation              
+M13-21 | Build inoculation analytics dashboard                      
+M13-22 | Validate drill realism without causing panic               
+
+================================================================================
+SECTION 23 — PHASE 21: MODULE 14 — MULE RECRUITMENT INTERCEPTOR
+================================================================================
+Objective: Stop scam networks from recruiting victims as unwitting money mules.
+
+FEATURE GROUP 1: Threat Intelligence & Crawling
+-------------------------------------------------
+M14-01 | Define mule recruitment threat taxonomy                    
+M14-02 | Define supported job portals and channels                  
+M14-03 | Build public job ad crawler (where legally permitted)      
+M14-04 | Build job ad ingestion pipeline                            
+
+FEATURE GROUP 2: Classification & Detection
+---------------------------------------------
+M14-05 | Build mule ad classifier                                   
+M14-06 | Build multilingual ad classifier support                   
+M14-07 | Build recruiter identity extraction                        
+M14-08 | Build fake employer registry                               
+M14-09 | Build recruiter-to-network linkage graph                   
+
+FEATURE GROUP 3: Citizen Protection
+-------------------------------------
+M14-10 | Build click-time citizen warning flow                      
+M14-11 | Build browser extension or portal partnership flow         
+M14-12 | Build bank pre-activation signal workflow                  
+
+FEATURE GROUP 4: Network Disruption
+-------------------------------------
+M14-13 | Build mule network mapping                                 
+M14-14 | Build WhatsApp group reporting workflow                    
+M14-15 | Build Telegram infiltration playbook (within legal limits) 
+M14-16 | Build honeypot recruiter persona flow                      
+M14-17 | Build recruiter evidence packet generation                 
+M14-18 | Build recruiter prioritization score                       
+
+FEATURE GROUP 5: Legal & Recovery Integration
+----------------------------------------------
+M14-19 | Build legal differentiation: mule victim vs criminal mule  
+M14-20 | Build integration with recovery module (M15)               
+M14-21 | Build performance dashboard for recruiter detection        
+
+================================================================================
+SECTION 24 — PHASE 22: MODULE 15 — POST-SCAM RECOVERY COMPANION
+================================================================================
+Objective: Help every scam victim get their money back and recover their dignity.
+
+FEATURE GROUP 1: Intake & Documentation
+-----------------------------------------
+M15-01 | Define victim recovery journey map                         
+M15-02 | Build guided intake form for victims                       
+M15-03 | Build case document vault                                  
+
+FEATURE GROUP 2: Dispute & Complaint Automation
+-------------------------------------------------
+M15-04 | Build automated bank dispute letter generator              
+M15-05 | Build multilingual letter templates                        
+M15-06 | Build ombudsman complaint generator                        
+M15-07 | Build consumer court guidance flow                         
+
+FEATURE GROUP 3: Case Tracking
+--------------------------------
+M15-08 | Build case status tracker                                  
+M15-09 | Build integration fields for police case tracking          
+M15-10 | Build bank case tracking                                   
+M15-11 | Build ombudsman case tracking                              
+M15-12 | Build court case tracking                                  
+
+FEATURE GROUP 4: Legal & Mental Health Support
+------------------------------------------------
+M15-13 | Build NALSA eligibility checker                            
+M15-14 | Build legal-aid referral workflow                          
+M15-15 | Build mental-health referral workflow                      
+M15-16 | Build mule-victim legal shield workflow                    
+
+FEATURE GROUP 5: Notifications & Community
+--------------------------------------------
+M15-17 | Build recovery progress notifications                      
+M15-18 | Build recovered-money counter                              
+M15-19 | Build cyber-insurance claim automation workflow            
+M15-20 | Build support-group / community flow with moderation       
+M15-21 | Build privacy and trauma-sensitive UX                      
+M15-22 | Build victim support analytics                             
+
+================================================================================
+SECTION 25 — PHASE 23: AI/ML MODELING STACK
+================================================================================
+Objective: Every model selected, trained, evaluated, and served reliably.
+
+FEATURE GROUP 1: Model Selection
+----------------------------------
+ML23-01 | Select base LLMs for conversation engine                  
+ML23-02 | Select ASR models for Indian languages                    
+ML23-03 | Select TTS models for Indian languages                    
+ML23-04 | Select NER model architecture                             
+ML23-05 | Select graph ML architecture                              
+ML23-06 | Select anomaly detection architecture                     
+ML23-07 | Select deepfake audio architecture                        
+ML23-08 | Select deepfake video architecture                        
+ML23-09 | Select voice stress architecture                          
+ML23-10 | Select job ad classifier architecture                     
+ML23-11 | Select personalization model for inoculation              
+
+FEATURE GROUP 2: Training & Evaluation Infrastructure
+-------------------------------------------------------
+ML23-12 | Define training pipelines                                 
+ML23-13 | Define batch vs online learning approach                  
+ML23-14 | Define retraining schedule per model                      
+ML23-15 | Define model registry                                     
+ML23-16 | Define model versioning                                   
+ML23-17 | Define feature store                                      
+ML23-18 | Define offline evaluation metrics                         
+ML23-19 | Define online evaluation metrics                          
+ML23-20 | Define fairness checks across languages                   
+ML23-21 | Define robustness checks across accents                   
+
+FEATURE GROUP 3: Safety & Governance
+--------------------------------------
+ML23-22 | Define adversarial testing framework                      
+ML23-23 | Define hallucination control for LLM agent                
+ML23-24 | Define safe response rules for honeypot agent             
+ML23-25 | Build human review pipeline for bad conversations         
+ML23-26 | Build red-team evaluation for model abuse                 
+
+FEATURE GROUP 4: Serving & Operations
+---------------------------------------
+ML23-27 | Build inference serving layer                             
+ML23-28 | Build GPU scheduling strategy                             
+ML23-29 | Build fallback rules when models fail                     
+ML23-30 | Build cost monitoring for inference                       
+ML23-31 | Build drift detection for all major models                
+
+================================================================================
+SECTION 26 — PHASE 24: MULTILINGUAL & LOCALIZATION LAYER
+================================================================================
+Objective: 22 Indian languages — zero exceptions, zero degraded experiences.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+LOC24-01| Freeze language roadmap                                   
+LOC24-02| Build translation memory                                  
+LOC24-03| Build terminology glossary for fraud terms                
+LOC24-04| Build state-wise dialect priority list                    
+LOC24-05| Build localized prompts for agent personas                
+LOC24-06| Build localized IVR voice packs                           
+LOC24-07| Build localized SMS templates                             
+LOC24-08| Build localized alert templates                           
+LOC24-09| Build localized drill content                             
+LOC24-10| Build localized legal complaint templates                 
+LOC24-11| Build language selection logic                            
+LOC24-12| Build fallback language logic                             
+LOC24-13| Conduct translation QA                                    
+LOC24-14| Conduct accent intelligibility tests                      
+LOC24-15| Conduct dialect comprehensibility tests                   
+LOC24-16| Build script normalization for multilingual NLP           
+
+Language Priority Order:
+  MVP:       Hindi, English
+  Phase 1:   Tamil, Telugu, Bengali, Marathi, Kannada, Malayalam
+  Phase 2:   Gujarati, Punjabi, Odia, Urdu, Assamese
+  Phase 3:   Remaining 9 scheduled languages
+
+================================================================================
+SECTION 27 — PHASE 25: FRONTEND BUILD
+================================================================================
+Objective: Production-grade, accessible, multilingual web frontend.
+
+FEATURE GROUP 1: Design Foundation
+------------------------------------
+FE25-01 | Design design system                                      
+FE25-02 | Design typography system                                  
+FE25-03 | Design color system                                       
+FE25-04 | Design accessibility rules (WCAG 2.1 AA minimum)          
+FE25-05 | Build reusable component library                          
+
+FEATURE GROUP 2: Auth & Onboarding Screens
+--------------------------------------------
+FE25-06 | Build auth screens                                        
+FE25-07 | Build citizen onboarding screens                          
+
+FEATURE GROUP 3: Citizen-Facing Screens
+-----------------------------------------
+FE25-08 | Build call shield screens                                 
+FE25-09 | Build alert feed screens                                  
+FE25-10 | Build trust circle screens                                
+FE25-11 | Build Sentinel Score screens                              
+FE25-12 | Build recovery screens                                    
+
+FEATURE GROUP 4: Agency-Facing Screens
+----------------------------------------
+FE25-13 | Build admin screens                                       
+FE25-14 | Build agency dashboards                                   
+FE25-15 | Build district heatmap pages                              
+FE25-16 | Build case detail pages                                   
+FE25-17 | Build graph visualization pages                           
+
+FEATURE GROUP 5: Settings & System
+------------------------------------
+FE25-18 | Build settings and privacy pages                          
+FE25-19 | Build multilingual switcher                               
+FE25-20 | Build senior mode                                         
+FE25-21 | Build low-bandwidth UI states                             
+FE25-22 | Build error states                                        
+FE25-23 | Build notification center                                 
+FE25-24 | Build responsive web layout                               
+FE25-25 | Build offline PWA behavior                                
+
+FEATURE GROUP 6: Quality
+--------------------------
+FE25-26 | Run usability testing                                     
+FE25-27 | Run accessibility audit                                   
+
+================================================================================
+SECTION 28 — PHASE 26: MOBILE APP BUILD
+================================================================================
+Objective: Native-quality Android + iOS app with full protection feature set.
+
+ID      | Feature                                                    | Status
+--------|-------------------------------------------------------------|--------
+MOB26-01| Set up React Native app                                   
+MOB26-02| Define native module requirements                         
+MOB26-03| Build app navigation                                      
+MOB26-04| Build secure storage for tokens                           
+MOB26-05| Build push notification integration                       
+MOB26-06| Build call-related permissions flow                       
+MOB26-07| Build "Let AI Handle" flow                                
+MOB26-08| Build alert receipt and acknowledgment                    
+MOB26-09| Build Sentinel Score local engine                         
+MOB26-10| Build trust circle onboarding                             
+MOB26-11| Build deepfake verification entry point                   
+MOB26-12| Build recovery companion screens                          
+MOB26-13| Build drill participation screens                         
+MOB26-14| Build multilingual UI                                     
+MOB26-15| Build elder-friendly mode                                 
+MOB26-16| Build analytics instrumentation                           
+MOB26-17| Build crash reporting                                     
+MOB26-18| Build app hardening                                       
+MOB26-19| Build Play Store assets                                   
+MOB26-20| Build App Store assets                                    
+MOB26-21| Complete release review checklists                        
+
+================================================================================
+SECTION 29 — PHASE 27: BACKEND PLATFORM BUILD
+================================================================================
+Objective: Resilient, scalable, auditable microservices backend.
+
+FEATURE GROUP 1: Foundation
+-----------------------------
+BE27-01 | Set up FastAPI services                                   
+BE27-02 | Set up Node.js orchestration services                     
+BE27-03 | Build API gateway                                         
+BE27-04 | Build auth service                                        
+BE27-05 | Build user profile service                                
+BE27-06 | Build consent service                                     
+
+FEATURE GROUP 2: Core Domain Services
+---------------------------------------
+BE27-07 | Build notification service                                
+BE27-08 | Build case service                                        
+BE27-09 | Build fraud scoring service                               
+BE27-10 | Build graph service                                       
+BE27-11 | Build recovery service                                    
+BE27-12 | Build drill service                                       
+BE27-13 | Build admin service                                       
+BE27-14 | Build analytics service                                   
+BE27-15 | Build config service                                      
+BE27-16 | Build partner integration service                         
+BE27-17 | Build audit log service                                   
+BE27-18 | Build file / evidence service                             
+BE27-19 | Build report generation service                           
+BE27-20 | Build WebSocket / live stream service                     
+
+FEATURE GROUP 3: API Quality
+------------------------------
+BE27-21 | Add API versioning                                        
+BE27-22 | Add rate limiting                                         
+BE27-23 | Add idempotency where needed                              
+BE27-24 | Add structured logging                                    
+BE27-25 | Add tracing                                               
+BE27-26 | Add retry / failover patterns                             
+BE27-27 | Add OpenAPI documentation                                 
+BE27-28 | Add health checks                                         
+BE27-29 | Add background job processing                             
+
+================================================================================
+SECTION 30 — PHASE 28: DATABASES, STORAGE & CACHE
+================================================================================
+Objective: Every data store production-ready, encrypted, backed up, and compliant.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+DB28-01 | Set up PostgreSQL                                         
+DB28-02 | Set up schema migrations                                  
+DB28-03 | Set up Neo4j                                              
+DB28-04 | Set up Redis cluster                                      
+DB28-05 | Set up Weaviate / vector DB                               
+DB28-06 | Set up object storage buckets                             
+DB28-07 | Set up encryption keys                                    
+DB28-08 | Define backup schedules                                   
+DB28-09 | Define restore testing schedule                           
+DB28-10 | Implement DB partitioning where needed                    
+DB28-11 | Implement retention and archival policies                 
+DB28-12 | Implement PII field encryption                            
+DB28-13 | Implement hot/cold storage policy                         
+DB28-14 | Implement query performance monitoring                    
+DB28-15 | Implement graph indexing                                  
+DB28-16 | Implement vector similarity indexing                      
+DB28-17 | Implement evidence storage checksum validation            
+DB28-18 | Implement geo/data residency checks                       
+
+================================================================================
+SECTION 31 — PHASE 29: EXTERNAL PARTNERSHIP IMPLEMENTATIONS
+================================================================================
+Objective: Every partner has a signed MoU and a working sandbox integration.
+
+ID      | Partner / Task                                             | Status
+--------|-------------------------------------------------------------|--------
+PRT29-01 | Prepare telecom partner pitch deck                       
+PRT29-02 | Prepare bank partner pitch deck                          
+PRT29-03 | Prepare government partner pitch deck                    
+PRT29-04 | Prepare NPCI partnership proposal                        
+PRT29-05 | Prepare RBI partnership proposal                         
+PRT29-06 | Prepare CERT-In proposal                                 
+PRT29-07 | Prepare DoT proposal                                     
+PRT29-08 | Prepare state cyber police proposal                      
+PRT29-09 | Prepare WhatsApp/Meta proposal                           
+PRT29-10 | Prepare Google India proposal                            
+PRT29-11 | Prepare job-portal proposal                              
+PRT29-12 | Prepare Prasar Bharati proposal                          
+PRT29-13 | Prepare NALSA proposal                                   
+PRT29-14 | Prepare TISS/iCall/Vandrevala proposal                   
+PRT29-15 | Define sandbox integration plan per partner              
+PRT29-16 | Define production integration plan per partner           
+PRT29-17 | Define partner SLAs                                      
+PRT29-18 | Define partner data contract                             
+PRT29-19 | Define partner failure handling                          
+PRT29-20 | Define partner escalation contacts                       
+PRT29-21 | Track status of each MoU and API access                  
+
+================================================================================
+SECTION 32 — PHASE 30: SECURITY ENGINEERING
+================================================================================
+Objective: Threat-modeled, pen-tested, zero-trust security across all layers.
+
+FEATURE GROUP 1: Threat Modeling
+----------------------------------
+SEC30-01 | Define threat model                                      
+SEC30-02 | Define attacker scenarios                                
+SEC30-03 | Define insider risk controls                             
+
+FEATURE GROUP 2: Identity & Access
+------------------------------------
+SEC30-04 | Implement MFA for privileged users                       
+SEC30-05 | Implement RBAC                                           
+SEC30-06 | Implement ABAC for agencies                              
+SEC30-07 | Implement device/session management                      
+SEC30-08 | Implement secrets vault                                  
+SEC30-09 | Implement KMS                                            
+
+FEATURE GROUP 3: Network & API Security
+-----------------------------------------
+SEC30-10 | Implement WAF                                            
+SEC30-11 | Implement DDoS protection                                
+SEC30-12 | Implement API gateway auth hardening                     
+SEC30-13 | Implement token expiration/rotation                      
+SEC30-14 | Implement encryption everywhere                          
+
+FEATURE GROUP 4: Audit & Data Protection
+------------------------------------------
+SEC30-15 | Implement audit log signing                              
+SEC30-16 | Implement admin action approvals                         
+SEC30-17 | Implement anomaly detection on admin usage               
+SEC30-18 | Implement data exfiltration controls                     
+SEC30-19 | Implement S3/object storage hardening                    
+SEC30-20 | Implement malware scanning for uploaded evidence         
+
+FEATURE GROUP 5: AI Security
+------------------------------
+SEC30-21 | Implement secure model serving                           
+SEC30-22 | Implement prompt injection defenses                      
+SEC30-23 | Implement model abuse controls                           
+
+FEATURE GROUP 6: Assurance Programs
+-------------------------------------
+SEC30-24 | Run secure code review                                   
+SEC30-25 | Run infrastructure hardening review                      
+SEC30-26 | Run VAPT                                                 
+SEC30-27 | Run red-team exercises                                   
+SEC30-28 | Launch bug bounty program                                
+
+================================================================================
+SECTION 33 — PHASE 31: TESTING & QA
+================================================================================
+Objective: Every code path, integration, device, and language tested before launch.
+
+FEATURE GROUP 1: Test Strategy & Core Tests
+---------------------------------------------
+QA31-01 | Define complete QA strategy                              
+QA31-02 | Write unit tests                                         
+QA31-03 | Write integration tests                                  
+QA31-04 | Write contract tests                                     
+QA31-05 | Write E2E tests                                          
+
+FEATURE GROUP 2: Performance & Resilience Tests
+-------------------------------------------------
+QA31-06 | Write load tests                                         
+QA31-07 | Write soak tests                                         
+QA31-08 | Write chaos tests                                        
+QA31-09 | Write recovery tests                                     
+QA31-10 | Write failover tests                                     
+
+FEATURE GROUP 3: Accessibility & Compatibility Tests
+------------------------------------------------------
+QA31-11 | Write localization tests                                 
+QA31-12 | Write accessibility tests                                
+QA31-13 | Write device compatibility tests                         
+QA31-14 | Write browser compatibility tests                        
+
+FEATURE GROUP 4: Feature Phone & Telecom Tests
+------------------------------------------------
+QA31-15 | Write feature phone path tests                           
+QA31-16 | Write USSD tests                                         
+QA31-17 | Write IVR tests                                          
+QA31-18 | Write telecom sandbox tests                              
+QA31-19 | Write bank integration tests                             
+
+FEATURE GROUP 5: Intelligence & AI Tests
+-----------------------------------------
+QA31-20 | Write graph engine tests                                 
+QA31-21 | Write alert delivery tests                               
+QA31-22 | Write evidence generation tests                          
+QA31-23 | Write FIR packet formatting tests                        
+QA31-24 | Write AI safety tests                                    
+QA31-25 | Write adversarial scammer tests                          
+QA31-26 | Write deepfake false-positive tests                      
+QA31-27 | Write mule ad classifier evaluation tests                
+QA31-28 | Write privacy regression tests                           
+
+FEATURE GROUP 6: User Acceptance Testing
+-----------------------------------------
+QA31-29 | Run pilot user acceptance testing                        
+QA31-30 | Run agency UAT                                           
+QA31-31 | Run accessibility UAT with seniors / low-literacy users  
+
+================================================================================
+SECTION 34 — PHASE 32: OBSERVABILITY, ANALYTICS & MONITORING
+================================================================================
+Objective: Full visibility into every system, model, and user flow — always.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+OBS32-01 | Set up centralized logging                               
+OBS32-02 | Set up metrics collection                                
+OBS32-03 | Set up distributed traces                                
+OBS32-04 | Set up error tracking                                    
+OBS32-05 | Set up uptime monitoring                                 
+OBS32-06 | Set up service dashboards                                
+OBS32-07 | Set up ML model dashboards                               
+OBS32-08 | Set up data pipeline dashboards                          
+OBS32-09 | Set up partner integration dashboards                    
+OBS32-10 | Set up fraud-volume dashboards                           
+OBS32-11 | Set up district performance dashboards                   
+OBS32-12 | Set up alert delivery dashboards                         
+OBS32-13 | Set up inference latency dashboards                      
+OBS32-14 | Set up cost dashboards                                   
+OBS32-15 | Set up product analytics for citizen app                 
+OBS32-16 | Set up funnel analytics for onboarding                   
+OBS32-17 | Set up retention analytics                               
+OBS32-18 | Set up drill participation analytics                     
+OBS32-19 | Set up recovery success analytics                        
+OBS32-20 | Set up fraud prevention metrics                          
+OBS32-21 | Set up anomaly alerts for monitoring                     
+OBS32-22 | Set up weekly ops review dashboard                       
+
+================================================================================
+SECTION 35 — PHASE 33: MVP DELIVERY
+================================================================================
+Objective: Hackathon/demo-ready build in 30 days for judges, govt, and investors.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+MVP33-01 | Select exact MVP modules                                 
+MVP33-02 | Freeze demo narrative                                    
+MVP33-03 | Build MVP architecture for selected modules only         
+MVP33-04 | Build sample data for demo                               
+MVP33-05 | Build demo-ready dashboard                               
+MVP33-06 | Build demo-ready honeypot call flow                      
+MVP33-07 | Build demo-ready graph engine                            
+MVP33-08 | Build demo-ready FIR packet                              
+MVP33-09 | Build demo-ready deepfake detection prototype            
+MVP33-10 | Build demo-ready inoculation drill prototype             
+MVP33-11 | Build demo-ready mule ad scan prototype                  
+MVP33-12 | Build investor/govt pitch deck                           
+MVP33-13 | Build product walkthrough video                          
+MVP33-14 | Build technical architecture slides                      
+MVP33-15 | Build demo script                                        
+MVP33-16 | Rehearse live demo                                       
+MVP33-17 | Prepare fallback recorded demo                           
+MVP33-18 | Prepare FAQ for judges / partners                        
+
+MVP Build Estimate:
+  - Timeline:  8–10 focused weeks
+  - Team size: 5–8 engineers
+  - Languages: Hindi + English first
+
+================================================================================
+SECTION 36 — PHASE 34: PILOT LAUNCH
+================================================================================
+Objective: Live, measured, real-world pilot in selected geography.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+PIL34-01 | Select pilot geography                                   
+PIL34-02 | Select pilot agencies                                    
+PIL34-03 | Select pilot telecom partner                             
+PIL34-04 | Select pilot bank partners                               
+PIL34-05 | Select pilot language set                                
+PIL34-06 | Select pilot scam categories                             
+PIL34-07 | Configure pilot-only dashboards                          
+PIL34-08 | Configure pilot success metrics                          
+PIL34-09 | Train pilot analysts                                     
+PIL34-10 | Train pilot police users                                 
+PIL34-11 | Train pilot bank users                                   
+PIL34-12 | Train field support staff                                
+PIL34-13 | Launch pilot communications                              
+PIL34-14 | Monitor pilot metrics daily                              
+PIL34-15 | Collect pilot feedback                                   
+PIL34-16 | Fix issues rapidly                                       
+PIL34-17 | Publish pilot outcome report                             
+PIL34-18 | Use pilot evidence to unlock more partnerships           
+
+================================================================================
+SECTION 37 — PHASE 35: NATIONAL SCALE PREPARATION
+================================================================================
+Objective: 773 districts, 4 major telecoms, 22 languages — ready to roll.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+NSC35-01 | Define rollout waves by state                            
+NSC35-02 | Define language expansion waves                          
+NSC35-03 | Define district onboarding playbook                      
+NSC35-04 | Define bank onboarding playbook                          
+NSC35-05 | Define telecom onboarding playbook                       
+NSC35-06 | Define OCC staffing scale-up plan                        
+NSC35-07 | Define infra scale-up plan                               
+NSC35-08 | Define GPU capacity scale-up plan                        
+NSC35-09 | Define state cyber cell onboarding plan                  
+NSC35-10 | Define district certification rollout plan               
+NSC35-11 | Define national awareness campaign plan                  
+NSC35-12 | Define citizen support plan at scale                     
+NSC35-13 | Define PR and crisis communication plan                  
+NSC35-14 | Define national incident escalation plan                 
+NSC35-15 | Define cross-border threat-sharing plan                  
+
+================================================================================
+SECTION 38 — PHASE 36: BUSINESS MODEL & REVENUE OPERATIONS
+================================================================================
+Objective: Sustainable revenue from government, enterprises, and citizens.
+ARR Target: Rs. 106 Crore
+
+FEATURE GROUP 1: Pricing & Revenue Streams
+--------------------------------------------
+REV36-01 | Finalize revenue streams for actual launch               
+REV36-02 | Decide which streams start in Year 1                     
+REV36-03 | Define B2G pricing                                       
+REV36-04 | Define B2B pricing                                       
+REV36-05 | Define bank alert pricing                                
+REV36-06 | Define telecom SaaS pricing                              
+REV36-07 | Define insurer pricing                                   
+REV36-08 | Define citizen premium pricing                           
+REV36-09 | Define SME plan pricing                                  
+REV36-10 | Define enterprise inoculation pricing                    
+
+FEATURE GROUP 2: Billing & Contracts
+--------------------------------------
+REV36-11 | Build billing system                                     
+REV36-12 | Build invoices and tax handling                          
+REV36-13 | Build subscription management                            
+REV36-14 | Build contract templates                                 
+REV36-15 | Build procurement-ready proposal templates               
+
+FEATURE GROUP 3: Sales & Account Management
+---------------------------------------------
+REV36-16 | Build ROI calculator for agencies                        
+REV36-17 | Build ROI calculator for telecoms                        
+REV36-18 | Build ROI calculator for banks                           
+REV36-19 | Build sales pipeline tracking                            
+REV36-20 | Build partner success / account management workflow      
+
+================================================================================
+SECTION 39 — PHASE 37: OPERATIONS & SUPPORT
+================================================================================
+Objective: 24/7 readiness across all stakeholder types.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+OPS37-01 | Set up support channels                                  
+OPS37-02 | Set up citizen support SOPs                              
+OPS37-03 | Set up government support SOPs                           
+OPS37-04 | Set up bank support SOPs                                 
+OPS37-05 | Set up telecom support SOPs                              
+OPS37-06 | Set up escalation queues                                 
+OPS37-07 | Set up incident classification                           
+OPS37-08 | Set up training manuals                                  
+OPS37-09 | Set up onboarding manuals                                
+OPS37-10 | Set up analyst handbook                                  
+OPS37-11 | Set up legal escalation handbook                         
+OPS37-12 | Set up recovery case handbook                            
+OPS37-13 | Set up multilingual support scripts                      
+OPS37-14 | Set up feedback capture workflow                         
+OPS37-15 | Set up bug triage workflow                               
+OPS37-16 | Set up release review meetings                           
+OPS37-17 | Set up weekly risk review                                
+OPS37-18 | Set up monthly partner review                            
+
+================================================================================
+SECTION 40 — PHASE 38: DOCUMENTATION
+================================================================================
+Objective: Every system, integration, and user type has complete documentation.
+
+ID      | Task                                                       | Status
+--------|-------------------------------------------------------------|--------
+DOC38-01 | Write architecture documentation                         
+DOC38-02 | Write API documentation                                  
+DOC38-03 | Write data model documentation                           
+DOC38-04 | Write telecom integration docs                           
+DOC38-05 | Write bank integration docs                              
+DOC38-06 | Write dashboard user manuals                             
+DOC38-07 | Write citizen app help docs                              
+DOC38-08 | Write IVR/USSD operational docs                          
+DOC38-09 | Write security runbooks                                  
+DOC38-10 | Write privacy documentation                              
+DOC38-11 | Write legal evidence workflow docs                       
+DOC38-12 | Write disaster recovery documentation                    
+DOC38-13 | Write model cards for all ML models                      
+DOC38-14 | Write dataset documentation                              
+DOC38-15 | Write annotation guidelines docs                         
+DOC38-16 | Write partner onboarding docs                            
+DOC38-17 | Write FAQ for citizens                                   
+DOC38-18 | Write FAQ for police                                     
+DOC38-19 | Write FAQ for banks                                      
+DOC38-20 | Write FAQ for telecoms                                   
+
+================================================================================
+SECTION 41 — PHASE 39: IMPACT, KPI & GOVERNANCE
+================================================================================
+Objective: Measure what matters — social, financial, and operational impact.
+
+FEATURE GROUP 1: Measurement Methodologies
+--------------------------------------------
+KPI39-01 | Define prevented-loss methodology                        
+KPI39-02 | Define rupees-saved methodology                          
+KPI39-03 | Define recovered-amount methodology                      
+KPI39-04 | Define fraud reduction methodology                       
+KPI39-05 | Define district score methodology                        
+KPI39-06 | Define Sentinel Score methodology                        
+KPI39-07 | Define inoculation effectiveness methodology             
+KPI39-08 | Define false-positive reporting methodology              
+KPI39-09 | Define agency accountability metrics                     
+
+FEATURE GROUP 2: Dashboards & Reports
+---------------------------------------
+KPI39-10 | Define product KPI dashboard                             
+KPI39-11 | Define social impact dashboard                           
+KPI39-12 | Define public transparency report format                 
+KPI39-13 | Define annual cyber immunity report format               
+KPI39-14 | Define district certification scorecard                  
+
+FEATURE GROUP 3: Governance
+-----------------------------
+KPI39-15 | Define governance review board                           
+KPI39-16 | Define ethics advisory process                           
+KPI39-17 | Define model review committee                            
+KPI39-18 | Define public-interest audit schedule                    
+
+Primary KPIs:
+  - Rupees saved / fraud prevented (monthly)
+  - Citizens protected (onboarded + engaged)
+  - Calls intercepted / routed to AI
+  - FIRs filed via platform
+  - Scammer time wasted (honeypot hours)
+  - Victim recovery rate (money back %)
+  - Bharat Cyber Immunity Index (quarterly)
+  - District Fraud Reduction Score
+
+================================================================================
+SECTION 42 — PHASE 40: LAUNCH READINESS CHECKLIST
+================================================================================
+Objective: Nothing ships until every gate is green.
+
+ID      | Gate                                                       | Status
+--------|-------------------------------------------------------------|--------
+LR40-01 | All critical modules pass testing                         
+LR40-02 | Security review completed                                 
+LR40-03 | Privacy review completed                                  
+LR40-04 | Legal review completed                                    
+LR40-05 | Pilot metrics acceptable                                  
+LR40-06 | Monitoring live                                           
+LR40-07 | Backups live                                              
+LR40-08 | Disaster recovery tested                                  
+LR40-09 | On-call rota active                                       
+LR40-10 | Support staff trained                                     
+LR40-11 | Partner SLAs signed                                       
+LR40-12 | Public messaging approved                                 
+LR40-13 | Incident response ready                                   
+LR40-14 | Billing ready                                             
+LR40-15 | Documentation published                                   
+LR40-16 | Release candidate signed off                              
+LR40-17 | Production go-live approved                               
+
+================================================================================
+SECTION 43 — PHASE 41: POST-LAUNCH CONTINUOUS IMPROVEMENT
+================================================================================
+Objective: Never stop getting better — the platform evolves faster than scammers.
+
+ID      | Continuous Improvement Task                                | Status
+--------|-------------------------------------------------------------|--------
+CI41-01 | Track fraud pattern drift weekly                          
+CI41-02 | Retrain models on confirmed new patterns                  
+CI41-03 | Expand scam taxonomy regularly                            
+CI41-04 | Expand language coverage                                  
+CI41-05 | Expand district coverage                                  
+CI41-06 | Improve false positive handling                           
+CI41-07 | Improve deepfake detection accuracy                       
+CI41-08 | Improve honeypot realism                                  
+CI41-09 | Improve recovery success rates                            
+CI41-10 | Improve family trust circle adoption                      
+CI41-11 | Improve drill completion rates                            
+CI41-12 | Improve bank and telecom response times                   
+CI41-13 | Improve partner dashboards                                
+CI41-14 | Improve cost efficiency                                   
+CI41-15 | Improve GPU utilization                                   
+CI41-16 | Review legal changes regularly                            
+CI41-17 | Review compliance obligations regularly                   
+CI41-18 | Publish periodic impact reports                           
+CI41-19 | Launch new partnerships                                   
+CI41-20 | Plan v4 roadmap                                           
+
+================================================================================
+SECTION 44 — MVP PRIORITY CHECKLIST
+================================================================================
+Objective: Minimum viable build for hackathon / demo / pilot submission.
+Complete this list before any other phases.
+
+MUST-HAVE FOR DEMO
+-------------------
+ID      | Feature                                                    | Status
+--------|-------------------------------------------------------------|--------
+MVPX-01 | Module 1 basic fraud risk scoring                         
+MVPX-02 | Module 2 basic AI honeypot with 2–3 personas              
+MVPX-03 | Module 3 basic fraud graph and FIR packet                 
+MVPX-04 | Module 6 basic command dashboard                          
+MVPX-05 | Module 7 basic citizen alert flow                         
+MVPX-06 | Module 12 basic deepfake demo                             
+MVPX-07 | Module 13 basic inoculation drill demo                    
+MVPX-08 | Module 14 basic mule ad classifier demo                   
+MVPX-09 | Core privacy, consent, logging, and security              
+MVPX-10 | One telecom sandbox integration                           
+MVPX-11 | One bank / demo integration                               
+MVPX-12 | Hindi + English language support                          
+MVPX-13 | Demo-ready end-to-end narrative                           
+
+MVP MODULE TIME ESTIMATES
+--------------------------
+Module                 | Minimum Demo Requirement                  | Estimate
+-----------------------|-------------------------------------------|----------
+M1 - FRI Scoring       | Metadata-based risk score on sample call  | 1 week
+M2 - Honeypot          | 2 personas, Hindi + English, 5-min demo   | 2-3 weeks
+M3 - Graph + FIR       | 100 sample entities, one-click FIR packet | 1.5 weeks
+M6 - Dashboard         | React dashboard with fake-data heatmap    | 1 week
+M7 - Alerts            | Push alert flow with demo phone           | 3 days
+M12 - Deepfake         | Static video analysis with verdict output | 1 week
+M13 - Drill            | One drill type, Hindi SMS flow            | 3 days
+M14 - Mule             | 100 sample job ads, classifier output     | 3 days
+Security + Privacy     | Consent flow, basic logging, HTTPS        | 3 days
+Demo Story             | End-to-end narrative, script, video       | 3 days
+-----------------------|-------------------------------------------|----------
+TOTAL MVP              | Focused 8–10 week build                   | Team of 5–8
+
+================================================================================
+SECTION 45 — APPENDIX: MODULE SUMMARY TABLE
+================================================================================
+
+#  | Module Name                          | Domain           | MVP? | Status
+---|--------------------------------------|------------------|------|--------
+1  | Real-Time Telecom Detection Grid     | Telecom / AI     | YES  
+2  | Agentic AI Honeypot Engine           | AI / Voice       | YES  
+3  | Fraud Intelligence Graph Engine      | Graph / Data     | YES  
+4  | UPI & WhatsApp Scam Shield           | Payments         | NO   
+5  | Bharat Feature Phone Layer           | Accessibility    | NO   
+6  | National Command Intelligence Dash   | Dashboard / Govt | YES  
+7  | Citizen Early Warning & Alert Engine | Mobile / Public  | YES  
+8  | Population Segment Protection        | Targeting        | NO   
+9  | Privacy-First AI Layer               | Compliance       | YES  
+10 | Operations Command Centre + DR       | Operations       | YES  
+11 | Scammer Reverse Profiling Engine     | AI / Intel       | NO   
+12 | Deepfake Video Call Defense          | AI / Video       | YES  
+13 | AI Scam Inoculation Engine           | Education / AI   | YES  
+14 | Mule Recruitment Interceptor         | Social / Intel   | YES  
+15 | Post-Scam Recovery Companion         | Recovery / Legal | NO   
+
+================================================================================
+TASK STATUS SUMMARY
+================================================================================
+
+Total Tasks Identified : 700       : ~450 tasks  (Foundations, planning, requirements, MVP modules)
+[PENDING]    : ~250 tasks  (AI stack, mobile, some backend, partnerships, security)
+[IN PROGRESS]: See individual phase tables above
+
+HIGHEST PRIORITY PENDING CLUSTERS:
+  1. AI/ML Model Selection (Phase 23)         — Blocks Modules 1,2,3,11,12,14
+  2. Data Acquisition (Phase 6)               — Blocks all model training
+  3. Telecom Integration Architecture (Ph 7)  — Blocks M1, M2, M5 production
+  4. Mobile App Build (Phase 26)              — Blocks citizen-facing launch
+  5. Security Engineering (Phase 30)          — Blocks any production deployment
+  6. External Partnerships (Phase 29)         — Blocks live data and real-world test
+  7. Neo4j + Vector DB Setup (Phase 28)       — Blocks M3 production graph
+
+================================================================================
+END OF DOCUMENT
+================================================================================
+SENTINEL 1930 | BASIG | PRD v3.0 | CONFIDENTIAL | For My India
+Jai Hind
+================================================================================

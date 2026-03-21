@@ -23,6 +23,8 @@ interface CallRecord {
     location: string;
     score: number;
     status: string;
+    recommended_action: string;
+    honeypot_candidate: boolean;
     timestamp: string;
 }
 
@@ -30,6 +32,11 @@ interface DetectionStats {
     risk_vectors: { name: string; value: number }[];
     active_nodes: number;
     latency_ms: number;
+    routing: {
+        honeypot_candidates: number;
+        flag_and_warn: number;
+        allow: number;
+    };
 }
 
 export default function DetectionGrid() {
@@ -109,6 +116,24 @@ export default function DetectionGrid() {
             </div>
 
             {/* Grid Table */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Honeypot Routes</p>
+                    <p className="text-2xl font-black text-redalert mt-2">{stats?.routing?.honeypot_candidates || 0}</p>
+                    <p className="text-xs text-silver mt-2">Calls ready to route into AI interception.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Flag and Warn</p>
+                    <p className="text-2xl font-black text-gold mt-2">{stats?.routing?.flag_and_warn || 0}</p>
+                    <p className="text-xs text-silver mt-2">Suspicious calls still under citizen-side caution workflow.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Allow</p>
+                    <p className="text-2xl font-black text-indgreen mt-2">{stats?.routing?.allow || 0}</p>
+                    <p className="text-xs text-silver mt-2">Low-risk calls cleared by the current scoring model.</p>
+                </div>
+            </div>
+
             <div className="bg-white rounded-2xl border border-silver/10 overflow-hidden shadow-sm">
                 <div className="p-6 border-b border-boxbg flex justify-between items-center">
                     <h3 className="font-bold text-indblue flex items-center gap-2">
@@ -135,6 +160,7 @@ export default function DetectionGrid() {
                                 <th className="px-6 py-4">{t("inferred_location")}</th>
                                 <th className="px-6 py-4 text-center">{t("fraud_risk_index")}</th>
                                 <th className="px-6 py-4">{t("verdict")}</th>
+                                <th className="px-6 py-4">{t("activity")}</th>
                                 <th className="px-6 py-4 text-right">{t("activity")}</th>
                             </tr>
                         </thead>
@@ -173,6 +199,16 @@ export default function DetectionGrid() {
                                             {call.status}
                                         </div>
                                     </td>
+                                    <td className="px-6 py-4">
+                                        <div className="space-y-1">
+                                            <p className="text-xs font-bold text-charcoal">{call.recommended_action}</p>
+                                            {call.honeypot_candidate ? (
+                                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-redalert/10 text-redalert text-[10px] font-bold uppercase tracking-wide">
+                                                    AI Route Ready
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-3 translate-x-2 group-hover:translate-x-0 transition-transform">
                                             <button
@@ -180,6 +216,14 @@ export default function DetectionGrid() {
                                                 className="p-1.5 text-redalert hover:bg-redalert/10 rounded-lg transition-colors" title="Block Number">
                                                 <ShieldAlert size={16} />
                                             </button>
+                                            {call.honeypot_candidate ? (
+                                                <button
+                                                    onClick={() => performAction('ROUTE_TO_HONEYPOT', call.number, { location: call.location, source: 'detection_grid' })}
+                                                    className="text-[10px] font-bold text-redalert uppercase tracking-widest hover:text-indblue transition-colors"
+                                                >
+                                                    Route
+                                                </button>
+                                            ) : null}
                                             <button
                                                 onClick={async () => {
                                                     const result = await performAction('VIEW_DETAIL', call.number, { location: call.location });

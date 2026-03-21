@@ -18,6 +18,10 @@ import FeedModal from "@/components/FeedModal";
 
 
 interface DeepfakeStats {
+    total_media_scanned?: number;
+    deepfakes_thwarted?: number;
+    detection_accuracy?: string;
+    model_runtime_status?: string;
     incidents: { type: string; risk: string; status: string }[];
     model_status: { liveness: string; gan_detector: string; false_positive_rate: string };
 }
@@ -220,6 +224,18 @@ export default function DeepfakePage() {
         return 'text-indblue';
     };
 
+    const verdictHeading = verdict === 'SUSPICIOUS'
+        ? 'Suspicious Media'
+        : verdict === 'REAL' || verdict === 'VERIFIED'
+            ? 'Verified Authentic'
+            : 'Deepfake Detected';
+
+    const verdictTone = verdict === 'SUSPICIOUS'
+        ? 'bg-gold/10 text-gold'
+        : verdict === 'REAL' || verdict === 'VERIFIED'
+            ? 'bg-indgreen/10 text-indgreen'
+            : 'bg-redalert/10 text-redalert';
+
     return (
         <div className="space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
@@ -244,6 +260,24 @@ export default function DeepfakePage() {
                          <Scan size={16} />
                          Live diagnostic
                     </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Media Scanned</p>
+                    <p className="text-2xl font-black text-indblue mt-2">{data?.total_media_scanned || 0}</p>
+                    <p className="text-xs text-silver mt-2">Total evidence files and live buffers processed by the forensic stack.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Deepfakes Thwarted</p>
+                    <p className="text-2xl font-black text-redalert mt-2">{data?.deepfakes_thwarted || 0}</p>
+                    <p className="text-xs text-silver mt-2">Cases escalated after model consensus and anomaly clustering.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Detection Accuracy</p>
+                    <p className="text-2xl font-black text-indgreen mt-2">{data?.detection_accuracy || "--"}</p>
+                    <p className="text-xs text-silver mt-2">Runtime status: {data?.model_runtime_status || "UNKNOWN"}.</p>
                 </div>
             </div>
 
@@ -276,13 +310,11 @@ export default function DeepfakePage() {
                             </div>
                         ) : verdict ? (
                             <div className="z-10 text-center space-y-6 w-full px-8 transform animate-in fade-in zoom-in duration-500">
-                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-xl ${verdict === 'REAL' || verdict === 'VERIFIED' ? 'bg-indgreen/10 text-indgreen' : 'bg-redalert/10 text-redalert'}`}>
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-xl ${verdictTone}`}>
                                     {verdict === 'FAKE' || verdict === 'DEEPFAKE' ? <ShieldAlert size={48} /> : <ShieldCheck size={48} />}
                                 </div>
                                 <div>
-                                    <h3 className={`text-3xl font-black tracking-tight ${getVerdictTextColor(verdict)}`}>
-                                        {verdict === 'REAL' || verdict === 'VERIFIED' ? 'Verified Authentic' : 'Deepfake Detected'}
-                                    </h3>
+                                    <h3 className={`text-3xl font-black tracking-tight ${getVerdictTextColor(verdict)}`}>{verdictHeading}</h3>
                                     <p className="text-silver mt-2 text-[10px] uppercase tracking-widest font-extrabold">
                                         Forensic Confidence Index: <span className={aiResult?.risk_level === 'HIGH' ? 'text-redalert' : 'text-indgreen'}>{((aiResult?.confidence || 0.98) * 100).toFixed(1)}%</span>
                                     </p>

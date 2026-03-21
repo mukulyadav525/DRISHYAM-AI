@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Phone, ArrowRight, User, Loader2 } from "lucide-react";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
@@ -11,15 +12,151 @@ interface AuthScreenProps {
   setCustomerId: (id: string) => void;
 }
 
+interface ConsentScope {
+  id: string;
+  label: string;
+  description: string;
+  required: boolean;
+}
+
+const FALLBACK_SCOPES: ConsentScope[] = [
+  {
+    id: "ai_handoff",
+    label: "AI scam handoff",
+    description: "Allow DRISHYAM to take over suspicious calls or chats to protect you.",
+    required: true,
+  },
+  {
+    id: "transcript_analysis",
+    label: "Transcript and scam analysis",
+    description: "Analyze suspicious messages to detect risk indicators and extract scam entities.",
+    required: true,
+  },
+  {
+    id: "evidence_packaging",
+    label: "Evidence packaging",
+    description: "Prepare verified evidence for FIR, graph linkage, and recovery workflows.",
+    required: true,
+  },
+  {
+    id: "alerting_recovery",
+    label: "Alerts and recovery support",
+    description: "Receive safety alerts and optional recovery support if you need help later.",
+    required: false,
+  },
+];
+
+function buildDefaultConsent(scopes: ConsentScope[]) {
+  return scopes.reduce<Record<string, boolean>>((acc, scope) => {
+    acc[scope.id] = false;
+    return acc;
+  }, {});
+}
+
 export default function AuthScreen({
   authStatus,
   setAuthStatus,
   customerId,
   setCustomerId,
 }: AuthScreenProps) {
+  const [policyVersion, setPolicyVersion] = useState("MVP-2026.03");
+  const [consentScopes, setConsentScopes] = useState<ConsentScope[]>(FALLBACK_SCOPES);
+  const [consentSelections, setConsentSelections] = useState<Record<string, boolean>>(() => buildDefaultConsent(FALLBACK_SCOPES));
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchConsentCatalog = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/privacy/consent/catalog`, { signal: controller.signal });
+        if (!res.ok) {
+          return;
+        }
+        const data = await res.json();
+        const scopes = Array.isArray(data?.scopes) && data.scopes.length > 0 ? data.scopes : FALLBACK_SCOPES;
+        setConsentScopes(scopes);
+        setPolicyVersion(data?.policy_version || "MVP-2026.03");
+        setConsentSelections((current) => ({
+          ...buildDefaultConsent(scopes),
+          ...current,
+        }));
+      } catch (error: any) {
+        if (error.name !== "AbortError") {
+          console.error("Consent catalog fetch failed:", error);
+        }
+      }
+    };
+
+    void fetchConsentCatalog();
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (customerId.length < 10) {
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const fetchExistingConsent = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/privacy/consent/lookup?phone_number=${encodeURIComponent(customerId)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          return;
+        }
+        const data = await res.json();
+        if (data?.scopes) {
+          setConsentSelections((current) => ({
+            ...current,
+            ...data.scopes,
+          }));
+        }
+        if (data?.policy_version) {
+          setPolicyVersion(data.policy_version);
+        }
+      } catch (error: any) {
+        if (error.name !== "AbortError") {
+          console.error("Consent lookup failed:", error);
+        }
+      }
+    };
+
+    void fetchExistingConsent();
+    return () => controller.abort();
+  }, [customerId]);
+
+  const requiredScopeIds = consentScopes.filter((scope) => scope.required).map((scope) => scope.id);
+  const missingRequiredConsent = requiredScopeIds.some((scopeId) => !consentSelections[scopeId]);
+
   const handleRequestAccess = async () => {
     if (customerId.length >= 10) {
+      if (missingRequiredConsent) {
+        toast.error("Please accept the required protection consent items first.");
+        return;
+      }
+
+      setIsSubmitting(true);
       try {
+        const consentRes = await fetch(`${API_BASE}/privacy/consent/record`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            phone_number: customerId,
+            scopes: consentSelections,
+            channel: "SIMULATION_PORTAL",
+            locale: typeof navigator !== "undefined" ? navigator.language : "en-IN",
+            policy_version: policyVersion,
+          })
+        });
+
+        if (!consentRes.ok) {
+          const errorData = await consentRes.json().catch(() => ({}));
+          throw new Error(errorData.detail || `Consent recording failed: ${consentRes.status}`);
+        }
+
         const res = await fetch(`${API_BASE}/auth/simulation/request`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -33,6 +170,8 @@ export default function AuthScreen({
         }
       } catch (e: any) {
         toast.error("HQ Connection Failed: " + e.message);
+      } finally {
+        setIsSubmitting(false);
       }
     } else {
       toast.error("Please enter a valid Phone Number");
@@ -67,11 +206,55 @@ export default function AuthScreen({
             </div>
           </div>
 
+          <div className="p-5 bg-boxbg rounded-2xl border border-silver/20 space-y-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-black text-indblue uppercase tracking-widest">Citizen Protection Consent</p>
+                <p className="text-xs text-silver mt-2 leading-relaxed">
+                  We record only the protection actions needed to run the DRISHYAM MVP safely. Required items must be accepted before access is granted.
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <p className="text-[9px] font-black text-indgreen uppercase tracking-widest">DPDP Ready</p>
+                <p className="text-[10px] text-silver mt-1">{policyVersion}</p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {consentScopes.map((scope) => (
+                <label key={scope.id} className="flex items-start gap-3 rounded-2xl border border-silver/10 bg-white px-4 py-3">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(consentSelections[scope.id])}
+                    onChange={(event) => setConsentSelections((current) => ({
+                      ...current,
+                      [scope.id]: event.target.checked,
+                    }))}
+                    className="mt-1 h-4 w-4 rounded border-silver/30 text-indblue focus:ring-indblue"
+                  />
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-sm font-bold text-charcoal">{scope.label}</p>
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${scope.required ? "text-redalert" : "text-indgreen"}`}>
+                        {scope.required ? "Required" : "Optional"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-silver mt-1 leading-relaxed">{scope.description}</p>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <button
             onClick={handleRequestAccess}
-            className="w-full py-5 bg-indblue text-white rounded-2xl font-black text-sm hover:bg-indblue/90 transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98]"
+            disabled={isSubmitting}
+            className={`w-full py-5 rounded-2xl font-black text-sm transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] ${
+              isSubmitting ? "bg-silver text-white cursor-not-allowed" : "bg-indblue text-white hover:bg-indblue/90"
+            }`}
           >
-            REQUEST ACCESS <ArrowRight size={18} />
+            {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : <ArrowRight size={18} />}
+            {isSubmitting ? "SECURING CONSENT..." : "REQUEST ACCESS"}
           </button>
 
           <div className="pt-4 flex items-center gap-3">

@@ -15,7 +15,7 @@
 :root {
   --background: #FFFFFF;
   --foreground: #171717;
-  --font-inter: "Inter", sans-serif;
+  --font-inter: "Segoe UI", "Noto Sans", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 body {

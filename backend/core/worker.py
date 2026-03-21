@@ -3,7 +3,11 @@ import logging
 import uuid
 import datetime
 import asyncio
-from celery import Celery
+import threading
+try:
+    from celery import Celery
+except Exception:
+    Celery = None
 from core.forensics import forensic_engine
 from core.vision import vision_engine
 from core.database import SessionLocal
@@ -13,7 +17,7 @@ from core.config import settings
 
 # Configure Celery
 REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
-celery_app = Celery("drishyam_worker", broker=REDIS_URL, backend=REDIS_URL)
+celery_app = Celery("drishyam_worker", broker=REDIS_URL, backend=REDIS_URL) if Celery else None
 
 logger = logging.getLogger("drishyam.worker")
 
@@ -149,3 +153,46 @@ async def _perform_analysis_async(upload_id: int):
             db.commit()
     finally:
         db.close()
+
+
+def _run_analysis_inline(upload_id: int):
+    try:
+        asyncio.run(_perform_analysis_async(upload_id))
+    except Exception as exc:
+        logger.error(f"Forensic inline worker crashed for upload {upload_id}: {exc}")
+
+
+class _InlineTaskDispatcher:
+    def delay(self, upload_id: int):
+        thread = threading.Thread(
+            target=_run_analysis_inline,
+            args=(upload_id,),
+            daemon=True,
+            name=f"forensic-inline-{upload_id}",
+        )
+        thread.start()
+        logger.info(f"Forensic analysis dispatched via inline worker for upload {upload_id}")
+        return {"mode": "inline", "upload_id": upload_id}
+
+
+if celery_app:
+    @celery_app.task(name="drishyam.perform_forensic_analysis")
+    def _celery_perform_forensic_analysis(upload_id: int):
+        asyncio.run(_perform_analysis_async(upload_id))
+
+    class _CeleryTaskDispatcher:
+        def delay(self, upload_id: int):
+            try:
+                return _celery_perform_forensic_analysis.delay(upload_id)
+            except Exception as exc:
+                logger.warning(
+                    "Celery dispatch failed for upload %s. Falling back to inline worker. Error: %s",
+                    upload_id,
+                    exc,
+                )
+                return _InlineTaskDispatcher().delay(upload_id)
+
+    perform_forensic_analysis = _CeleryTaskDispatcher()
+else:
+    logger.warning("Celery is unavailable. Forensic analysis will run in an inline background thread.")
+    perform_forensic_analysis = _InlineTaskDispatcher()

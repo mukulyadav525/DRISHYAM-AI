@@ -235,6 +235,20 @@ class SystemAuditLog(Base):
     timestamp = Column(DateTime, default=datetime.datetime.utcnow)
     metadata_json = Column(JSON, nullable=True)
 
+class CitizenConsent(Base):
+    __tablename__ = "citizen_consents"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    phone_number = Column(String, index=True, nullable=False)
+    status = Column(String, default="ACTIVE", index=True) # ACTIVE, REVOKED
+    channel = Column(String, default="SIMULATION_PORTAL")
+    policy_version = Column(String, default="MVP-2026.03")
+    scopes_json = Column(JSON, nullable=False, default=dict)
+    metadata_json = Column(JSON, nullable=True)
+    given_at = Column(DateTime, default=datetime.datetime.utcnow)
+    revoked_at = Column(DateTime, nullable=True)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
 class NotificationLog(Base):
     __tablename__ = "notification_logs"
     id = Column(Integer, primary_key=True, index=True)
@@ -267,6 +281,101 @@ class IntelligenceAlert(Base):
     category = Column(String) # e.g., "VPA_ROTATION", "SCAM_POD"
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class PilotProgram(Base):
+    __tablename__ = "pilot_programs"
+    id = Column(Integer, primary_key=True, index=True)
+    pilot_id = Column(String, unique=True, index=True)
+    name = Column(String, nullable=False)
+    geography = Column(String, nullable=True)
+    telecom_partner = Column(String, nullable=True)
+    bank_partners_json = Column(JSON, nullable=True)
+    agencies_json = Column(JSON, nullable=True)
+    languages_json = Column(JSON, nullable=True)
+    scam_categories_json = Column(JSON, nullable=True)
+    dashboard_scope_json = Column(JSON, nullable=True)
+    success_metrics_json = Column(JSON, nullable=True)
+    training_status_json = Column(JSON, nullable=True)
+    communications_json = Column(JSON, nullable=True)
+    outcome_summary_json = Column(JSON, nullable=True)
+    launch_status = Column(String, default="CONFIGURING")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class PilotFeedback(Base):
+    __tablename__ = "pilot_feedback"
+    id = Column(Integer, primary_key=True, index=True)
+    pilot_program_id = Column(Integer, ForeignKey("pilot_programs.id"), nullable=True, index=True)
+    stakeholder_type = Column(String, nullable=False)
+    source_agency = Column(String, nullable=True)
+    sentiment = Column(String, default="NEUTRAL")
+    message = Column(String, nullable=False)
+    status = Column(String, default="OPEN")
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class PartnerPipeline(Base):
+    __tablename__ = "partner_pipeline"
+    id = Column(Integer, primary_key=True, index=True)
+    account_name = Column(String, nullable=False, index=True)
+    segment = Column(String, nullable=False, index=True)  # B2G, BANK, TELECOM, ENTERPRISE, SME, INSURER
+    stage = Column(String, nullable=False, default="LEAD", index=True)  # LEAD, DISCOVERY, PROPOSAL, PROCUREMENT, PILOT, ACTIVE
+    owner = Column(String, nullable=False)
+    annual_value_inr = Column(Float, default=0.0)
+    status = Column(String, default="OPEN", index=True)  # OPEN, WON, LOST, ON_HOLD
+    next_step = Column(String, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class BillingRecord(Base):
+    __tablename__ = "billing_records"
+    id = Column(Integer, primary_key=True, index=True)
+    partner_name = Column(String, nullable=False, index=True)
+    plan_name = Column(String, nullable=False)
+    invoice_number = Column(String, unique=True, nullable=False, index=True)
+    amount_inr = Column(Float, default=0.0)
+    tax_inr = Column(Float, default=0.0)
+    billing_status = Column(String, default="DRAFT", index=True)  # DRAFT, ISSUED, PAID, OVERDUE
+    subscription_status = Column(String, default="ACTIVE", index=True)  # ACTIVE, TRIAL, EXPIRING, CANCELLED
+    billing_cycle = Column(String, default="MONTHLY")  # MONTHLY, QUARTERLY, YEARLY
+    due_date = Column(DateTime, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class SupportTicket(Base):
+    __tablename__ = "support_tickets"
+    id = Column(Integer, primary_key=True, index=True)
+    ticket_id = Column(String, unique=True, nullable=False, index=True)
+    channel = Column(String, nullable=False)
+    stakeholder_type = Column(String, nullable=False, index=True)
+    severity = Column(String, default="MEDIUM", index=True)
+    incident_classification = Column(String, nullable=False, index=True)
+    queue_name = Column(String, nullable=False, index=True)
+    status = Column(String, default="OPEN", index=True)  # OPEN, IN_PROGRESS, ESCALATED, RESOLVED
+    owner = Column(String, nullable=True)
+    resolution_eta_min = Column(Integer, default=60)
+    summary = Column(String, nullable=False)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+class GovernanceReview(Base):
+    __tablename__ = "governance_reviews"
+    id = Column(Integer, primary_key=True, index=True)
+    review_id = Column(String, unique=True, nullable=False, index=True)
+    board_type = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    cadence = Column(String, default="MONTHLY")
+    status = Column(String, default="SCHEDULED", index=True)  # SCHEDULED, COMPLETE
+    next_review_at = Column(DateTime, nullable=True)
+    outcome_summary = Column(String, nullable=True)
+    recommendations_json = Column(JSON, nullable=True)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 class NPCILog(Base):
     __tablename__ = "npci_logs"

@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { Loader2, ShieldAlert } from "lucide-react";
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
-    const { user, isAuthenticated, isLoading } = useAuth();
+    const { user, isAuthenticated, isMfaPending, isLoading } = useAuth();
     const pathname = usePathname();
     const router = useRouter();
 
@@ -14,7 +14,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
         if (!isLoading && !isAuthenticated && pathname !== "/login") {
             router.replace("/login");
         }
-    }, [isLoading, isAuthenticated, pathname, router]);
+        if (!isLoading && isAuthenticated && isMfaPending && pathname !== "/login") {
+            router.replace("/login");
+        }
+    }, [isLoading, isAuthenticated, isMfaPending, pathname, router]);
 
     // Show loading spinner while checking auth
     if (isLoading) {
@@ -32,6 +35,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
 
     // If not authenticated, show nothing (redirect will happen)
     if (!isAuthenticated) {
+        return null;
+    }
+
+    if (isMfaPending) {
         return null;
     }
 

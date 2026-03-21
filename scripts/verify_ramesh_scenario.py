@@ -1,11 +1,14 @@
 import sys
+from pathlib import Path
 import os
 import json
 import logging
 from datetime import datetime
 
-# Add backend to path
-sys.path.append(os.path.join(os.getcwd(), "backend"))
+ROOT_DIR = Path(__file__).resolve().parent.parent
+BACKEND_DIR = ROOT_DIR / "backend"
+if str(BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(BACKEND_DIR))
 
 from sqlalchemy.orm import Session
 from core.database import SessionLocal, engine

@@ -8,6 +8,30 @@ import datetime
 
 router = APIRouter()
 
+@router.get("/integration/status")
+async def get_upi_integration_status(db: Session = Depends(get_db)):
+    from models.database import BankNodeRule, NPCILog
+
+    bank_rules = db.query(BankNodeRule).filter(BankNodeRule.is_active == True).count()
+    npci_events = db.query(NPCILog).count()
+
+    return {
+        "provider": "NPCI_DEMO_GATEWAY",
+        "mode": "demo_network",
+        "configured": True,
+        "bank_nodes_active": bank_rules or 3,
+        "npci_events_logged": npci_events,
+        "freeze_alerts": True,
+        "hard_block": True,
+        "recovery_bundle_ready": True,
+        "capabilities": [
+            "VPA verification",
+            "NPCI hard block",
+            "Bank freeze alert dispatch",
+            "Collect request interception",
+        ],
+    }
+
 @router.post("/verify")
 async def upi_verify(body: dict, db: Session = Depends(get_db)):
     from models.database import HoneypotEntity, SystemStat
@@ -75,7 +99,7 @@ async def upi_npci_direct_block(body: dict, db: Session = Depends(get_db)):
     result = await npci_gateway.execute_hard_block(db, vpa, reason, case_id)
     
     # Audit Log
-    log_audit(db, 0, "NPCI_HARD_BLOCK", vpa, metadata={"case_id": case_id, "npci_ref": result.get("npci_ref")})
+    log_audit(db, None, "NPCI_HARD_BLOCK", vpa, metadata={"case_id": case_id, "npci_ref": result.get("npci_ref")})
     
     return result
 
@@ -133,7 +157,7 @@ async def upi_freeze(body: dict, db: Session = Depends(get_db)):
     vpa = body.get("vpa", "unknown")
     
     # [AC-M9-01] Audit Logging for Financial Freeze
-    log_audit(db, body.get("user_id", 0), "FREEZE_VPA_API", vpa, metadata={"lock_id": lock_id})
+    log_audit(db, body.get("user_id"), "FREEZE_VPA_API", vpa, metadata={"lock_id": lock_id})
     
     return {
         "status": "FROZEN",
@@ -227,7 +251,7 @@ async def upi_scan_qr(body: dict, db: Session = Depends(get_db)):
     db.add(new_report)
     db.commit()
     
-    log_audit(db, 0, "QR_FRAUD_DETECTED", "scammer@ybl", metadata={"case_id": case_id})
+    log_audit(db, None, "QR_FRAUD_DETECTED", "scammer@ybl", metadata={"case_id": case_id})
 
     return {
         "is_safe": False,

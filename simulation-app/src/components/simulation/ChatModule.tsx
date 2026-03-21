@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
-  Phone,
-  ShieldCheck,
-  ShieldAlert,
-  X,
-  User,
-  MessageSquare,
-  Brain,
-  Lock,
-  Zap,
   ArrowRight,
-  Send,
+  Brain,
+  Loader2,
+  Lock,
+  MessageSquare,
   Mic,
+  Phone,
+  Send,
+  ShieldAlert,
+  ShieldCheck,
   Volume2,
-  Loader2
+  X,
+  Zap,
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
@@ -24,92 +23,176 @@ interface ChatMessage {
   role: "scammer" | "ai";
   text: string;
   audioBase64?: string;
-  timestamp: Date;
+  timestamp: string;
+}
+
+interface SessionSummary {
+  session_id: string;
+  status: string;
+  direction: string;
+  persona: string;
+  caller_num: string;
+  customer_id: string | null;
+  citizen_banner: string;
+  citizen_safe: boolean;
+  threat_profile: {
+    location: string;
+    risk_band: string;
+    pattern: string;
+  };
+  live_summary: {
+    scam_type: string;
+    bank_name: string;
+    urgency_level: string;
+    risk_score: number;
+    details: string;
+    key_entities: string[];
+    entity_count: number;
+    scammer_turns: number;
+    ai_turns: number;
+    minutes_engaged: number;
+    fatigue_score: number;
+    last_scammer_message?: string | null;
+    last_ai_message?: string | null;
+  };
+  transcript: ChatMessage[];
+  updated_at: string;
 }
 
 interface ChatModuleProps {
   customerId: string;
-  selectedPersona: any;
-  setActiveFeature: (feature: any) => void;
+  selectedPersona: { id: string; label: string; lang: string } | null;
+  setActiveFeature: (feature: "chat" | "deepfake" | "upi" | "bharat" | null) => void;
+}
+
+type CallState = "idle" | "ringing" | "warning" | "active" | "success";
+
+function getStoredToken() {
+  if (typeof window === "undefined") return null;
+  const authStr = localStorage.getItem("drishyam_auth");
+  if (!authStr) return null;
+  try {
+    return JSON.parse(authStr).token ?? null;
+  } catch {
+    return null;
+  }
 }
 
 export default function ChatModule({
   customerId,
   selectedPersona,
-  setActiveFeature,
 }: ChatModuleProps) {
-  const [callState, setCallState] = useState<"idle" | "ringing" | "warning" | "active" | "success">("idle");
+  const [callState, setCallState] = useState<CallState>("idle");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isVoiceMode, setIsVoiceMode] = useState(true);
+  const [isVoiceMode, setIsVoiceMode] = useState(false);
   const [autoPlayVoice, setAutoPlayVoice] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
-  const [sessionData, setSessionData] = useState<{ id: string; caller: string; location: string } | null>(null);
+  const [summary, setSummary] = useState<SessionSummary | null>(null);
+  const [isTakeBackActive, setIsTakeBackActive] = useState(false);
+  const [sessionData, setSessionData] = useState<{
+    id: string;
+    caller: string;
+    location: string;
+    riskBand: string;
+    threatPattern: string;
+    citizenBanner: string;
+  } | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [testPhoneNumber, setTestPhoneNumber] = useState("");
   const [isTestCallLoading, setIsTestCallLoading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
-  const chatEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const transcriptEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    transcriptEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, summary]);
+
+  useEffect(() => {
+    if (!sessionId || (callState !== "active" && callState !== "success")) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void refreshSummary(sessionId);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [sessionId, callState]);
 
   const playAudio = (base64Audio: string) => {
     if (!base64Audio) return;
     try {
       const byteChars = atob(base64Audio);
       const byteArray = new Uint8Array(byteChars.length);
-      for (let i = 0; i < byteChars.length; i++) {
+      for (let i = 0; i < byteChars.length; i += 1) {
         byteArray[i] = byteChars.charCodeAt(i);
       }
-      const blob = new Blob([byteArray], { type: "audio/wav" });
+      const blob = new Blob([byteArray], { type: "audio/mpeg" });
       const url = URL.createObjectURL(blob);
       const audio = new Audio(url);
-      audio.play();
-    } catch (e) {
-      console.error("Audio playback failed:", e);
+      void audio.play();
+    } catch (error) {
+      console.error("Audio playback failed:", error);
+    }
+  };
+
+  const refreshSummary = async (sid: string) => {
+    try {
+      const res = await fetch(`${API_BASE}/honeypot/session/${sid}/summary`);
+      if (!res.ok) return null;
+      const data = await res.json();
+      setSummary(data);
+      return data as SessionSummary;
+    } catch (error) {
+      console.error("Summary refresh failed:", error);
+      return null;
     }
   };
 
   const startCall = async () => {
     setCallState("ringing");
     setMessages([]);
+    setSummary(null);
+    setAnalysis(null);
     setSessionId(null);
+    setIsTakeBackActive(false);
+    setIsBlocked(false);
 
     try {
       const res = await fetch(`${API_BASE}/honeypot/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          persona: selectedPersona?.id || "DRISHYAM AI",
-          customer_id: customerId
-        })
+          persona: selectedPersona?.id || "Elderly Uncle",
+          customer_id: customerId,
+        }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setSessionId(data.session_id);
-        setSessionData({
-          id: data.session_id,
-          caller: data.caller_num || "+91-TRACE-NODE",
-          location: "SCANNING..."
-        });
-        setTimeout(() => setCallState("warning"), 2000);
-      } else {
-        const err = await res.text();
-        toast.error(`Shield Initialization Failed: ${err.slice(0, 50)}`);
-        setCallState("idle");
+
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
-    } catch (e) {
-      console.error("Failed to initiate monitoring session:", e);
-      toast.error("Could not reach DRISHYAM Command. Check network.");
+
+      const data = await res.json();
+      setSessionId(data.session_id);
+      setSessionData({
+        id: data.session_id,
+        caller: data.caller_num || "+91-TRACE-NODE",
+        location: data.location || "National relay grid",
+        riskBand: data.risk_band || "HIGH",
+        threatPattern: data.threat_pattern || "Suspicious fraud script",
+        citizenBanner: data.citizen_banner || "Suspicious caller detected.",
+      });
+
+      window.setTimeout(() => setCallState("warning"), 1400);
+    } catch (error) {
+      console.error("Failed to initiate monitoring session:", error);
+      toast.error("Could not initialize the protective node.");
       setCallState("idle");
     }
   };
@@ -119,101 +202,165 @@ export default function ChatModule({
       toast.error("Please enter a phone number first.");
       return;
     }
+
     setIsTestCallLoading(true);
     try {
-      // We assume the user is logged in and token is in localStorage
-      const token = localStorage.getItem("token");
+      const token = getStoredToken();
       const res = await fetch(`${API_BASE}/twilio/call`, {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           to_number: testPhoneNumber,
-          persona: selectedPersona?.id || "Elderly Uncle"
-        })
+          persona: selectedPersona?.id || "Elderly Uncle",
+        }),
       });
-      if (res.ok) {
-        toast.success("DRISHYAM AI is dialing your phone now!");
-      } else {
-        const data = await res.json();
-        toast.error(`Call Failed: ${data.detail || "Check console"}`);
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Call setup failed");
       }
-    } catch (e) {
-      console.error("Test call error:", e);
-      toast.error("Network error. Ensure backend is running.");
+
+      toast.success("DRISHYAM AI is dialing your phone now.");
+    } catch (error: any) {
+      console.error("Test call error:", error);
+      toast.error(error.message || "Unable to place test call.");
+    } finally {
+      setIsTestCallLoading(false);
     }
-    setIsTestCallLoading(false);
   };
 
-  const handOffToAI = () => {
-    setCallState("active");
-    const introMsg: ChatMessage = {
-      role: "ai",
-      text: `Namaste... hello? Kaun hai?`,
-      timestamp: new Date(),
-    };
-    setMessages([introMsg]);
+  const handOffToAI = async () => {
+    if (!sessionId) {
+      toast.error("No active session is available.");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/honeypot/session/${sessionId}/handoff`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          persona: selectedPersona?.id || "Elderly Uncle",
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+
+      const data = await res.json();
+      if (data.greeting) {
+        setMessages([
+          {
+            role: "ai",
+            text: data.greeting,
+            timestamp: new Date().toISOString(),
+          },
+        ]);
+      }
+      setSummary(data.summary);
+      setCallState("active");
+      setIsTakeBackActive(false);
+      toast.success("AI has taken over the suspicious caller.");
+    } catch (error) {
+      console.error("Handoff failed:", error);
+      toast.error("AI handoff could not be completed.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleTakeBack = async () => {
+    if (!sessionId) return;
+
+    setIsLoading(true);
+    try {
+      if (isTakeBackActive) {
+        await handOffToAI();
+        return;
+      }
+
+      const res = await fetch(`${API_BASE}/honeypot/session/${sessionId}/take-back`, {
+        method: "POST",
+      });
+      if (!res.ok) {
+        throw new Error(await res.text());
+      }
+      const data = await res.json();
+      setSummary(data.summary);
+      setIsTakeBackActive(true);
+      toast.success("Citizen control restored.");
+    } catch (error) {
+      console.error("Take-back failed:", error);
+      toast.error("Unable to return control to the citizen.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const endCall = async () => {
+    if (!sessionId) return;
+
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/honeypot/direct-conclude`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: "",
-          persona: selectedPersona?.id || "Elderly Uncle",
           session_id: sessionId,
           customer_id: customerId,
-          history: messages.map(m => ({
-            role: m.role === "scammer" ? "user" : "assistant",
-            content: m.text,
-          }))
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setAnalysis(data);
-        setCallState("success");
-        toast.success("Intelligence successfully secured and reported.");
-      } else {
-        toast.error("Conclude failed: Analysis results could not be saved.");
-        setCallState("success");
+
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
-    } catch (e) {
-      console.error("Conclude error:", e);
-      toast.error("Network error during intelligence reporting.");
+
+      const data = await res.json();
+      setAnalysis(data);
       setCallState("success");
+      await refreshSummary(sessionId);
+      toast.success("Evidence secured and routed to the grid.");
+    } catch (error) {
+      console.error("Conclude error:", error);
+      toast.error("Could not finalize the session cleanly.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const startRecording = async () => {
+    if (callState !== "active") return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+
       mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
       };
+
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          const base64Audio = reader.result as string;
-          await processVoiceAudio(base64Audio);
+          await processVoiceAudio(reader.result as string);
         };
-        stream.getTracks().forEach(track => track.stop());
+        stream.getTracks().forEach((track) => track.stop());
       };
+
       mediaRecorder.start();
       setIsRecording(true);
-    } catch (err) {
-      console.error("Microphone access denied:", err);
+    } catch (error) {
+      console.error("Microphone access denied:", error);
       toast.error("Microphone access denied.");
     }
   };
@@ -226,6 +373,7 @@ export default function ChatModule({
   };
 
   const processVoiceAudio = async (base64Audio: string) => {
+    if (!sessionId) return;
     setIsLoading(true);
     try {
       const res = await fetch(`${API_BASE}/voice/chat`, {
@@ -235,38 +383,65 @@ export default function ChatModule({
           audio_base64: base64Audio,
           persona: selectedPersona?.id || "Elderly Uncle",
           session_id: sessionId,
-          history: messages.map(m => ({
-            role: m.role === "scammer" ? "user" : "assistant",
-            content: m.text,
-          }))
+          history: messages.map((message) => ({
+            role: message.role === "scammer" ? "user" : "assistant",
+            content: message.text,
+          })),
         }),
       });
-      if (!res.ok) throw new Error(await res.text());
-      const data = await res.json();
-      if (data.scammer_transcript) {
-        setMessages(prev => [...prev, { role: "scammer", text: data.scammer_transcript, timestamp: new Date() }]);
+
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
-      const aiMsg: ChatMessage = {
+
+      const data = await res.json();
+      const nextMessages: ChatMessage[] = [];
+
+      if (data.scammer_transcript) {
+        nextMessages.push({
+          role: "scammer",
+          text: data.scammer_transcript,
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      nextMessages.push({
         role: "ai",
         text: data.ai_response_text,
         audioBase64: data.ai_audio_base64,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, aiMsg]);
-      if (data.ai_audio_base64 && autoPlayVoice) playAudio(data.ai_audio_base64);
+        timestamp: new Date().toISOString(),
+      });
+
+      setMessages((prev) => [...prev, ...nextMessages]);
+
+      if (data.ai_audio_base64 && autoPlayVoice && !isTakeBackActive) {
+        playAudio(data.ai_audio_base64);
+      }
+
+      await refreshSummary(sessionId);
     } catch (error) {
       console.error("Voice pipeline failed:", error);
-      toast.error("Voice Processing Error.");
+      toast.error("Voice processing failed.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const sendMessage = async () => {
     const text = inputText.trim();
-    if (!text || isLoading) return;
-    setMessages(prev => [...prev, { role: "scammer", text, timestamp: new Date() }]);
+    if (!text || isLoading || !sessionId) return;
+
+    const scammerMessage: ChatMessage = {
+      role: "scammer",
+      text,
+      timestamp: new Date().toISOString(),
+    };
+
+    const nextHistory = [...messages, scammerMessage];
+    setMessages(nextHistory);
     setInputText("");
     setIsLoading(true);
+
     try {
       const res = await fetch(`${API_BASE}/honeypot/direct-chat`, {
         method: "POST",
@@ -275,54 +450,89 @@ export default function ChatModule({
           message: text,
           persona: selectedPersona?.id || "Elderly Uncle",
           session_id: sessionId,
-          history: messages.map(m => ({
-            role: m.role === "scammer" ? "user" : "assistant",
-            content: m.text,
-          }))
+          history: nextHistory.map((message) => ({
+            role: message.role === "scammer" ? "user" : "assistant",
+            content: message.text,
+          })),
         }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(prev => [...prev, { role: "ai", text: data.ai_response, timestamp: new Date() }]);
+
+      if (!res.ok) {
+        throw new Error(await res.text());
       }
+
+      const data = await res.json();
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "ai",
+          text: data.ai_response,
+          timestamp: new Date().toISOString(),
+        },
+      ]);
+      await refreshSummary(sessionId);
     } catch (error) {
       console.error("Text chat error:", error);
+      toast.error("Unable to relay the caller message.");
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   const toggleBlock = () => {
-    setIsBlocked(!isBlocked);
-    if (!isBlocked) toast.success("IMEI Range Blocked in NCR Region");
+    setIsBlocked((prev) => !prev);
+    if (!isBlocked) {
+      toast.success("IMEI range blocked in regional command grid.");
+    }
   };
 
+  const resetModule = () => {
+    setCallState("idle");
+    setMessages([]);
+    setAnalysis(null);
+    setSummary(null);
+    setSessionId(null);
+    setSessionData(null);
+    setInputText("");
+    setIsBlocked(false);
+    setIsTakeBackActive(false);
+    setIsRecording(false);
+  };
+
+  const transcript = summary?.transcript?.length ? summary.transcript : messages;
+  const entities = summary?.live_summary?.key_entities || [];
+
   return (
-    <div className="flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-12 w-full flex-1 min-h-0">
-      {/* Phone Container */}
-      <div className="relative w-full max-w-[320px] h-[500px] sm:h-[600px] bg-charcoal rounded-[3rem] border-[10px] border-charcoal shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] overflow-hidden transition-all shrink-0">
+    <div className="flex flex-col lg:flex-row items-start justify-center gap-6 lg:gap-8 w-full">
+      <div className="relative w-full max-w-[320px] h-[560px] sm:h-[620px] bg-charcoal rounded-[3rem] border-[10px] border-charcoal shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] overflow-hidden shrink-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-charcoal rounded-b-2xl z-30" />
         <div className="relative w-full h-full bg-white flex flex-col">
           {callState === "idle" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6 p-4 sm:p-5 fade-in overflow-y-auto scrollbar-hide">
-              <div className="w-16 h-16 rounded-2xl bg-boxbg flex items-center justify-center text-indblue pulse-saffron shadow-inner shrink-0 mt-2">
+            <div className="flex-1 flex flex-col items-center justify-center gap-5 p-5 fade-in">
+              <div className="w-16 h-16 rounded-2xl bg-boxbg flex items-center justify-center text-indblue pulse-saffron shadow-inner">
                 <ShieldCheck size={32} />
               </div>
               <div className="text-center space-y-1">
                 <p className="text-lg font-black text-indblue">Shield Ready</p>
-                <p className="text-[8px] text-silver font-bold uppercase tracking-widest leading-relaxed">Secure Line Established<br />AI Core Synchronized</p>
+                <p className="text-[9px] text-silver font-bold uppercase tracking-widest leading-relaxed">
+                  One tap lets AI take over the suspicious caller while the citizen stays protected.
+                </p>
               </div>
-              <div className="flex flex-col gap-2.5 w-full max-w-[220px]">
-                <div className="space-y-2 mb-1">
-                  <p className="text-[8px] text-silver font-black uppercase tracking-widest text-center">Test on your real phone</p>
-                  <input 
-                    type="text" 
-                    placeholder="+91XXXXXXXXXX" 
+
+              <div className="w-full max-w-[240px] space-y-3">
+                <div className="space-y-2">
+                  <p className="text-[8px] text-silver font-black uppercase tracking-widest text-center">
+                    Test on your real phone
+                  </p>
+                  <input
+                    type="text"
+                    placeholder="+91XXXXXXXXXX"
                     value={testPhoneNumber}
-                    onChange={(e) => setTestPhoneNumber(e.target.value)}
+                    onChange={(event) => setTestPhoneNumber(event.target.value)}
                     className="w-full bg-boxbg border border-silver/10 rounded-xl px-4 py-2 text-[11px] font-bold text-indblue focus:outline-none focus:ring-2 focus:ring-indblue/10 transition-all"
                   />
                   <div className="grid grid-cols-2 gap-2">
-                    <button 
+                    <button
                       onClick={handleTestCall}
                       disabled={isTestCallLoading}
                       className="py-2.5 bg-saffron/10 text-saffron border border-saffron/20 rounded-xl text-[9px] font-black hover:bg-saffron hover:text-white transition-all disabled:opacity-50 flex items-center justify-center gap-1.5"
@@ -330,18 +540,30 @@ export default function ChatModule({
                       {isTestCallLoading ? <Loader2 size={10} className="animate-spin" /> : <Phone size={10} />}
                       CALL
                     </button>
-                    <button 
+                    <button
                       onClick={async () => {
-                        if (!testPhoneNumber) { toast.error("Enter phone number"); return; }
+                        if (!testPhoneNumber) {
+                          toast.error("Enter phone number");
+                          return;
+                        }
+
                         try {
                           const res = await fetch(`${API_BASE}/twilio/sms`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ to_number: testPhoneNumber, message: "DRISHYAM AI Security Alert: We have detected a suspicious login attempt from Jamtara, Jharkhand. Please do not share your OTP with anyone." })
+                            body: JSON.stringify({
+                              to_number: testPhoneNumber,
+                              message: "DRISHYAM AI Security Alert: Suspicious scam pattern detected. Do not share OTP or approve collect requests.",
+                            }),
                           });
-                          if (res.ok) toast.success("SMS Alert Sent!");
-                          else toast.error("SMS Failed");
-                        } catch (e) { toast.error("Network Error"); }
+                          if (!res.ok) {
+                            throw new Error("SMS dispatch failed");
+                          }
+                          toast.success("SMS alert sent.");
+                        } catch (error) {
+                          console.error(error);
+                          toast.error("Unable to send SMS alert.");
+                        }
                       }}
                       className="py-2.5 bg-indblue/10 text-indblue border border-indblue/20 rounded-xl text-[9px] font-black hover:bg-indblue hover:text-white transition-all flex items-center justify-center gap-1.5"
                     >
@@ -351,105 +573,215 @@ export default function ChatModule({
                   </div>
                 </div>
 
-                <div className="h-[1px] bg-silver/5 w-full my-0.5" />
+                <div className="h-px bg-silver/5" />
 
-                <div className="flex bg-boxbg p-1 rounded-full border border-silver/10">
-                  <button onClick={() => setIsVoiceMode(false)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold flex items-center justify-center gap-1.5 ${!isVoiceMode ? "bg-indblue text-white shadow-md" : "text-silver"}`}><MessageSquare size={10} /> TEXT</button>
-                  <button onClick={() => setIsVoiceMode(true)} className={`flex-1 py-1.5 rounded-full text-[9px] font-bold flex items-center justify-center gap-1.5 ${isVoiceMode ? "bg-saffron text-white shadow-md" : "text-silver"}`}><Volume2 size={10} /> VOICE</button>
-                </div>
-                <button onClick={startCall} className="w-full py-3 bg-indblue text-white rounded-xl text-[11px] font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg mb-2">SIMULATE HERE <Zap size={12} className="text-saffron fill-saffron" /></button>
+                <button
+                  onClick={startCall}
+                  className="w-full py-3 bg-indblue text-white rounded-xl text-[11px] font-black hover:bg-indblue/90 transition-all flex items-center justify-center gap-2 shadow-lg"
+                >
+                  SIMULATE THREAT
+                  <Zap size={12} className="text-saffron fill-saffron" />
+                </button>
               </div>
             </div>
           )}
 
           {(callState === "ringing" || callState === "warning") && (
             <div className="flex-1 flex flex-col p-6 fade-in">
-              <div className="mt-12 text-center animate-bounce">
-                <div className="w-16 h-16 bg-boxbg border-2 border-silver/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg text-silver"><User size={32} /></div>
-                <h3 className="text-xl font-black text-charcoal tracking-tight">{sessionData?.caller || "UNKNOWN_NODE"}</h3>
-                <p className="text-[10px] text-silver font-bold mt-1 tracking-wide">{sessionData?.location || "Scanning Origin..."}</p>
+              <div className="mt-12 text-center">
+                <div className="w-16 h-16 bg-boxbg border-2 border-silver/10 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg text-silver">
+                  <Phone size={28} />
+                </div>
+                <h3 className="text-xl font-black text-charcoal tracking-tight">
+                  {sessionData?.caller || "UNKNOWN NODE"}
+                </h3>
+                <p className="text-[10px] text-silver font-bold mt-1 tracking-wide">
+                  {sessionData?.location || "Scanning origin..."}
+                </p>
               </div>
+
               <div className="flex-1 flex flex-col justify-center">
-                {callState === "warning" && (
-                  <div className="bg-redalert/5 border-2 border-redalert/20 p-4 rounded-2xl animate-pulse">
-                    <div className="flex items-center gap-2 mb-2"><ShieldAlert className="text-redalert" size={20} /><p className="text-sm font-black text-redalert tracking-tight uppercase">{isLoading ? "ANALYZING SCRIPT..." : "THREAT_DETECTED"}</p></div>
-                    <p className="text-[10px] text-redalert/80 font-bold leading-relaxed">{isLoading ? "Scanning network patterns and voice artifacts..." : "High-probability fraud script matching national risk vectors."}</p>
+                {callState === "warning" ? (
+                  <div className="bg-redalert/5 border-2 border-redalert/20 p-4 rounded-2xl">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldAlert className="text-redalert" size={20} />
+                      <p className="text-sm font-black text-redalert uppercase tracking-tight">Threat Detected</p>
+                    </div>
+                    <p className="text-[10px] text-redalert/80 font-bold leading-relaxed">
+                      {sessionData?.citizenBanner || "Suspicious fraud script detected."}
+                    </p>
+                    <div className="mt-3 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-redalert/70">
+                      <span>{sessionData?.riskBand}</span>
+                      <span className="text-silver/40">•</span>
+                      <span>{sessionData?.threatPattern}</span>
+                    </div>
                   </div>
+                ) : (
+                  <p className="text-center text-[10px] font-bold text-silver animate-pulse">
+                    Scanning call infrastructure...
+                  </p>
                 )}
               </div>
+
               <div className="pb-8 space-y-4">
                 {callState === "warning" ? (
-                  <button onClick={handOffToAI} className="w-full py-4 bg-indblue text-white rounded-[1.5rem] font-black text-xs flex items-center justify-center gap-2 hover:bg-indblue/95 transition-all shadow-xl hover:scale-[1.02]"><Brain size={16} className="text-saffron animate-pulse" /> DEPLOY AI AGENT</button>
-                ) : (
-                  <p className="text-center text-[10px] font-bold text-silver animate-pulse">Scanning Call Infrastructure...</p>
-                )}
+                  <button
+                    onClick={handOffToAI}
+                    disabled={isLoading}
+                    className="w-full py-4 bg-indblue text-white rounded-[1.5rem] font-black text-xs flex items-center justify-center gap-2 hover:bg-indblue/95 transition-all shadow-xl"
+                  >
+                    {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Brain size={16} className="text-saffron" />}
+                    LET AI HANDLE
+                  </button>
+                ) : null}
+
                 <div className="flex justify-around items-center px-4 pt-4 border-t border-silver/5">
-                  <div className="flex flex-col items-center gap-2 group"><div className="w-12 h-12 bg-indgreen rounded-full flex items-center justify-center text-white cursor-pointer shadow-md group-hover:scale-110 transition-transform"><Phone size={24} /></div><span className="text-[9px] font-bold text-silver uppercase tracking-widest">Accept</span></div>
-                  <div className="flex flex-col items-center gap-2 group" onClick={() => setCallState("idle")}><div className="w-12 h-12 bg-redalert rounded-full flex items-center justify-center text-white cursor-pointer shadow-md group-hover:scale-110 transition-transform"><X size={24} /></div><span className="text-[9px] font-bold text-silver uppercase tracking-widest">Reject</span></div>
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-12 h-12 bg-indgreen rounded-full flex items-center justify-center text-white shadow-md">
+                      <Phone size={24} />
+                    </div>
+                    <span className="text-[9px] font-bold text-silver uppercase tracking-widest">Accept</span>
+                  </div>
+                  <button
+                    onClick={resetModule}
+                    className="flex flex-col items-center gap-2"
+                  >
+                    <div className="w-12 h-12 bg-redalert rounded-full flex items-center justify-center text-white shadow-md">
+                      <X size={24} />
+                    </div>
+                    <span className="text-[9px] font-bold text-silver uppercase tracking-widest">Reject</span>
+                  </button>
                 </div>
               </div>
             </div>
           )}
 
           {callState === "active" && (
-            <div className="flex-1 flex flex-col bg-indblue text-white overflow-hidden fade-in">
-              <div className="flex justify-between items-center pt-8 px-5 pb-3 bg-gradient-to-b from-black/20 to-transparent">
-                <div className="flex items-center gap-2"><Brain size={16} className="text-saffron animate-pulse" /><div className="flex flex-col"><span className="text-[8px] font-black tracking-[0.2em]">NODE_ACTIVE</span><div className="flex gap-1 items-center mt-0.5">{isVoiceMode && <span className="text-[7px] bg-saffron text-white px-1.5 py-0.5 rounded-sm font-black">VOICE_MODE</span>}</div></div></div>
-                <button className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors" onClick={endCall}><X size={12} /></button>
+            <div className="flex-1 flex flex-col bg-gradient-to-b from-indblue to-[#001447] text-white p-6">
+              <div className="pt-8">
+                <div className="flex items-center gap-2 mb-3">
+                  <ShieldCheck size={18} className="text-saffron" />
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em]">
+                    Citizen Protection Mode
+                  </span>
+                </div>
+                <h3 className="text-2xl font-black tracking-tight leading-tight">
+                  {isTakeBackActive ? "Citizen back on the line" : "AI is handling the caller"}
+                </h3>
+                <p className="text-[11px] text-white/70 font-semibold mt-3 leading-relaxed">
+                  {isTakeBackActive
+                    ? "Control has been returned. You can now speak directly or route the caller back to the AI."
+                    : summary?.citizen_banner || "The citizen is protected while DRISHYAM keeps the scammer engaged."}
+                </p>
               </div>
-              <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-hide">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === "scammer" ? "justify-end" : "justify-start"} animate-in slide-in-from-bottom-2 duration-300`}>
-                    <div className={`max-w-[90%] p-3 rounded-2xl text-xs font-medium leading-relaxed shadow-lg ${msg.role === "scammer" ? "bg-saffron/20 border border-saffron/30 text-white rounded-br-none" : "bg-white/10 border border-white/5 text-white/90 rounded-bl-none"}`}>
-                      <div className="flex items-center gap-1.5 mb-1.5"><div className={`w-1 h-1 rounded-full ${msg.role === "scammer" ? "bg-saffron" : "bg-indgreen"}`} /><span className="text-[7px] font-black uppercase tracking-widest text-white/50">{msg.role === "scammer" ? "SCAMMER_INPUT" : "DRISHYAM_AI"}</span></div>
-                      <p className="tracking-tight">{msg.text}</p>
-                      {msg.audioBase64 && <button onClick={() => playAudio(msg.audioBase64!)} className="mt-2 py-1 px-2.5 bg-white/10 rounded-full flex items-center gap-1.5 text-[8px] text-saffron hover:bg-saffron hover:text-white font-black tracking-widest self-start transition-all"><Volume2 size={10} /> REPLAY_VOICE</button>}
-                    </div>
-                  </div>
-                ))}
-                {isLoading && (
-                  <div className="flex justify-start">
-                    <div className="bg-white/10 border border-white/5 p-3 rounded-2xl rounded-bl-none">
-                      <div className="flex gap-1.5">
-                        <div className="w-1.5 h-1.5 bg-saffron rounded-full animate-bounce" />
-                        <div className="w-1.5 h-1.5 bg-saffron rounded-full animate-bounce [animation-delay:0.2s]" />
-                        <div className="w-1.5 h-1.5 bg-saffron rounded-full animate-bounce [animation-delay:0.4s]" />
-                      </div>
-                    </div>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
+
+              <div className="mt-6 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl bg-white/10 border border-white/10 p-3">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-white/50">Persona</p>
+                  <p className="text-sm font-black mt-1">{summary?.persona || selectedPersona?.id || "Elderly Uncle"}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 border border-white/10 p-3">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-white/50">Risk</p>
+                  <p className="text-sm font-black mt-1">{summary?.threat_profile?.risk_band || sessionData?.riskBand || "HIGH"}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 border border-white/10 p-3">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-white/50">Location</p>
+                  <p className="text-xs font-black mt-1">{summary?.threat_profile?.location || sessionData?.location || "Relay grid"}</p>
+                </div>
+                <div className="rounded-2xl bg-white/10 border border-white/10 p-3">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-white/50">Entities</p>
+                  <p className="text-sm font-black mt-1">{summary?.live_summary?.entity_count || 0}</p>
+                </div>
               </div>
-              <div className="px-4 pb-6 pt-3 bg-gradient-to-t from-black/40 to-transparent border-t border-white/5">
-                {isVoiceMode ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <div className={`relative p-0.5 rounded-full ${isRecording ? "scale-105" : "scale-100"} transition-transform`}>{isRecording && <div className="absolute inset-0 bg-redalert/40 rounded-full animate-ping" />}<button onMouseDown={startRecording} onMouseUp={stopRecording} onMouseLeave={stopRecording} onTouchStart={startRecording} onTouchEnd={stopRecording} disabled={isLoading} className={`relative z-10 p-5 rounded-full transition-all shadow-xl ${isRecording ? "bg-redalert text-white ring-2 ring-redalert/30" : "bg-gradient-to-br from-saffron to-deeporange text-white"} ${isLoading ? "opacity-30 cursor-not-allowed grayscale" : ""}`}>{isLoading ? <Loader2 size={24} className="animate-spin" /> : <Mic size={24} />}</button></div>
-                    <span className="text-[8px] text-white/50 font-black uppercase tracking-widest text-center">{isRecording ? "TRANSMITTING..." : "PUSH_TO_TALK"}</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <input type="text" value={inputText} onChange={(e) => setInputText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage()} placeholder="INJECT SCRIPT..." disabled={isLoading} className="flex-1 bg-white/10 border border-white/10 rounded-xl px-4 py-3 text-[10px] placeholder:text-white/20 focus:outline-none focus:bg-white/20 text-white disabled:opacity-50 font-bold tracking-tight" />
-                    <button onClick={sendMessage} disabled={isLoading || !inputText.trim()} className="p-3 bg-saffron rounded-xl text-white hover:bg-saffron/80 disabled:opacity-30 transition-all shadow-lg"><Send size={14} /></button>
-                  </div>
-                )}
+
+              <div className="mt-6 rounded-2xl bg-white/10 border border-white/10 p-4">
+                <p className="text-[8px] font-black uppercase tracking-widest text-saffron">Live Summary</p>
+                <p className="text-sm font-bold mt-2 leading-relaxed">
+                  {summary?.live_summary?.details || "No transcript captured yet. Inject caller input to continue the simulation."}
+                </p>
+                <div className="mt-3 flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-white/60">
+                  <span>{summary?.live_summary?.scam_type || "UNKNOWN"}</span>
+                  <span className="text-white/20">•</span>
+                  <span>{summary?.live_summary?.urgency_level || "MEDIUM"}</span>
+                </div>
+              </div>
+
+              <div className="mt-auto space-y-3 pt-6">
+                <button
+                  onClick={toggleTakeBack}
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-white/10 border border-white/15 rounded-2xl font-black text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-white/15 transition-all"
+                >
+                  {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Volume2 size={14} />}
+                  {isTakeBackActive ? "RETURN TO SAFE MODE" : "TAKE BACK CONTROL"}
+                </button>
+                <button
+                  onClick={endCall}
+                  disabled={isLoading}
+                  className="w-full py-3.5 bg-saffron text-white rounded-2xl font-black text-[10px] tracking-widest flex items-center justify-center gap-2 hover:bg-deeporange transition-all shadow-lg"
+                >
+                  {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Lock size={14} />}
+                  END AND SECURE EVIDENCE
+                </button>
+                <p className="text-[9px] text-white/40 text-center font-bold uppercase tracking-widest">
+                  The citizen sees live protection status without hearing the scammer.
+                </p>
               </div>
             </div>
           )}
 
           {callState === "success" && (
-            <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 bg-gradient-to-b from-boxbg to-white fade-in overflow-y-auto scrollbar-hide">
-              <div className="w-16 h-16 rounded-[1.5rem] bg-indgreen flex items-center justify-center text-white shadow-xl shadow-indgreen/20 animate-success"><ShieldCheck size={32} /></div>
-              <div className="text-center space-y-1 mb-2"><h4 className="font-black text-indblue text-xl tracking-tighter">NODE_SECURED</h4><p className="text-[10px] text-silver font-bold leading-relaxed px-2">Intelligence extracted successfully uploaded to Grid.</p></div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-5 p-6 bg-gradient-to-b from-boxbg to-white fade-in overflow-y-auto">
+              <div className="w-16 h-16 rounded-[1.5rem] bg-indgreen flex items-center justify-center text-white shadow-xl shadow-indgreen/20">
+                <ShieldCheck size={32} />
+              </div>
+              <div className="text-center space-y-1">
+                <h4 className="font-black text-indblue text-xl tracking-tighter">Node Secured</h4>
+                <p className="text-[10px] text-silver font-bold leading-relaxed px-2">
+                  Transcript, extracted entities, and intelligence report have been secured.
+                </p>
+              </div>
               <div className="w-full bg-white rounded-2xl border border-silver/10 shadow-lg overflow-hidden">
-                <div className="bg-indblue p-3 text-white flex justify-between items-center"><span className="text-[8px] font-black tracking-widest">INTEL_LOG_V3</span><Brain size={14} className="text-saffron" /></div>
+                <div className="bg-indblue p-3 text-white flex justify-between items-center">
+                  <span className="text-[8px] font-black tracking-widest">INTEL LOG</span>
+                  <Brain size={14} className="text-saffron" />
+                </div>
                 <div className="p-4 space-y-2">
-                  <div className="flex justify-between items-center border-b border-silver/5 pb-1"><span className="text-[9px] text-silver font-bold uppercase tracking-widest">PATTERN</span><span className="text-xs font-black text-indblue tracking-tight">{analysis?.analysis?.scam_type || "FRAUD_OPS"}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-[9px] text-silver font-bold uppercase tracking-widest">TARGET</span><span className="text-xs font-black text-indblue tracking-tight">{analysis?.analysis?.bank_name || "CENTRAL_GRID"}</span></div>
+                  <div className="flex justify-between items-center border-b border-silver/5 pb-1">
+                    <span className="text-[9px] text-silver font-bold uppercase tracking-widest">Pattern</span>
+                    <span className="text-xs font-black text-indblue tracking-tight">
+                      {analysis?.analysis?.scam_type || summary?.live_summary?.scam_type || "FRAUD_OPS"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center border-b border-silver/5 pb-1">
+                    <span className="text-[9px] text-silver font-bold uppercase tracking-widest">Target</span>
+                    <span className="text-xs font-black text-indblue tracking-tight">
+                      {analysis?.analysis?.bank_name || summary?.live_summary?.bank_name || "CENTRAL_GRID"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[9px] text-silver font-bold uppercase tracking-widest">Reports</span>
+                    <span className="text-xs font-black text-indblue tracking-tight">
+                      {analysis?.reports_created ?? 0}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div className="w-full space-y-3">
-                <button onClick={toggleBlock} className={`w-full py-4 rounded-[1.5rem] font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg group ${isBlocked ? "bg-redalert/10 text-redalert border-2 border-redalert/20" : "bg-redalert text-white"}`}>{isBlocked ? <ShieldAlert size={16} /> : <Lock size={16} />}{isBlocked ? "IMEI_PERMA_BLOCKED" : "BLOCK_IMEI_RANGE"}</button>
-                <button onClick={() => { setCallState("idle"); setMessages([]); setAnalysis(null); setIsBlocked(false); }} className="w-full text-indblue font-black text-[9px] flex items-center justify-center gap-1.5 py-1.5 opacity-50 hover:opacity-100 transition-opacity tracking-widest uppercase">RE_INITIALIZE <ArrowRight size={12} /></button>
+                <button
+                  onClick={toggleBlock}
+                  className={`w-full py-4 rounded-[1.5rem] font-black text-xs flex items-center justify-center gap-2 transition-all shadow-lg ${isBlocked ? "bg-redalert/10 text-redalert border-2 border-redalert/20" : "bg-redalert text-white"}`}
+                >
+                  {isBlocked ? <ShieldAlert size={16} /> : <Lock size={16} />}
+                  {isBlocked ? "IMEI RANGE BLOCKED" : "BLOCK IMEI RANGE"}
+                </button>
+                <button
+                  onClick={resetModule}
+                  className="w-full text-indblue font-black text-[9px] flex items-center justify-center gap-1.5 py-1.5 opacity-50 hover:opacity-100 transition-opacity tracking-widest uppercase"
+                >
+                  REINITIALIZE
+                  <ArrowRight size={12} />
+                </button>
               </div>
             </div>
           )}
@@ -457,19 +789,230 @@ export default function ChatModule({
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-silver/20 rounded-full" />
       </div>
 
-      {/* Cards Container */}
-      <div className="flex flex-row lg:flex-col gap-4 lg:gap-6 w-full lg:w-72 shrink-0 overflow-x-auto lg:overflow-visible pb-2 lg:pb-0">
-        {[
-          { icon: Lock, title: "TRAP_GRID", desc: "Live surveillance of scammer audio patterns via ML nodes." },
-          { icon: Volume2, title: "BULBUL_v2", desc: "Real-time TTS engine with 99.2% human-parity in Indian dialects." },
-          { icon: Brain, title: "DRISHYAM_AI", desc: "Forensic extraction system designed to waste attacker time." }
-        ].map((item, i) => (
-          <div key={i} className="group p-4 sm:p-6 bg-white rounded-[1.5rem] sm:rounded-[2rem] border border-silver/10 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1 min-w-[200px] lg:min-w-0">
-            <div className="w-10 h-10 rounded-xl bg-boxbg flex items-center justify-center text-indblue mb-4 group-hover:bg-saffron group-hover:text-white transition-colors"><item.icon size={20} /></div>
-            <h4 className="text-[9px] font-black text-indblue uppercase tracking-widest mb-2">{item.title}</h4>
-            <p className="text-[10px] text-silver font-medium leading-relaxed">{item.desc}</p>
+      <div className="w-full lg:flex-1 space-y-4">
+        {callState === "active" || callState === "success" ? (
+          <>
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+              <div className="xl:col-span-2 p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em]">Live Summary Feed</h4>
+                    <p className="text-xs text-silver font-medium mt-1">
+                      Citizen-safe status, extracted entities, and fatigue telemetry update live.
+                    </p>
+                  </div>
+                  <div className="px-3 py-1.5 rounded-full bg-redalert/10 text-redalert text-[10px] font-black uppercase tracking-widest">
+                    {summary?.threat_profile?.risk_band || sessionData?.riskBand || "HIGH"}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Scam Type</p>
+                    <p className="text-sm font-black text-indblue mt-2">{summary?.live_summary?.scam_type || "UNKNOWN"}</p>
+                  </div>
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Minutes Engaged</p>
+                    <p className="text-sm font-black text-indblue mt-2">{summary?.live_summary?.minutes_engaged || 0}</p>
+                  </div>
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Fatigue Score</p>
+                    <p className="text-sm font-black text-indblue mt-2">{summary?.live_summary?.fatigue_score || 0}</p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-silver/10 p-4">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-saffron">Latest AI Readout</p>
+                  <p className="text-sm font-bold text-charcoal mt-2 leading-relaxed">
+                    {summary?.live_summary?.last_ai_message || "The AI response will appear here once the caller engages."}
+                  </p>
+                  <p className="text-xs text-silver mt-3 leading-relaxed">
+                    {summary?.live_summary?.details || "No high-confidence tactics extracted yet."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
+                <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em] mb-4">Extracted Intel</h4>
+                <div className="space-y-3">
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Targeted Institution</p>
+                    <p className="text-sm font-black text-charcoal mt-2">
+                      {summary?.live_summary?.bank_name || "Unknown"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Urgency</p>
+                    <p className="text-sm font-black text-charcoal mt-2">
+                      {summary?.live_summary?.urgency_level || "MEDIUM"}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl bg-boxbg p-4 border border-silver/5 min-h-[160px]">
+                    <p className="text-[8px] font-black text-silver uppercase tracking-widest">Entities</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {entities.length > 0 ? entities.map((entity) => (
+                        <span
+                          key={entity}
+                          className="px-2.5 py-1.5 rounded-full bg-indblue/5 text-indblue text-[10px] font-black border border-indblue/10"
+                        >
+                          {entity}
+                        </span>
+                      )) : (
+                        <p className="text-xs text-silver font-medium">
+                          No entity extracted yet. Continue the caller simulation to capture phone numbers, VPAs, or IDs.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+              <div className="p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
+                <div className="flex items-center justify-between gap-4 mb-4">
+                  <div>
+                    <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em]">Scammer Relay Console</h4>
+                    <p className="text-xs text-silver font-medium mt-1">
+                      Simulate what the caller says while the citizen remains protected.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsVoiceMode(false)}
+                      className={`px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${!isVoiceMode ? "bg-indblue text-white border-indblue" : "bg-white text-silver border-silver/20"}`}
+                    >
+                      TEXT
+                    </button>
+                    <button
+                      onClick={() => setIsVoiceMode(true)}
+                      className={`px-3 py-2 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all ${isVoiceMode ? "bg-saffron text-white border-saffron" : "bg-white text-silver border-silver/20"}`}
+                    >
+                      VOICE
+                    </button>
+                  </div>
+                </div>
+
+                {isVoiceMode ? (
+                  <div className="flex flex-col items-center gap-4 py-6">
+                    <button
+                      onMouseDown={startRecording}
+                      onMouseUp={stopRecording}
+                      onMouseLeave={stopRecording}
+                      onTouchStart={startRecording}
+                      onTouchEnd={stopRecording}
+                      disabled={isLoading}
+                      className={`relative p-5 rounded-full transition-all shadow-xl ${isRecording ? "bg-redalert text-white" : "bg-gradient-to-br from-saffron to-deeporange text-white"} ${isLoading ? "opacity-40 cursor-not-allowed" : ""}`}
+                    >
+                      {isLoading ? <Loader2 size={24} className="animate-spin" /> : <Mic size={24} />}
+                    </button>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-silver">
+                      {isRecording ? "Recording caller audio..." : "Push to talk as the scammer"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={inputText}
+                      onChange={(event) => setInputText(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          void sendMessage();
+                        }
+                      }}
+                      placeholder="Type the caller script here..."
+                      disabled={isLoading}
+                      className="flex-1 bg-boxbg border border-silver/20 rounded-xl px-4 py-3 text-sm placeholder:text-silver/40 focus:outline-none focus:border-indblue transition-all text-charcoal font-semibold"
+                    />
+                    <button
+                      onClick={sendMessage}
+                      disabled={isLoading || !inputText.trim()}
+                      className="p-3 bg-saffron rounded-xl text-white hover:bg-deeporange disabled:opacity-30 transition-all shadow-lg"
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
+                )}
+
+                <div className="mt-5 flex items-center justify-between rounded-2xl bg-boxbg border border-silver/10 px-4 py-3">
+                  <div>
+                    <p className="text-[8px] font-black uppercase tracking-widest text-silver">Voice Replay</p>
+                    <p className="text-xs text-charcoal font-semibold mt-1">Auto-play AI voice when generated</p>
+                  </div>
+                  <button
+                    onClick={() => setAutoPlayVoice((prev) => !prev)}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${autoPlayVoice ? "bg-indgreen" : "bg-silver/40"}`}
+                  >
+                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${autoPlayVoice ? "left-6" : "left-0.5"}`} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
+                <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em] mb-4">Transcript Monitor</h4>
+                <div className="max-h-[360px] overflow-y-auto space-y-3 pr-1">
+                  {transcript.length > 0 ? transcript.map((message, index) => (
+                    <div
+                      key={`${message.timestamp}-${index}`}
+                      className={`p-3 rounded-2xl border text-xs leading-relaxed ${message.role === "scammer" ? "bg-saffron/5 border-saffron/15 text-charcoal" : "bg-indblue/5 border-indblue/10 text-charcoal"}`}
+                    >
+                      <p className="text-[8px] font-black uppercase tracking-widest text-silver mb-2">
+                        {message.role === "scammer" ? "Caller" : "DRISHYAM AI"}
+                      </p>
+                      <p className="font-semibold">{message.text}</p>
+                      {"audioBase64" in message && message.audioBase64 ? (
+                        <button
+                          onClick={() => playAudio(message.audioBase64!)}
+                          className="mt-3 py-1.5 px-2.5 bg-white rounded-full flex items-center gap-1.5 text-[8px] text-indblue hover:bg-indblue hover:text-white font-black tracking-widest transition-all"
+                        >
+                          <Volume2 size={10} />
+                          REPLAY
+                        </button>
+                      ) : null}
+                    </div>
+                  )) : (
+                    <div className="p-4 rounded-2xl bg-boxbg border border-silver/10 text-xs text-silver font-medium">
+                      Transcript will populate as soon as the AI or caller speaks.
+                    </div>
+                  )}
+                  <div ref={transcriptEndRef} />
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {[
+              {
+                icon: Lock,
+                title: "PROTECTED HANDOFF",
+                desc: "Citizen can hand the suspicious caller to AI and stay out of the audio path.",
+              },
+              {
+                icon: Volume2,
+                title: "LIVE SUMMARY",
+                desc: "Threat type, urgency, and extracted entities surface without exposing the citizen to the caller.",
+              },
+              {
+                icon: Brain,
+                title: "TRANSCRIPT INTEL",
+                desc: "Every turn is retained for downstream graphing, FIR packaging, and recovery workflows.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="group p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm hover:shadow-xl transition-all hover:-translate-y-1"
+              >
+                <div className="w-10 h-10 rounded-xl bg-boxbg flex items-center justify-center text-indblue mb-4 group-hover:bg-saffron group-hover:text-white transition-colors">
+                  <item.icon size={20} />
+                </div>
+                <h4 className="text-[9px] font-black text-indblue uppercase tracking-widest mb-2">{item.title}</h4>
+                <p className="text-[11px] text-silver font-medium leading-relaxed">{item.desc}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

@@ -220,11 +220,56 @@ async def get_command_stats(db: Session = Depends(get_db)):
 
 @router.get("/stats/inoculation")
 async def get_inoculation_stats(db: Session = Depends(get_db)):
+    from models.database import SystemAction
+
+    drill_actions = db.query(SystemAction).filter(
+        SystemAction.action_type.in_(["START_DRILL", "INOCULATION_DRILL"])
+    ).order_by(SystemAction.created_at.desc()).limit(50).all()
+    drills_today = len(drill_actions)
+    completed_drills = len([action for action in drill_actions if action.status == "success"])
+    completion_rate = int((completed_drills / drills_today) * 100) if drills_today else 84
+
     return {
         "citizen_resilience_index": 72,
-        "drills_conducted_today": 1240,
+        "drills_conducted_today": 1240 + drills_today,
         "top_vulnerable_sector": "Elderly / Retirees",
-        "awareness_reach": "1.2M"
+        "awareness_reach": "1.2M",
+        "scenarios": {
+            "bank_kyc": {
+                "name": "Hindi SMS KYC Trap",
+                "desc": "Build resistance against urgent KYC links and caller-pressure tactics.",
+                "steps": [
+                    "[SIM] Hindi SMS drill dispatched: 'Aapka bank KYC aaj band ho jayega.'",
+                    "[CHECK] Citizen opens safe drill explainer instead of the phishing link.",
+                    "[COACH] DRISHYAM explains why OTP, PIN, and APK requests are scam signals.",
+                    "[SCORE] Drill marked complete and resilience score updated.",
+                ],
+            },
+            "upi_collect": {
+                "name": "UPI Collect Request Drill",
+                "desc": "Teach citizens to spot fake collect requests and refund scams.",
+                "steps": [
+                    "[SIM] UPI collect request training prompt sent to the target.",
+                    "[CHECK] Citizen identifies 'receive money' vs 'pay money' mismatch.",
+                    "[COACH] Guidance shared on VPAs, collect handles, and payment intent.",
+                    "[SCORE] Payment safety score increased for the completed drill.",
+                ],
+            },
+            "job_scam": {
+                "name": "Job Offer Mule Trap",
+                "desc": "Prepare users for recruiter-style scams and mule account bait.",
+                "steps": [
+                    "[SIM] Recruiter scam script delivered through the safe drill sandbox.",
+                    "[CHECK] Citizen challenges salary promise and document ask.",
+                    "[COACH] DRISHYAM explains mule recruitment red flags in simple language.",
+                    "[SCORE] Citizen classified as safer against mule recruitment campaigns.",
+                ],
+            },
+        },
+        "impact": {
+            "prevented": f"{1480 + drills_today * 12}",
+            "velocity": f"+{max(completion_rate - 52, 18)}%",
+        },
     }
 
 @router.get("/stats/score")
@@ -251,7 +296,24 @@ async def get_deepfake_stats(db: Session = Depends(get_db)):
     """
     from core.config import settings
     import httpx
-    
+    from models.database import FileUpload
+
+    uploads = db.query(FileUpload).order_by(FileUpload.created_at.desc()).limit(5).all()
+    incidents = [
+        {
+            "type": upload.filename,
+            "risk": upload.risk_level or ("HIGH" if (upload.verdict or "").upper() in {"FAKE", "DEEPFAKE"} else "LOW"),
+            "status": "Deepfake" if (upload.verdict or "").upper() in {"FAKE", "DEEPFAKE"} else ("Suspicious" if (upload.verdict or "").upper() == "SUSPICIOUS" else "Verified"),
+        }
+        for upload in uploads
+    ]
+    if not incidents:
+        incidents = [
+            {"type": "Manager video callback", "risk": "HIGH", "status": "Deepfake"},
+            {"type": "Aadhaar selfie verification", "risk": "MEDIUM", "status": "Suspicious"},
+            {"type": "Recruiter onboarding clip", "risk": "LOW", "status": "Verified"},
+        ]
+
     try:
         async with httpx.AsyncClient(timeout=5.0) as client:
             headers = {"X-API-KEY": settings.DEEPFAKE_API_KEY}
@@ -265,6 +327,7 @@ async def get_deepfake_stats(db: Session = Depends(get_db)):
                     "model_runtime_status": data.get("status", "OPERATIONAL").upper(),
                     "engine": data.get("engine", "DRISHYAM-ULTIMATE-V3"),
                     "capabilities": data.get("forensic_capabilities", []),
+                    "incidents": incidents,
                     "model_status": {
                         "liveness": "Operational",
                         "gan_detector": "Active",
@@ -279,17 +342,78 @@ async def get_deepfake_stats(db: Session = Depends(get_db)):
         "total_media_scanned": 42500,
         "deepfakes_thwarted": 1240,
         "detection_accuracy": "99.8%",
-        "model_runtime_status": "OPERATIONAL"
+        "model_runtime_status": "OPERATIONAL",
+        "incidents": incidents,
+        "model_status": {
+            "liveness": "Operational",
+            "gan_detector": "Active",
+            "false_positive_rate": "0.01%",
+        },
     }
 
 
 @router.get("/stats/mule")
 async def get_mule_stats(db: Session = Depends(get_db)):
+    from models.database import MuleAd
+
+    ads = db.query(MuleAd).order_by(MuleAd.created_at.desc()).limit(12).all()
+    if not ads:
+        ads_payload = [
+            {
+                "id": 1,
+                "title": "Instant Salary Transfer Coordinator",
+                "salary": "₹48,000 / month",
+                "platform": "Telegram",
+                "risk": 0.96,
+                "status": "Mule Campaign",
+            },
+            {
+                "id": 2,
+                "title": "Remote KYC Processing Executive",
+                "salary": "₹32,000 / month",
+                "platform": "WhatsApp",
+                "risk": 0.88,
+                "status": "High Risk",
+            },
+            {
+                "id": 3,
+                "title": "International Settlement Assistant",
+                "salary": "₹55,000 / month",
+                "platform": "Facebook Meta",
+                "risk": 0.79,
+                "status": "Under Review",
+            },
+        ]
+    else:
+        ads_payload = [
+            {
+                "id": ad.id,
+                "title": ad.title,
+                "salary": ad.salary or "₹0 / month",
+                "platform": ad.platform,
+                "risk": round(ad.risk_score or 0.0, 2),
+                "status": ad.status,
+            }
+            for ad in ads
+        ]
+
+    platform_counts: dict[str, int] = {}
+    for ad in ads_payload:
+        platform_counts[ad["platform"]] = platform_counts.get(ad["platform"], 0) + 1
+
+    patterns = [
+        {"label": "High Salary Bait", "value": min(96, 62 + len(ads_payload) * 4)},
+        {"label": "Telegram / WhatsApp Funnel", "value": min(94, 58 + sum(platform_counts.get(p, 0) for p in ["Telegram", "WhatsApp"]) * 11)},
+        {"label": "Rapid Onboarding Pressure", "value": min(92, 54 + len([ad for ad in ads_payload if ad["risk"] > 0.85]) * 9)},
+    ]
+
     return {
-        "accounts_flagged": 2400,
+        "accounts_flagged": 2400 + len(ads_payload) * 3,
         "funds_intercepted": "₹12.4 Cr",
         "organized_clusters": 12,
-        "active_mules_detected": 420
+        "active_mules_detected": 420 + len(ads_payload),
+        "ads": ads_payload,
+        "patterns": patterns,
     }
 
 @router.get("/stats/bharat")
@@ -406,23 +530,36 @@ async def get_upi_stats(db: Session = Depends(get_db)):
 
 @router.get("/graph")
 async def get_system_graph(db: Session = Depends(get_db)):
-    from models.database import ScamCluster, HoneypotEntity
+    from models.database import ScamCluster, HoneypotEntity, HoneypotSession
     import random
     
     clusters = db.query(ScamCluster).limit(5).all()
-    entities = db.query(HoneypotEntity).limit(10).all()
+    entities = db.query(HoneypotEntity).order_by(HoneypotEntity.last_seen.desc()).limit(12).all()
+    sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(6).all()
     
     nodes = []
     edges = []
+    seen_nodes = set()
+
+    def add_node(node: dict):
+        if node["id"] in seen_nodes:
+            return
+        seen_nodes.add(node["id"])
+        nodes.append(node)
     
     # 1. Add clusters as central nodes
     for c in clusters:
-        nodes.append({"id": f"cluster_{c.cluster_id}", "label": c.location, "type": "cluster"})
+        add_node({"id": f"cluster_{c.cluster_id}", "label": c.location, "type": "cluster", "risk": c.risk_level})
         
     # 2. Add entities (VPA, Phone etc) and link to clusters
     for e in entities:
         node_id = f"entity_{e.id}"
-        nodes.append({"id": node_id, "label": e.entity_value, "type": e.entity_type.lower() if e.entity_type else "unknown"})
+        add_node({
+            "id": node_id,
+            "label": e.entity_value,
+            "type": e.entity_type.lower() if e.entity_type else "unknown",
+            "risk": "CRITICAL" if e.risk_score >= 0.8 else "HIGH",
+        })
         if clusters:
             # Create a semi-random edge for visualization
             target = random.choice(clusters)
@@ -430,6 +567,31 @@ async def get_system_graph(db: Session = Depends(get_db)):
                 "source": node_id,
                 "target": f"cluster_{target.cluster_id}",
                 "label": "Direct Linked"
+            })
+
+    for s in sessions:
+        session_node_id = f"session_{s.session_id}"
+        add_node({
+            "id": session_node_id,
+            "label": s.session_id,
+            "type": "session",
+            "risk": "HIGH" if s.status == "completed" else "MEDIUM",
+        })
+        if s.caller_num:
+            caller_node_id = f"caller_{s.session_id}"
+            add_node({
+                "id": caller_node_id,
+                "label": s.caller_num,
+                "type": "number",
+                "risk": "HIGH",
+            })
+            edges.append({"source": session_node_id, "target": caller_node_id, "label": "Observed Caller"})
+        if clusters:
+            cluster = random.choice(clusters)
+            edges.append({
+                "source": session_node_id,
+                "target": f"cluster_{cluster.cluster_id}",
+                "label": "Regional Correlation",
             })
             
     # Fallback if DB is empty to prevent blank screen
@@ -446,7 +608,89 @@ async def get_system_graph(db: Session = Depends(get_db)):
         
     return {
         "nodes": nodes,
-        "edges": edges
+        "edges": edges,
+        "root_entity": entities[0].entity_value if entities else (sessions[0].caller_num if sessions else "Cluster: Jamtara"),
+    }
+
+
+@router.get("/graph/spotlight")
+async def get_graph_spotlight(entity: str | None = None, db: Session = Depends(get_db)):
+    from models.database import HoneypotEntity, HoneypotSession, CrimeReport
+    from core.graph import fraud_graph
+
+    latest_entity = db.query(HoneypotEntity).order_by(HoneypotEntity.last_seen.desc()).first()
+    latest_session = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).first()
+
+    root_entity = entity or (latest_entity.entity_value if latest_entity else None) or (latest_session.caller_num if latest_session else "+919000123456")
+    network = fraud_graph.get_network(root_entity)
+
+    entity_record = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == root_entity).first()
+    recent_sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(5).all()
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(5).all()
+
+    matching_sessions = []
+    fir_preview = None
+    for session in recent_sessions:
+        analysis = session.recording_analysis_json or {}
+        linked_entities = analysis.get("key_entities", []) if isinstance(analysis, dict) else []
+        if root_entity == session.caller_num or root_entity in linked_entities:
+            matching_sessions.append({
+                "session_id": session.session_id,
+                "status": session.status,
+                "direction": session.direction,
+                "created_at": session.created_at.isoformat() if session.created_at else None,
+                "scam_type": analysis.get("scam_type", "UNKNOWN") if isinstance(analysis, dict) else "UNKNOWN",
+            })
+            auto_fir = (session.metadata_json or {}).get("auto_fir") if session.metadata_json else None
+            if auto_fir and not fir_preview:
+                fir_preview = {
+                    "fir_id": auto_fir.get("fir_id"),
+                    "summary": auto_fir.get("formatted_document", "")[:420],
+                    "entities": auto_fir.get("accused_info", {}).get("extracted_entities", []),
+                    "ready": True,
+                }
+
+    if not fir_preview:
+        fir_preview = {
+            "fir_id": f"FIR-PREVIEW-{abs(hash(root_entity)) % 10000:04d}",
+            "summary": f"Entity {root_entity} is linked to live scam activity, honeypot transcript evidence, and downstream police packaging.",
+            "entities": [root_entity],
+            "ready": True,
+        }
+
+    linked_reports = [
+        {
+            "report_id": report.report_id,
+            "category": report.category,
+            "scam_type": report.scam_type,
+            "priority": report.priority,
+            "status": report.status,
+            "created_at": report.created_at.isoformat() if report.created_at else None,
+        }
+        for report in reports
+    ]
+
+    return {
+        "root_entity": root_entity,
+        "network": network,
+        "entity_intel": {
+            "type": entity_record.entity_type if entity_record else "PHONE",
+            "confidence": round(entity_record.risk_score if entity_record else 0.91, 2),
+            "report_count": len(linked_reports),
+            "recommended_action": "Generate FIR and route to graph-linked agencies",
+            "last_seen": entity_record.last_seen.isoformat() if entity_record and entity_record.last_seen else None,
+        },
+        "recent_sessions": matching_sessions or [
+            {
+                "session_id": latest_session.session_id if latest_session else "H-DEMO01",
+                "status": latest_session.status if latest_session else "completed",
+                "direction": latest_session.direction if latest_session else "handoff",
+                "created_at": latest_session.created_at.isoformat() if latest_session and latest_session.created_at else None,
+                "scam_type": (latest_session.recording_analysis_json or {}).get("scam_type", "BANK_FRAUD") if latest_session else "BANK_FRAUD",
+            }
+        ],
+        "linked_reports": linked_reports,
+        "fir_preview": fir_preview,
     }
 
 @router.get("/search/citizen")
@@ -464,9 +708,36 @@ async def search_citizen(query: str, db: Session = Depends(get_db)):
 
 @router.get("/alerts/coverage")
 async def get_alert_coverage(region: str, db: Session = Depends(get_db)):
+    from models.database import NotificationLog
+
+    coverage_profiles = {
+        "national": {"citizens": 1480000, "districts": 766, "delivery": 94, "channels": ["SMS", "IVR", "WHATSAPP", "FM_RADIO"]},
+        "delhi": {"citizens": 210000, "districts": 11, "delivery": 97, "channels": ["SMS", "WHATSAPP", "CELL_BROADCAST"]},
+        "mh": {"citizens": 540000, "districts": 36, "delivery": 95, "channels": ["SMS", "IVR", "FM_RADIO"]},
+        "ka": {"citizens": 160000, "districts": 31, "delivery": 96, "channels": ["SMS", "IVR", "GRAM_PANCHAYAT_PA"]},
+    }
+    profile = coverage_profiles.get(region, coverage_profiles["national"])
+
+    recent_logs = db.query(NotificationLog).filter(
+        NotificationLog.template_id.like("ALERT_%"),
+        NotificationLog.recipient == region,
+    ).order_by(NotificationLog.sent_at.desc()).limit(20).all()
+
+    if recent_logs:
+        deliveries = [
+            float((log.metadata_json or {}).get("delivery_rate_percent", profile["delivery"]))
+            for log in recent_logs
+        ]
+        delivery = round(sum(deliveries) / len(deliveries), 1)
+    else:
+        delivery = profile["delivery"]
+
     return {
         "region": region,
-        "population_reach": "84%",
-        "active_broadcast_channels": ["SMS", "IVR", "WHATSAPP", "FM_RADIO"],
-        "latency_sec": 4
+        "citizens": profile["citizens"],
+        "districts": profile["districts"],
+        "delivery": delivery,
+        "population_reach": f"{profile['delivery']}%",
+        "active_broadcast_channels": profile["channels"],
+        "latency_sec": 4,
     }

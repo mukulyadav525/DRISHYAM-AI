@@ -177,5 +177,13 @@ async def list_personas(db: Session = Depends(get_db)):
     duration = (datetime.datetime.now() - start_time).total_seconds()
     logger.info(f"[PERF] Personas DB query took {duration:.4f}s")
     if not personas:
-        return {"personas": [{"name": "DRISHYAM AI", "language": "en", "speaker": "Female", "pace": 1.0}]}
+        return {
+            "personas": [
+                {"name": "Elderly Uncle", "language": "hi-IN", "speaker": "Male", "pace": 0.85},
+                {"name": "Rural Farmer", "language": "hi-IN", "speaker": "Male", "pace": 0.9},
+                {"name": "College Student", "language": "en-IN", "speaker": "Male", "pace": 1.05},
+                {"name": "Housewife", "language": "hi-IN", "speaker": "Female", "pace": 0.95},
+                {"name": "Busy Executive", "language": "en-IN", "speaker": "Female", "pace": 1.0},
+            ]
+        }
     return {"personas": [{"name": p.name, "language": p.language, "speaker": p.speaker, "pace": p.pace} for p in personas]}

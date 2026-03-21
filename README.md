@@ -55,6 +55,36 @@ We've provided a unified way to run all components simultaneously using `concurr
     - Agency Dashboard: `http://localhost:3000`
     - Simulation Portal: `http://localhost:3001`
 
+### Verification
+
+Run the demo-safe verification bundle before handoff or live demos:
+
+```bash
+npm run verify:launch
+```
+
+This builds both frontends and runs the backend smoke checks in [scripts/smoke_backend.py](/Users/mukul/Desktop/DRISHYAM-AI/scripts/smoke_backend.py).
+
+Run the full MVP plus narrative bundle with:
+
+```bash
+npm run verify:mvp
+```
+
+Run the full repo PRD control-plane bundle with:
+
+```bash
+npm run verify:prd
+```
+
+### Runbook
+
+Launch and recovery instructions live in [docs/launch_readiness_runbook.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/launch_readiness_runbook.md).
+Pilot execution guidance lives in [docs/pilot_launch_runbook.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/pilot_launch_runbook.md).
+The end-to-end demo story lives in [docs/demo_narrative_runbook.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/demo_narrative_runbook.md).
+The documentation index lives in [docs/documentation_index.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/documentation_index.md).
+The demo-scope PRD audit lives in [docs/prd_demo_scope_audit.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/prd_demo_scope_audit.md).
+
 ---
 
 ## 🛡️ Operational Workflow

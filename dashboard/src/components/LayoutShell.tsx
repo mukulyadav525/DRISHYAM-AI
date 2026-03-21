@@ -10,13 +10,13 @@ import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
 
 function InnerShell({ children }: { children: React.ReactNode }) {
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isMfaPending } = useAuth();
     const pathname = usePathname();
     const isLoginPage = pathname === "/login";
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // On the login page, render children without sidebar
-    if (isLoginPage || !isAuthenticated) {
+    if (isLoginPage || !isAuthenticated || isMfaPending) {
         return <AuthGate>{children}</AuthGate>;
     }
 

@@ -29,6 +29,10 @@ interface MuleAd {
 }
 
 interface MuleStats {
+    accounts_flagged?: number;
+    funds_intercepted?: string;
+    organized_clusters?: number;
+    active_mules_detected?: number;
     ads: MuleAd[];
     patterns: { label: string; value: number }[];
 }
@@ -107,6 +111,24 @@ export default function MulePage() {
                         <span className="hidden sm:inline">{isScanning ? `Analyzing ${scanProgress}%` : "Scan Active Feed"}</span>
                         <span className="sm:hidden">{isScanning ? `${scanProgress}%` : "Scan"}</span>
                     </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Accounts Flagged</p>
+                    <p className="text-2xl font-black text-redalert mt-2">{data?.accounts_flagged || 0}</p>
+                    <p className="text-xs text-silver mt-2">Linked mule accounts and recruiter-controlled destinations under review.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Funds Intercepted</p>
+                    <p className="text-2xl font-black text-indgreen mt-2">{data?.funds_intercepted || "₹0"}</p>
+                    <p className="text-xs text-silver mt-2">Estimated value protected from recruitment-led laundering funnels.</p>
+                </div>
+                <div className="bg-white rounded-2xl border border-silver/10 p-5">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Active Clusters</p>
+                    <p className="text-2xl font-black text-indblue mt-2">{data?.organized_clusters || 0}</p>
+                    <p className="text-xs text-silver mt-2">{data?.active_mules_detected || 0} active mule entities are linked into the current feed.</p>
                 </div>
             </div>
 

@@ -4,11 +4,25 @@ from pydantic import BaseModel
 from typing import List, Optional
 from core.database import get_db
 from core.auth import require_role, create_access_token
-from models.database import SimulationRequest, User, UserRole
+from models.database import CitizenConsent, SimulationRequest, User, UserRole
 import datetime
 import uuid
 
 router = APIRouter()
+
+
+def _normalize_phone(phone_number: str | None) -> str:
+    digits = "".join(ch for ch in str(phone_number or "") if ch.isdigit())
+    if len(digits) >= 10:
+        return digits[-10:]
+    return str(phone_number or "").strip()
+
+
+def _has_required_consent(consent: CitizenConsent | None) -> bool:
+    if not consent or consent.status != "ACTIVE" or not isinstance(consent.scopes_json, dict):
+        return False
+    required_scopes = ["ai_handoff", "transcript_analysis", "evidence_packaging"]
+    return all(bool(consent.scopes_json.get(scope)) for scope in required_scopes)
 
 # --- Schemas ---
 class SimulationRequestCreate(BaseModel):
@@ -30,13 +44,27 @@ class SimulationRequestOut(BaseModel):
 @router.post("/request", response_model=SimulationRequestOut)
 def create_request(req_in: SimulationRequestCreate, db: Session = Depends(get_db)):
     """Citizens call this to request access to the simulation."""
+    normalized_phone = _normalize_phone(req_in.phone_number)
+
+    consent = (
+        db.query(CitizenConsent)
+        .filter(CitizenConsent.phone_number == normalized_phone)
+        .order_by(CitizenConsent.updated_at.desc(), CitizenConsent.given_at.desc())
+        .first()
+    )
+    if not _has_required_consent(consent):
+        raise HTTPException(
+            status_code=400,
+            detail="Citizen consent is required before simulation access can be requested.",
+        )
+
     # Check if a request already exists
-    existing = db.query(SimulationRequest).filter(SimulationRequest.phone_number == req_in.phone_number).first()
+    existing = db.query(SimulationRequest).filter(SimulationRequest.phone_number == normalized_phone).first()
     if existing:
         return existing
     
     new_request = SimulationRequest(
-        phone_number=req_in.phone_number,
+        phone_number=normalized_phone,
         status="pending"
     )
     db.add(new_request)
@@ -47,27 +75,38 @@ def create_request(req_in: SimulationRequestCreate, db: Session = Depends(get_db
 @router.get("/status/{phone}", response_model=SimulationRequestOut)
 def get_status(phone: str, db: Session = Depends(get_db)):
     """Simulation app calls this to check if access is granted."""
-    request = db.query(SimulationRequest).filter(SimulationRequest.phone_number == phone).first()
+    normalized_phone = _normalize_phone(phone)
+    request = db.query(SimulationRequest).filter(SimulationRequest.phone_number == normalized_phone).first()
     if not request:
         raise HTTPException(status_code=404, detail="Request not found")
     
     # If approved, generate a token for the user
     if request.status == "approved":
         # Ensure a User object exists for this simulation phone number
-        user = db.query(User).filter(User.username == phone).first()
+        user = db.query(User).filter(User.username == normalized_phone).first()
         if not user:
             from core.auth import get_password_hash
             user = User(
-                username=phone,
-                phone_number=phone,
+                username=normalized_phone,
+                phone_number=normalized_phone,
                 hashed_password=get_password_hash(uuid.uuid4().hex),
                 role=UserRole.COMMON.value,
                 is_active=True,
-                full_name=f"Simulation User {phone[-4:]}"
+                full_name=f"Simulation User {normalized_phone[-4:]}"
             )
             db.add(user)
             db.commit()
             db.refresh(user)
+
+        consent = (
+            db.query(CitizenConsent)
+            .filter(CitizenConsent.phone_number == normalized_phone)
+            .order_by(CitizenConsent.updated_at.desc(), CitizenConsent.given_at.desc())
+            .first()
+        )
+        if consent and consent.user_id is None:
+            consent.user_id = user.id
+            db.commit()
         
         # Generate token
         token = create_access_token(data={

@@ -28,19 +28,42 @@ from api.recovery import router as recovery_router
 from api.modules import router as modules_router
 from api.whatsapp import router as whatsapp_router
 from api.security import router as security_router
+from api.pilot import router as pilot_router
+from api.program_office import router as program_office_router
 from api.ai import router as ai_router
 
 from core.security import security_logging_middleware
 from core.logging_config import setup_production_logging
 
 # Security & Rate Limiting
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
-from slowapi.errors import RateLimitExceeded
+try:
+    from slowapi import Limiter, _rate_limit_exceeded_handler
+    from slowapi.util import get_remote_address
+    from slowapi.errors import RateLimitExceeded
+    SLOWAPI_AVAILABLE = True
+except Exception as import_error:
+    Limiter = None
+    RateLimitExceeded = None
+    SLOWAPI_AVAILABLE = False
+
+    def _rate_limit_exceeded_handler(request, exc):
+        raise exc
+
+    def get_remote_address(request):
+        return "local-dev"
 import secure
 
 # Initialize Rate Limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=[f"{settings.RATE_LIMIT_PER_MINUTE}/minute"])
+limiter = None
+if SLOWAPI_AVAILABLE:
+    limiter = Limiter(
+        key_func=get_remote_address,
+        default_limits=[f"{settings.RATE_LIMIT_PER_MINUTE}/minute"],
+    )
+else:
+    logging.getLogger("drishyam.main").warning(
+        "SlowAPI could not be imported. Rate limiting is disabled for this environment."
+    )
 secure_headers = secure.Secure()
 
 # Setup Logging
@@ -156,8 +179,10 @@ app = FastAPI(
 )
 
 # Rate Limiting Error Handler
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+if limiter is not None:
+    app.state.limiter = limiter
+if RateLimitExceeded is not None:
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Configure CORS
 app.add_middleware(
@@ -209,6 +234,8 @@ app.include_router(simulation_router, prefix="/api/v1/auth/simulation", tags=["s
 app.include_router(telecom_router, prefix="/api/v1/telecom", tags=["telecom"])
 app.include_router(intelligence_router, prefix="/api/v1/intelligence", tags=["intelligence"])
 app.include_router(notifications_router, prefix="/api/v1/notifications", tags=["notifications"])
+app.include_router(pilot_router, prefix="/api/v1/pilot", tags=["pilot"])
+app.include_router(program_office_router, prefix="/api/v1/program-office", tags=["program-office"])
 app.include_router(citizen_router, prefix="/api/v1/citizen", tags=["citizen"])
 app.include_router(recovery_router, prefix="/api/v1/recovery", tags=["recovery"])
 app.include_router(modules_router, prefix="/api/v1/modules", tags=["modules"])
