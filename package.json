@@ -2,8 +2,8 @@
     "name": "drishyam-ai-workspace",
     "private": true,
     "scripts": {
-        "build:dashboard": "npm run build -w dashboard",
-        "build:simulation": "npm run build -w simulation-app",
+        "build:dashboard": "cd dashboard && next build",
+        "build:simulation": "cd simulation-app && next build",
         "build": "npm run build:dashboard && npm run build:simulation",
         "verify:backend": "cd backend && ./venv/bin/python ../scripts/smoke_backend.py",
         "verify:narrative": "cd backend && ./venv/bin/python ../scripts/verify_ramesh_scenario.py",
