@@ -131,14 +131,11 @@ export default function SimulationPortal() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-indblue/10 text-indblue rounded-full text-[10px] font-bold tracking-widest uppercase mb-1">
               <ShieldCheck size={12} /> Active Node: {activeFeature === 'chat' ? 'Voice_INT' : activeFeature === 'deepfake' ? 'Visual_DF' : 'Fin_Sec'}
             </div>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight flex items-center justify-center gap-2">
-              <span className="text-saffron">DRISHYAM</span>
-              <span className="text-indblue">
-                {activeFeature === 'chat' && "Voice/Video Trace"}
-                {activeFeature === 'deepfake' && "Deepfake Defense"}
-                {activeFeature === 'upi' && "UPI Armor"}
-                {activeFeature === 'bharat' && "Bharat Layer"}
-              </span>
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-indblue tracking-tight">
+              {activeFeature === 'chat' && "DRISHYAM Voice/Video Trace"}
+              {activeFeature === 'deepfake' && "DRISHYAM Deepfake Defense"}
+              {activeFeature === 'upi' && "DRISHYAM UPI Armor"}
+              {activeFeature === 'bharat' && "DRISHYAM Bharat Layer"}
             </h2>
           </div>
 
