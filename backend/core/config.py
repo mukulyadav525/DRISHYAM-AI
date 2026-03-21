@@ -104,6 +104,7 @@ except Exception as e:
             ALGORITHM = "HS256"
             ACCESS_TOKEN_EXPIRE_MINUTES = 480
             SARVAM_API_KEY = "mock-key"
+            GEMINI_API_KEY = "mock-key"
             DEEPGRAM_API_KEY = "mock-key"
             SQLALCHEMY_DATABASE_URI = "sqlite:///./drishyam.db"
             REDIS_URL = None
@@ -116,6 +117,8 @@ except Exception as e:
             TWILIO_AUTH_TOKEN = None
             TWILIO_PHONE_NUMBER = None
             TWILIO_WEBHOOK_BASE_URL = None
+            DEEPFAKE_API_URL = "https://mock-deepfake.railway.app"
+            DEEPFAKE_API_KEY = "mock-key"
         settings = MockSettings()
     else:
         raise e

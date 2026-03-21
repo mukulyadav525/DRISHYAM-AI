@@ -28,6 +28,7 @@ export default function DeepfakeModule({
   const [deepfakeVerdict, setDeepfakeVerdict] = useState<null | 'VERIFIED' | 'DEEPFAKE'>(null);
   const [deepfakeStats, setDeepfakeStats] = useState<any>(null);
   const [deepfakeAiResult, setDeepfakeAiResult] = useState<any>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video'>('video');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,7 +52,11 @@ export default function DeepfakeModule({
     } else if (scanProgress >= 100) {
       setTimeout(() => {
         setIsDeepfakeScanning(false);
-        setDeepfakeVerdict(deepfakeAiResult?.verdict || 'DEEPFAKE');
+        if (deepfakeAiResult?.verdict) {
+          setDeepfakeVerdict(deepfakeAiResult.verdict);
+        } else if (scanProgress === 100 && !deepfakeAiResult) {
+            toast.error("Forensic engine returned no verdict.");
+        }
       }, 500);
     }
   }, [isDeepfakeScanning, scanProgress, deepfakeAiResult]);
@@ -62,7 +67,10 @@ export default function DeepfakeModule({
     setDeepfakeVerdict(null);
     setDeepfakeAiResult(null);
 
-    performAction('SCAN_VIDEO', 'FORENSIC_PIPELINE');
+    const type = file?.type.startsWith('image/') ? 'image' : 'video';
+    setMediaType(type);
+
+    performAction('SCAN_MEDIA', `FORENSIC_PIPELINE_${type.toUpperCase()}`);
 
     try {
       const authStr = localStorage.getItem('drishyam_auth');
@@ -84,7 +92,7 @@ export default function DeepfakeModule({
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           },
-          body: JSON.stringify({ media_type: 'video' })
+          body: JSON.stringify({ media_type: type })
         });
       }
 
@@ -122,6 +130,7 @@ export default function DeepfakeModule({
         }
       } else {
         setIsDeepfakeScanning(false);
+        toast.error("Communication with Forensic Lab failed.");
       }
     } catch (err) {
       console.error("Forensic API Error:", err);
@@ -131,11 +140,27 @@ export default function DeepfakeModule({
 
   const getMetricColor = (val: string) => {
     const v = val.toLowerCase();
-    if (v.includes('verified') || v.includes('none') || v.includes('matched') || v.includes('normal') || v.includes('9')) return 'text-indgreen';
+    if (v.includes('verified') || v.includes('none') || v.includes('matched') || v.includes('normal') || v.includes('authentic') || v.includes('9')) return 'text-indgreen';
     if (v.includes('suspicious') || v.includes('low') || v.includes('anomaly') || v.includes('8')) return 'text-gold';
-    if (v.includes('fake') || v.includes('deepfake') || v.includes('high') || v.includes('artifact')) return 'text-redalert';
+    if (v.includes('fake') || v.includes('deepfake') || v.includes('high') || v.includes('artifact') || v.includes('tamper')) return 'text-redalert';
     return 'text-indblue';
   };
+
+  const videoMetrics = [
+    { label: "Lip-Sync (SyncNet)", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready" },
+    { label: "Acoustic Env", value: isDeepfakeScanning ? "Matching..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.acoustic_env || "Matched") : "Ready" },
+    { label: "GAN Artifacts", value: isDeepfakeScanning ? "Scanning..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.visual_artifacts || "None") : "Ready" },
+    { label: "Signal Robustness", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.signal_robustness || "98.2%") : "Ready" }
+  ];
+
+  const imageMetrics = [
+    { label: "Pixel Integrity", value: isDeepfakeScanning ? "Validating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.pixel_integrity || "Authentic") : "Ready" },
+    { label: "Tamper Detection", value: isDeepfakeScanning ? "Checking..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.tamper_detection || "None") : "Ready" },
+    { label: "Metadata Sync", value: isDeepfakeScanning ? "Verifying..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.metadata_sync || "Verified") : "Ready" },
+    { label: "GAN Artifacts", value: isDeepfakeScanning ? "Scanning..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.visual_artifacts || "None") : "Ready" }
+  ];
+
+  const metrics = mediaType === 'image' ? imageMetrics : videoMetrics;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
@@ -153,8 +178,8 @@ export default function DeepfakeModule({
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-black text-indblue uppercase tracking-widest">Active Forensic Scan</p>
-                <p className="text-[10px] text-silver font-bold uppercase">Decrypting Latent Visual Signatures...</p>
+                <p className="text-xs font-black text-indblue uppercase tracking-widest">{mediaType === 'image' ? 'Image Forensic Scan' : 'Video Forensic Scan'}</p>
+                <p className="text-[10px] text-silver font-bold uppercase">{mediaType === 'image' ? 'Analyzing Pixel Distribution...' : 'Decrypting Latent Visual Signatures...'}</p>
               </div>
             </div>
           ) : deepfakeVerdict ? (
@@ -174,12 +199,12 @@ export default function DeepfakeModule({
               <div className="mt-4 pt-4 border-t border-silver/5">
                  <div className="flex justify-between items-center mb-1">
                     <span className="text-[9px] font-bold text-silver uppercase">Forensic Confidence</span>
-                    <span className="text-[9px] font-bold text-indblue">{(deepfakeAiResult?.confidence * 100 || 98).toFixed(1)}%</span>
+                    <span className="text-[9px] font-bold text-indblue">{(deepfakeAiResult?.confidence * 100 || 0).toFixed(1)}%</span>
                  </div>
                  <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
                     <div 
                       className={`h-full transition-all duration-1000 ${deepfakeVerdict === 'VERIFIED' ? 'bg-indgreen' : 'bg-redalert'}`} 
-                      style={{ width: `${(deepfakeAiResult?.confidence * 100 || 98)}%` }}
+                      style={{ width: `${(deepfakeAiResult?.confidence * 100 || 0)}%` }}
                     />
                  </div>
               </div>
@@ -209,12 +234,7 @@ export default function DeepfakeModule({
           )}
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          {[
-            { label: "Lip-Sync (SyncNet)", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready" },
-            { label: "Acoustic Env", value: isDeepfakeScanning ? "Matching..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.acoustic_env || "Matched") : "Ready" },
-            { label: "GAN Artifacts", value: isDeepfakeScanning ? "Scanning..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.visual_artifacts || "None") : "Ready" },
-            { label: "Signal Robustness", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.signal_robustness || "98.2%") : "Ready" }
-          ].map(f => (
+          {metrics.map(f => (
             <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm hover:border-saffron/20 transition-all cursor-default group">
               <p className="text-[9px] font-extrabold text-silver uppercase tracking-wider mb-1 group-hover:text-indblue transition-colors">{f.label}</p>
               <p className={`text-xs font-black ${getMetricColor(f.value)}`}>{f.value}</p>
@@ -247,3 +267,4 @@ export default function DeepfakeModule({
     </div>
   );
 }
+

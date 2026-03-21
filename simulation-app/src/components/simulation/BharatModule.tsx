@@ -1,18 +1,29 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
-  Smartphone,
-  ArrowRight,
   ShieldCheck,
-  AlertCircle,
   FileText,
-  BadgeCheck,
+  X,
+  CheckCircle2,
+  Signal,
+  Wifi,
+  Battery,
+  Phone,
+  MessageSquare,
+  Menu,
+  Globe,
+  Lock,
+  ArrowUp,
+  ArrowDown,
   ChevronRight,
   ChevronLeft,
-  X,
-  Upload,
-  CheckCircle2
+  Smartphone,
+  Hash,
+  Activity,
+  Cpu,
+  Zap,
+  Radio
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
@@ -26,9 +37,7 @@ export default function BharatModule({
   customerId,
 }: BharatModuleProps) {
   const [ussdStep, setUssdStep] = useState(0);
-  const [ussdHistory, setUssdHistory] = useState<string[]>([]);
   const [ussdInput, setUssdInput] = useState("");
-  const [isReportingMode, setIsReportingMode] = useState(false);
   const [reportingStep, setReportingStep] = useState(1);
   const [reportData, setReportData] = useState({
     category: "",
@@ -39,56 +48,98 @@ export default function BharatModule({
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [caseId, setCaseId] = useState<string | null>(null);
+  
+  const [phoneState, setPhoneState] = useState<'HOME' | 'DIALER' | 'USSD' | 'WIZARD'>('HOME');
+  const [currentTime, setCurrentTime] = useState("");
 
-  const ussdFlow = [
-    { title: "DRISHYAM AI USSD NODE", content: "1. Report Cyber Crime\n2. Verify UPI ID\n3. Emergency Broadcast\n4. Digital Saathi" },
-    { title: "REPORT SCAM", content: "Select Scam Category:\n1. KYC/Bank Fraud\n2. Jobs/Investment\n3. Sextortion\n4. Other" },
-    { title: "PROCESSING...", content: "Sending report to National Command Center..." },
-    { title: "SUCCESS", content: "Case Logged Successfully.\nA Digital FIR (65B) will be sent via SMS shortly." }
-  ];
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      setCurrentTime(now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+    };
+    updateTime();
+    const interval = setInterval(updateTime, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const handleUssdSubmit = async () => {
-    if (ussdInput === "1930" || ussdInput === "*1930#") {
-      setIsReportingMode(true);
-      setReportingStep(1);
-      setUssdInput("");
+  const handleKeyPress = (key: string) => {
+    if (phoneState === 'WIZARD' && reportingStep === 2) {
+        if (!isNaN(Number(key))) {
+            setReportData(prev => ({ ...prev, amount: prev.amount + key }));
+        }
+        return;
+    }
+
+    setUssdInput(prev => {
+        const next = prev + key;
+        if (phoneState === 'HOME') setPhoneState('DIALER');
+        
+        if (next === '1930' || next === '*1930#') {
+          triggerReportingFlow();
+          return "";
+        }
+        return next;
+    });
+  };
+
+  const clearInput = () => {
+    if (phoneState === 'WIZARD' && reportingStep === 2) {
+        setReportData(prev => ({ ...prev, amount: prev.amount.slice(0, -1) }));
+        return;
+    }
+    setUssdInput(prev => prev.slice(0, -1));
+    if (ussdInput.length <= 1 && phoneState === 'DIALER') setPhoneState('HOME');
+  };
+
+  const triggerReportingFlow = () => {
+    setPhoneState('WIZARD');
+    setReportingStep(1);
+    setUssdInput("");
+  };
+
+  const handleOkSubmit = async () => {
+    if (phoneState === 'DIALER') {
+      if (ussdInput === '1930' || ussdInput === '*1930#') {
+        triggerReportingFlow();
+      } else if (ussdInput.startsWith('*') && ussdInput.endsWith('#')) {
+        setPhoneState('USSD');
+        setUssdStep(1);
+      } else {
+        toast.error("Dial 1930 for Helpline");
+        setPhoneState('HOME');
+        setUssdInput("");
+      }
       return;
     }
 
-    if (ussdStep < ussdFlow.length - 1) {
-      const nextStep = ussdStep + 1;
-      setUssdHistory([...ussdHistory, `> ${ussdInput || '1'}`]);
-      
-      if (nextStep === ussdFlow.length - 1) {
-        try {
-          const authStr = localStorage.getItem('drishyam_auth');
-          const token = authStr ? JSON.parse(authStr).token : null;
-          const res = await fetch(`${API_BASE}/bharat/ussd/report?phone_number=${customerId}&scam_type=${ussdInput || 'General'}&lang=en`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (res.ok) {
-            const data = await res.json();
-            toast.success(`Report Dispatched: ${data.case_id}`);
-          }
-        } catch (e) {
-          console.error("USSD Report Failed:", e);
-        }
-      }
-      setUssdStep(nextStep);
+    if (phoneState === 'USSD' && ussdStep < ussdFlow.length - 1) {
+      setUssdStep(prev => prev + 1);
       setUssdInput("");
-    } else {
+    } else if (phoneState === 'USSD' && ussdStep === ussdFlow.length - 1) {
+      setPhoneState('HOME');
       setUssdStep(0);
-      setUssdHistory([]);
+      setUssdInput("");
+    }
+
+    if (phoneState === 'WIZARD') {
+        if (reportingStep === 2 && reportData.amount) setReportingStep(3);
+        else if (reportingStep === 3) submitFinalReport();
     }
   };
+
+  const ussdFlow = [
+    { title: "DRISHYAM AI NODE", content: "1. Report Cyber Crime\n2. Verify UPI ID\n3. Emergency Broadcast\n4. Digital Saathi" },
+    { title: "REPORT SCAM", content: "Select Scam Category:\n1. KYC/Bank Fraud\n2. Jobs/Investment\n3. Sextortion\n4. Other" },
+    { title: "PROCESSING...", content: "Sending report to National Command Center..." },
+    { title: "SUCCESS", content: "Case Logged Successfully.\nFIR (65B) sent via SMS." }
+  ];
 
   const submitFinalReport = async () => {
     setIsSubmitting(true);
     try {
       const authStr = localStorage.getItem('drishyam_auth');
       const token = authStr ? JSON.parse(authStr).token : null;
-      const res = await fetch(`${API_BASE}/bharat/report/comprehensive?reporter_num=${customerId}&category=${reportData.category}&scam_type=${reportData.scam_type}&amount=${reportData.amount}&platform=${reportData.platform}&description=${reportData.description}`, {
+      const res = await fetch(`${API_BASE}/bharat/report/comprehensive?reporter_num=${customerId}&category=${reportData.category}&scam_type=${reportData.scam_type}&amount=${reportData.amount || "0"}&platform=${reportData.platform || "Simulated"}&description=${reportData.description || "Simulated Report"}`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -99,323 +150,193 @@ export default function BharatModule({
         toast.success("Cyber Incident Registered");
       }
     } catch (e) {
-      toast.error("Submission failed. Offline node retry.");
+      toast.error("Submission failed.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center flex-1 w-full max-w-5xl py-4 lg:py-8 fade-in h-full overflow-hidden relative">
-      <AnimatePresence>
-        {isReportingMode && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            className="fixed inset-0 z-50 bg-charcoal/95 backdrop-blur-md flex items-center justify-center p-4 lg:p-8"
-          >
-            <div className="w-full max-w-4xl bg-white rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden flex flex-col h-[85vh]">
-              {/* Wizard Header */}
-              <div className="bg-indblue p-6 sm:p-8 text-white relative flex justify-between items-center shrink-0">
-                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-deeporange via-white to-indgreen opacity-50" />
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center backdrop-blur-sm">
-                       <ShieldCheck className="text-deeporange" size={28} />
+    <div className="flex bg-white items-center justify-center w-full h-[100dvh] overflow-hidden relative">
+      <div className="flex flex-col lg:flex-row items-center justify-center gap-8 w-full h-full max-h-[95dvh] px-4">
+        
+        {/* iPhone 16 Mockup - Responsive Height */}
+        <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-[800px]">
+            <div className="relative w-[340px] h-full max-h-[720px] rounded-[3.5rem] p-1.5 bg-[#f0f0f0] border-[8px] border-indblue/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] ring-1 ring-silver/20 overflow-hidden flex flex-col">
+                
+                {/* Island (Interactive) */}
+                <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-5 bg-indblue rounded-full z-[100] flex items-center justify-center px-3 shadow-md border border-white/10">
+                    <div className="flex gap-1 items-center"><div className="w-0.5 h-0.5 rounded-full bg-saffron animate-ping" /><div className="w-8 h-px bg-white/20 rounded-full" /></div>
+                </div>
+
+                {/* Inner Screen */}
+                <div className="flex-1 relative flex flex-col bg-white rounded-[2.8rem] overflow-hidden border border-silver/5">
+                    
+                    {/* Status Bar */}
+                    <div className="px-8 pt-8 pb-4 flex justify-between items-center bg-transparent z-50">
+                        <div className="text-[9px] font-black text-indblue tracking-tight">{currentTime}</div>
+                        <div className="flex items-center gap-1.5">
+                            <Signal size={10} className="text-indblue/40" />
+                            <Wifi size={10} className="text-indblue/40" />
+                            <Battery size={14} className="text-indblue/40" />
+                        </div>
                     </div>
-                    <div>
-                       <h2 className="text-xl sm:text-2xl font-black tracking-tight">NATIONAL CYBER HELPLINE</h2>
-                       <p className="text-[10px] uppercase font-bold tracking-[0.3em] opacity-60">Govt of India Interception Node</p>
+
+                    {/* Viewport content */}
+                    <div className="flex-1 relative flex flex-col overflow-hidden">
+                        <AnimatePresence mode="wait">
+                          {phoneState === 'HOME' && (
+                            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-gradient-to-b from-white to-boxbg/30">
+                                <motion.div animate={{ rotate: [0, 5, -5, 0] }} transition={{ repeat: Infinity, duration: 10 }} className="mb-10 text-indblue opacity-20"><Activity size={100} /></motion.div>
+                                <h1 className="text-2xl font-black text-indblue tracking-[0.2em] mb-1">DRISHYAM</h1>
+                                <p className="text-[8px] font-black text-silver uppercase tracking-[0.5em] mb-12">Security Node Active</p>
+                                <div className="grid grid-cols-2 gap-4 w-full px-6">
+                                    <div className="p-4 bg-white border border-silver/10 rounded-2xl shadow-sm flex flex-col items-center gap-2"><Phone size={16} className="text-indblue/40" /><span className="text-[7px] font-black uppercase text-silver">Comms</span></div>
+                                    <div className="p-4 bg-white border border-silver/10 rounded-2xl shadow-sm flex flex-col items-center gap-2"><Lock size={16} className="text-indblue/40" /><span className="text-[7px] font-black uppercase text-silver">Secure</span></div>
+                                </div>
+                            </motion.div>
+                          )}
+
+                          {phoneState === 'DIALER' && (
+                            <motion.div key="dialer" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 flex flex-col justify-end p-10 pb-20 bg-white">
+                                <div className="text-right text-5xl font-black text-indblue tracking-tighter mb-10 overflow-hidden text-ellipsis">{ussdInput || "0"}</div>
+                                <div className="flex justify-between items-center py-6 border-t border-silver/10">
+                                    <button className="text-[8px] font-black text-silver uppercase tracking-widest hover:text-indblue" onClick={() => { setPhoneState('HOME'); setUssdInput(""); }}>Clear</button>
+                                    <button className="px-10 py-4 bg-indgreen text-white text-[8px] font-black uppercase tracking-[0.4em] rounded-2xl shadow-lg ring-1 ring-white/10" onClick={handleOkSubmit}>Call Hub</button>
+                                </div>
+                            </motion.div>
+                          )}
+
+                          {phoneState === 'USSD' && (
+                            <motion.div key="ussd" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-4 bg-boxbg/40 rounded-[2.5rem] border border-silver/10 flex flex-col p-8 overflow-hidden">
+                                <div className="flex items-center gap-2 mb-4 text-[8px] font-black text-silver uppercase tracking-widest"><Radio size={10} className="text-indgreen" /> USSD Channel Alpha</div>
+                                <div className="flex-1 bg-white/50 p-6 rounded-2xl border border-silver/5 shadow-inner overflow-hidden flex flex-col">
+                                    <h3 className="text-lg font-black text-indblue mb-3">{ussdFlow[ussdStep].title}</h3>
+                                    <p className="text-[11px] font-bold text-charcoal/70 whitespace-pre-wrap leading-relaxed font-mono flex-1 overflow-y-auto pr-2 scrollbar-hide">{ussdFlow[ussdStep].content}</p>
+                                </div>
+                                <div className="pt-6 mt-2 space-y-4 border-t border-silver/10">
+                                    <div className="h-12 bg-white rounded-xl border border-silver/5 flex items-center px-4 font-mono text-saffron text-base font-black shadow-inner">❯ {ussdInput || "Wait..."}</div>
+                                    <div className="flex justify-between px-2">
+                                        <button className="text-[8px] font-black text-silver uppercase tracking-widest hover:text-indblue" onClick={() => { setPhoneState('HOME'); setUssdStep(0); }}>Abort</button>
+                                        <button className="text-[8px] font-black text-saffron uppercase tracking-widest hover:text-indblue" onClick={handleOkSubmit}>Confirm</button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                          )}
+
+                          {phoneState === 'WIZARD' && (
+                            <motion.div key="wizard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white flex flex-col overflow-hidden z-[200]">
+                                <div className="bg-indblue p-8 pt-10 text-white shrink-0 shadow-lg relative">
+                                    <div className="flex items-center justify-between mb-6 relative z-10">
+                                        <div className="flex items-center gap-2"><ShieldCheck size={18} className="text-saffron" /><span className="text-[9px] font-black uppercase tracking-widest opacity-80">Helpline 1930</span></div>
+                                        <button onClick={() => setPhoneState('HOME')} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><X size={16} /></button>
+                                    </div>
+                                    <div className="flex justify-between gap-1.5 mb-2 relative z-10">
+                                      {[1, 2, 3, 4].map(s => (<div key={s} className={`flex-1 h-0.5 rounded-full transition-all duration-700 ${reportingStep >= s ? 'bg-saffron' : 'bg-white/10'}`} />))}
+                                    </div>
+                                    <h2 className="text-base font-black tracking-tight mt-2 relative z-10">{reportingStep === 1 ? 'Step 1: Category' : reportingStep === 2 ? 'Step 2: Details' : reportingStep === 3 ? 'Step 3: Verification' : 'Protocol Resolved'}</h2>
+                                </div>
+                                
+                                <div className="flex-1 overflow-y-auto p-8 space-y-3 scrollbar-hide bg-boxbg/10">
+                                    {reportingStep === 1 && (
+                                        <motion.div className="space-y-2">
+                                            {['Financial Fraud', 'Impersonation', 'Identity Theft', 'Social Media'].map((cat, i) => (
+                                                <button key={cat} onClick={() => { setReportData({...reportData, category: cat}); setReportingStep(2); }} className="w-full px-6 py-4 bg-white border border-silver/5 rounded-2xl text-left shadow-sm hover:shadow-md hover:border-saffron/30 transition-all group flex justify-between items-center"><span className="text-[11px] font-bold text-indblue">{cat}</span><ChevronRight size={14} className="text-silver group-hover:text-saffron transition-colors" /></button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                    {reportingStep === 2 && (
+                                        <div className="space-y-4">
+                                            <div className="space-y-1.5"><label className="text-[8px] font-black text-silver uppercase tracking-widest ml-1">Monetary Impact</label><div className="relative"><span className="absolute left-6 top-1/2 -translate-y-1/2 text-lg font-black text-silver/40">₹</span><input type="text" readOnly placeholder="0" value={reportData.amount} className="w-full pl-10 p-4 bg-white border border-silver/10 rounded-2xl text-xl font-black text-indblue shadow-inner outline-none transition-all " /></div><p className="text-[7px] font-bold text-silver italic ml-1">Input using tactical keypad on right.</p></div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {['Telegram', 'WhatsApp', 'Instagram', 'Other'].map(plat => (
+                                                    <button key={plat} onClick={() => setReportData({...reportData, platform: plat})} className={`py-4 rounded-xl border transition-all font-black text-[8px] uppercase tracking-widest ${reportData.platform === plat ? 'bg-indblue text-white border-indblue' : 'bg-white border-silver/10 text-silver'}`}>{plat}</button>
+                                                )) }
+                                            </div>
+                                            <button onClick={() => setReportingStep(3)} className="w-full py-4 bg-indblue text-white rounded-xl text-[9px] font-black uppercase tracking-[0.4em] shadow-xl mt-4">Next Step</button>
+                                        </div>
+                                    )}
+                                    {reportingStep === 3 && (
+                                        <div className="space-y-4">
+                                            <div className="bg-white p-6 rounded-2xl border border-silver/10 space-y-3 shadow-sm relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-4 opacity-5"><FileText size={50} /></div>
+                                                <div className="flex justify-between items-center border-b border-boxbg pb-2"><span className="text-[7px] font-black text-silver uppercase">Type</span><span className="text-xs font-black text-indblue">{reportData.category}</span></div>
+                                                <div className="flex justify-between items-center border-b border-boxbg pb-2"><span className="text-[7px] font-black text-silver uppercase">Loss</span><span className="text-base font-black text-saffron">₹{reportData.amount}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[7px] font-black text-silver uppercase">Platform</span><span className="text-xs font-black text-indblue">{reportData.platform}</span></div>
+                                            </div>
+                                            <button onClick={submitFinalReport} disabled={isSubmitting} className="w-full py-5 bg-saffron text-white rounded-xl text-[9px] font-black uppercase tracking-[0.4em] shadow-2xl hover:brightness-105 active:scale-95 transition-all text-center">{isSubmitting ? 'ENCRYPTING...' : 'ELECTRONIC SUBMIT'}</button>
+                                        </div>
+                                    )}
+                                    {reportingStep === 4 && (
+                                        <div className="text-center py-6 px-4 flex flex-col items-center">
+                                            <div className="w-16 h-16 bg-indgreen/10 rounded-full flex items-center justify-center text-indgreen mb-6 shadow-inner"><CheckCircle2 size={32} /></div>
+                                            <h3 className="text-xl font-black text-indblue mb-2">Protocol Logged</h3>
+                                            <div className="px-5 py-2.5 bg-indblue text-white rounded-xl mb-8 shadow-md"><p className="text-[9px] font-black uppercase tracking-widest">ID: {caseId}</p></div>
+                                            <p className="text-[9px] text-silver font-bold uppercase tracking-widest max-w-[160px] mx-auto leading-relaxed mb-10">Routed via Bharat Tunnel #404-Alpha.</p>
+                                            <button onClick={() => setPhoneState('HOME')} className="w-full py-4 bg-charcoal text-white rounded-xl text-[8px] font-black uppercase tracking-widest shadow-xl">Disconnect Hub</button>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                     </div>
-                 </div>
-                 <button onClick={() => setIsReportingMode(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
-                    <X size={24} />
-                 </button>
-              </div>
 
-              {/* Progress Bar */}
-              <div className="px-8 pt-6 shrink-0">
-                 <div className="flex justify-between mb-2">
-                    {[1, 2, 3, 4].map(s => (
-                       <div key={s} className={`flex items-center gap-2 ${reportingStep >= s ? 'text-indblue' : 'text-silver'}`}>
-                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 ${reportingStep >= s ? 'border-indblue bg-indblue text-white' : 'border-silver/20'}`}>
-                             {reportingStep > s ? <CheckCircle2 size={12} /> : s}
-                          </div>
-                          <span className={`text-[10px] font-extrabold uppercase tracking-widest hidden sm:inline`}>
-                             {s === 1 ? 'Category' : s === 2 ? 'Details' : s === 3 ? 'Review' : 'Receipt'}
-                          </span>
-                       </div>
-                    ))}
-                 </div>
-                 <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
-                    <motion.div 
-                      className="h-full bg-deeporange shadow-lg shadow-deeporange/20" 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${(reportingStep / 4) * 100}%` }}
-                    />
-                 </div>
-              </div>
-
-              {/* Wizard Content */}
-              <div className="flex-1 overflow-y-auto p-8 sm:p-12 scrollbar-hide">
-                 {reportingStep === 1 && (
-                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                      <div>
-                        <h3 className="text-3xl font-black text-indblue tracking-tight mb-2">Select Incident Category</h3>
-                        <p className="text-sm text-silver font-medium">Under Section 66D IT Act, misreporting is a punishable offense.</p>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {[
-                          { id: "FINANCIAL", icon: AlertCircle, label: "Financial Fraud", desc: "UPI, ATM, Bank, Credit Card" },
-                          { id: "SOCIAL", icon: Smartphone, label: "Social Media Crime", desc: "Hacking, Impersonation" },
-                          { id: "IDENTITY", icon: FileText, label: "Identity Theft", desc: "PAN/Aadhar misuse" },
-                          { id: "OTHER", icon: BadgeCheck, label: "Cyber Stalking", desc: "Bullying, Harassment" }
-                        ].map(cat => (
-                          <button 
-                            key={cat.id}
-                            onClick={() => { setReportData({...reportData, category: cat.id}); setReportingStep(2); }}
-                            className={`p-6 rounded-3xl border-2 text-left transition-all group ${reportData.category === cat.id ? 'border-deeporange bg-deeporange/5' : 'border-silver/10 hover:border-indblue/30 bg-white'}`}
-                          >
-                            <cat.icon size={24} className={reportData.category === cat.id ? 'text-deeporange' : 'text-silver group-hover:text-indblue'} />
-                            <h4 className="text-lg font-black text-indblue mt-4">{cat.label}</h4>
-                            <p className="text-xs text-silver mt-1">{cat.desc}</p>
-                          </button>
-                        ))}
-                      </div>
-                   </motion.div>
-                 )}
-
-                 {reportingStep === 2 && (
-                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 max-w-2xl">
-                      <div>
-                        <h3 className="text-3xl font-black text-indblue tracking-tight mb-2">Evidence Capture</h3>
-                        <p className="text-sm text-silver font-medium">Detailed forensics accelerate the recovery process.</p>
-                      </div>
-                      <div className="space-y-6">
-                        <div className="space-y-2">
-                           <label className="text-[10px] font-black text-silver uppercase tracking-widest">Type of Scam</label>
-                           <input 
-                              type="text" 
-                              placeholder="e.g. UPI QR Code Scam"
-                              className="w-full p-4 bg-boxbg/50 rounded-2xl border border-silver/10 focus:border-indblue outline-none transition-all font-bold text-indblue"
-                              value={reportData.scam_type}
-                              onChange={e => setReportData({...reportData, scam_type: e.target.value})}
-                           />
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-silver uppercase tracking-widest">Amount Lost (INR)</label>
-                             <input 
-                                type="text" 
-                                placeholder="0.00"
-                                className="w-full p-4 bg-boxbg/50 rounded-2xl border border-silver/10 focus:border-indblue outline-none transition-all font-bold text-indblue"
-                                value={reportData.amount}
-                                onChange={e => setReportData({...reportData, amount: e.target.value})}
-                             />
-                          </div>
-                          <div className="space-y-2">
-                             <label className="text-[10px] font-black text-silver uppercase tracking-widest">Platform</label>
-                             <input 
-                                type="text" 
-                                placeholder="WhatsApp, Instagram, etc."
-                                className="w-full p-4 bg-boxbg/50 rounded-2xl border border-silver/10 focus:border-indblue outline-none transition-all font-bold text-indblue"
-                                value={reportData.platform}
-                                onChange={e => setReportData({...reportData, platform: e.target.value})}
-                             />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                           <label className="text-[10px] font-black text-silver uppercase tracking-widest">Brief Incident Description</label>
-                           <textarea 
-                              rows={3}
-                              placeholder="How did it happen?"
-                              className="w-full p-4 bg-boxbg/50 rounded-2xl border border-silver/10 focus:border-indblue outline-none transition-all font-bold text-indblue resize-none"
-                              value={reportData.description}
-                              onChange={e => setReportData({...reportData, description: e.target.value})}
-                           />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <button onClick={() => setReportingStep(1)} className="px-8 py-4 border-2 border-silver/10 rounded-2xl text-xs font-black text-silver uppercase tracking-widest hover:text-indblue transition-all">Back</button>
-                        <button onClick={() => setReportingStep(3)} className="flex-1 py-4 bg-indblue text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indblue/90 transition-all shadow-xl shadow-indblue/20">Review Report</button>
-                      </div>
-                   </motion.div>
-                 )}
-
-                 {reportingStep === 3 && (
-                   <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                      <div>
-                        <h3 className="text-3xl font-black text-indblue tracking-tight mb-2">Final Review</h3>
-                        <p className="text-sm text-silver font-medium">The DRISHYAM AI engine will auto-generate Section 65B FIR copy.</p>
-                      </div>
-                      <div className="bg-boxbg/30 rounded-[2rem] p-8 border border-silver/10 grid grid-cols-1 md:grid-cols-2 gap-8 ring-1 ring-silver/5">
-                        <div className="space-y-4">
-                          <DetailItem label="Incident Category" value={reportData.category} />
-                          <DetailItem label="Scam Type" value={reportData.scam_type} />
-                          <DetailItem label="Platform" value={reportData.platform} />
-                        </div>
-                        <div className="space-y-4">
-                          <DetailItem label="Amount Lost" value={`₹${reportData.amount}`} danger />
-                          <DetailItem label="Reporter Number" value={customerId} />
-                          <DetailItem label="Status" value="Verification Pending" />
-                        </div>
-                      </div>
-                      <div className="flex gap-4">
-                        <button onClick={() => setReportingStep(2)} className="px-8 py-4 border-2 border-silver/10 rounded-2xl text-xs font-black text-silver uppercase tracking-widest hover:text-indblue transition-all">Edit</button>
-                        <button 
-                          onClick={submitFinalReport} 
-                          disabled={isSubmitting}
-                          className="flex-1 py-4 bg-deeporange text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-600 transition-all shadow-xl shadow-deeporange/20 flex items-center justify-center gap-2"
-                        >
-                          {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
-                          {isSubmitting ? 'GENERATING FIR...' : 'SUBMIT & GENERATE FIR'}
-                        </button>
-                      </div>
-                   </motion.div>
-                 )}
-
-                 {reportingStep === 4 && (
-                   <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-8 space-y-8">
-                      <div className="w-24 h-24 bg-indgreen/10 rounded-full flex items-center justify-center mx-auto text-indgreen shadow-xl">
-                        <CheckCircle2 size={48} />
-                      </div>
-                      <div>
-                        <h3 className="text-4xl font-black text-indblue tracking-tight">Report Successfully Logged</h3>
-                        <p className="text-silver mt-2 font-medium">FIR Copy generation triggered for Case ID: <span className="text-indblue font-black">{caseId}</span></p>
-                      </div>
-                      <div className="bg-white p-8 rounded-3xl border-2 border-dashed border-indgreen/30 max-w-sm mx-auto shadow-sm">
-                         <FileText size={40} className="mx-auto text-silver mb-4" />
-                         <p className="text-[10px] font-black text-silver uppercase tracking-widest">DRISHYAM-AI CERTIFIED</p>
-                         <p className="text-xs font-bold text-indblue mt-2 leading-relaxed">Evidence has been cryptographically hashed and synced with the National Command Center.</p>
-                      </div>
-                      <button 
-                        onClick={() => setIsReportingMode(false)}
-                        className="px-12 py-4 bg-charcoal text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all"
-                      >
-                        CLOSE WIZARD
-                      </button>
-                   </motion.div>
-                 )}
-              </div>
-
-              {/* Wizard Footer */}
-              <div className="bg-boxbg/30 p-6 sm:p-8 shrink-0 flex justify-between items-center border-t border-silver/5">
-                 <p className="text-[9px] font-bold text-silver uppercase tracking-widest">Hashed ID: SH256-441092-X9</p>
-                 <div className="flex gap-2">
-                    <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="India Emblem" className="h-6 opacity-30 invert" />
-                 </div>
-              </div>
+                    {/* Bottom Pill */}
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-16 h-1 bg-indblue/10 rounded-full" />
+                </div>
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 sm:gap-12 items-center w-full z-10">
-        {/* Feature Phone UI */}
-        <div className="relative w-full max-w-[288px] h-[520px] bg-charcoal rounded-[2.5rem] p-6 shadow-2xl border-4 border-white/5 mx-auto">
-          <div className="w-full h-full flex flex-col gap-4">
-            <div className="w-16 h-1 bg-white/10 rounded-full mx-auto" />
+        {/* Tactical Keypad Module - Responsive Scaling */}
+        <div className="flex flex-col gap-6 w-full max-w-[280px] shrink-0 h-full max-h-[720px] justify-center scale-95 lg:scale-100">
             
-            <div className="w-full h-48 bg-indblue rounded-xl p-4 font-mono text-white flex flex-col border-2 border-white/10 relative overflow-hidden">
-              <div className="absolute top-1 right-2 text-[8px] opacity-50 flex gap-1">
-                <span>4G</span> <Smartphone size={8} />
-              </div>
-              <div className="text-[10px] font-bold border-b border-white/20 pb-1 mb-2">
-                {ussdFlow[ussdStep].title}
-              </div>
-              <div className="flex-1 text-[9px] whitespace-pre-wrap leading-tight text-white/90">
-                {ussdFlow[ussdStep].content}
-              </div>
-              <div className="mt-auto pt-2 flex flex-col gap-1">
-                {ussdHistory.slice(-2).map((h, i) => (
-                  <div key={i} className="text-[8px] text-white/40">{h}</div>
-                ))}
-                <div className="text-[8px] text-saffron font-black">{ussdInput ? `> ${ussdInput}` : '> _'}</div>
-              </div>
+            {/* Control Panel Header */}
+            <div className="bg-white rounded-[2rem] p-5 border border-silver/10 shadow-xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-4 opacity-5"><Cpu size={60} /></div>
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-boxbg rounded-xl border border-silver/5"><ShieldCheck size={14} className="text-indblue" /></div>
+                    <div>
+                        <h4 className="text-[9px] font-black text-indblue uppercase tracking-widest">ICU Console</h4>
+                        <div className="flex items-center gap-1 mt-0.5"><div className="w-1 h-1 bg-indgreen rounded-full animate-pulse" /><span className="text-[7px] font-bold text-silver uppercase">Link Active</span></div>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2 px-8">
-              <div />
-              <button className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 ring-1 ring-white/10 hover:bg-white/10 transition-colors"><ChevronRight size={16} className="-rotate-90" /></button>
-              <div />
-              <button className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 ring-1 ring-white/10 hover:bg-white/10 transition-colors"><ChevronLeft size={16} /></button>
-              <button className="w-10 h-10 bg-deeporange rounded-full flex items-center justify-center text-white shadow-lg shadow-deeporange/20 border-2 border-white/20" onClick={handleUssdSubmit}>OK</button>
-              <button className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 ring-1 ring-white/10 hover:bg-white/10 transition-colors"><ChevronRight size={16} /></button>
-              <div />
-              <button className="w-10 h-10 bg-white/5 rounded-full flex items-center justify-center text-white/40 ring-1 ring-white/10 hover:bg-white/10 transition-colors"><ChevronRight size={16} className="rotate-90" /></button>
-              <div />
+            {/* Hardware Keypad Mockup */}
+            <div className="bg-white rounded-[2.5rem] p-7 border border-silver/15 shadow-2xl flex flex-col items-center relative gap-6">
+                
+                {/* Central Select Wheel */}
+                <div className="relative w-20 h-20 rounded-full bg-white border-2 border-silver/5 shadow-inner flex items-center justify-center ring-4 ring-boxbg/30">
+                    <motion.button whileTap={{ scale: 0.9 }} onClick={handleOkSubmit} className="w-14 h-14 bg-indblue text-white rounded-full shadow-2xl border-2 border-white/20 flex items-center justify-center font-black text-xs cursor-pointer hover:bg-indblue/90 transition-all z-10">OK</motion.button>
+                    <ArrowUp size={10} className="absolute top-0.5 text-silver/20" />
+                    <ArrowDown size={10} className="absolute bottom-0.5 text-silver/20" />
+                    <ChevronLeft size={10} className="absolute left-0.5 text-silver/20" />
+                    <ChevronRight size={10} className="absolute right-0.5 text-silver/20" />
+                </div>
+
+                {/* Grid Layout */}
+                <div className="grid grid-cols-3 gap-2.5 w-full">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(key => (
+                        <button key={key} onClick={() => handleKeyPress(key)} className="relative h-14 bg-white rounded-xl border border-silver/10 shadow-sm hover:shadow-md hover:border-indblue/10 active:scale-95 transition-all flex flex-col items-center justify-center group overflow-hidden">
+                            <span className="text-xl font-black text-indblue/60 group-hover:text-indblue group-hover:scale-105 transition-all">{key}</span>
+                            <span className="text-[6px] font-black text-silver/40 uppercase mt-0.5 tracking-tighter">{key === '1' ? 'abc' : key === '2' ? 'def' : key === '3' ? 'ghi' : key === '4' ? 'jkl' : key === '5' ? 'mno' : key === '6' ? 'pqrs' : key === '7' ? 'tuv' : key === '8' ? 'wxyz' : ''}</span>
+                        </button>
+                    ))}
+                </div>
+
+                {/* Panel Buttons */}
+                <div className="grid grid-cols-2 gap-2.5 w-full pt-4 border-t border-silver/5">
+                    <button className="py-3.5 bg-boxbg/50 rounded-xl flex items-center justify-center font-black text-[7px] text-silver uppercase tracking-widest hover:text-redalert transition-all" onClick={clearInput}>Clear</button>
+                    <button className="py-3.5 bg-boxbg/50 rounded-xl flex items-center justify-center font-black text-[7px] text-silver uppercase tracking-widest hover:text-indblue transition-all" onClick={() => phoneState === 'HOME' ? setUssdInput("*#06#") : setPhoneState('HOME')}>Return</button>
+                </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-3">
-              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(key => (
-                <button 
-                  key={key}
-                  onClick={() => setUssdInput(prev => prev + key)}
-                  className="py-3 bg-white/5 rounded-xl text-white font-bold text-xs ring-1 ring-white/5 hover:bg-white/10 active:scale-95 transition-all shadow-inner"
-                >
-                  {key}
-                </button>
-              ))}
-            </div>
-          </div>
+            {/* Version ID */}
+            <p className="text-center text-[7px] font-black text-silver/20 uppercase tracking-[0.4em]">Node Protocol Alpha 2.4.1</p>
         </div>
 
-        <div className="space-y-8">
-          <div className="bg-white p-8 rounded-[2.5rem] border border-silver/10 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-               <AlertCircle size={80} />
-            </div>
-            <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em] mb-4">Tactical Protocol: Bharat Layer</h4>
-            <h3 className="text-2xl font-black text-indblue mb-4 leading-tight">National Crime Registration Interface</h3>
-            <p className="text-xs text-silver font-medium leading-relaxed mb-6">
-              The Bharat Layer intercepts crimes via USSD gateways. Dial <span className="text-deeporange font-black">1930</span> on the simulator to trigger the secure National Reporting Portal.
-            </p>
-            <ul className="space-y-4">
-              {[
-                "Dial 1930 to trigger Helplne Wizard",
-                "End-to-end encrypted incident logging",
-                "Real-time integration with National Portal",
-                "Digital FIR generation (Section 65B)"
-              ].map((text, i) => (
-                <li key={i} className="flex items-center gap-3 text-xs font-bold text-indblue">
-                  <div className="w-1.5 h-1.5 bg-deeporange rounded-full" /> {text}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bg-charcoal p-6 rounded-[2rem] border border-white/5 text-white/40 font-mono text-[9px] space-y-2 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-indgreen/5 to-transparent animate-pulse" />
-            <p className="text-indgreen font-black tracking-widest uppercase text-[7px] mb-2 flex items-center gap-2">
-               <div className="w-1 h-1 bg-indgreen rounded-full animate-ping" />
-               GSM SIMULATION ACTIVE
-            </p>
-            <p className="flex justify-between"><span>NODE:</span> <span className="text-white/60">TRACE_NODE_DELHI_09</span></p>
-            <p className="flex justify-between"><span>SIGNAL:</span> <span className="text-indgreen">CRYPTO_STABLE_92%</span></p>
-            <p className="flex justify-between"><span>LINK:</span> <span className="text-white/60">AES_256_SECURE_TUNNEL</span></p>
-          </div>
-        </div>
       </div>
     </div>
   );
 }
-
-function DetailItem({ label, value, danger = false }: { label: string, value: string, danger?: boolean }) {
-  return (
-    <div>
-      <p className="text-[9px] font-black text-silver uppercase tracking-[0.2em] mb-1">{label}</p>
-      <p className={`text-sm font-black ${danger ? 'text-deeporange underline decoration-wavy decoration-deeporange/30' : 'text-indblue'}`}>
-        {value || 'Not Specified'}
-      </p>
-    </div>
-  );
-}
-
-function Loader2({ size, className }: { size: number, className?: string }) {
-  return (
-    <div className={`animate-spin ${className}`} style={{ width: size, height: size }}>
-      <Smartphone size={size} />
-    </div>
-  );
-}
-

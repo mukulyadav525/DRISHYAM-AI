@@ -52,24 +52,28 @@ class GeminiVisionEngine:
             elif "video" in mime_type:
                 media_category = "Temporal Visual"
 
+            detail_keys = ""
+            if media_category == "Visual":
+                detail_keys = '"pixel_integrity": "String", "tamper_detection": "String", "metadata_sync": "String"'
+            else:
+                detail_keys = '"blink_frequency": "String", "temporal_consistency": "String", "lip_sync_match": "String"'
+
             prompt = (
                 f"You are the DRISHYAM AI {media_category} Forensic Engine. "
                 f"Perform a deep forensic analysis on the provided {mime_type} file. "
-                "For visual media, check lighting, edges, and blending. "
-                "For audio, check for speech artifacts and frequency clipping. "
+                "For visual media/images, check lighting consistency, edge blending, and compression artifacts. "
+                "For video, check for speech artifacts, temporal flickering, and lip desync. "
                 "For PDFs, check for metadata inconsistency and pixel-level tampering. "
                 "Return a JSON response strictly matching this schema: "
                 "{\n"
                 '  "verdict": "DEEPFAKE" or "VERIFIED",\n'
                 '  "confidence": <float 0.0-1.0>,\n'
-                '  "probability": <float 0.0-1.0 representing correct classification probability>,\n'
-                '  "false_positive_rate": <float 0.0-1.0 representing system false alarm probability>,\n'
+                '  "probability": <float 0.0-1.0>,\n'
+                '  "false_positive_rate": <float 0.0-1.0>,\n'
                 '  "analysis_details": {\n'
-                '    "blink_frequency": "String",\n'
-                '    "temporal_consistency": "String",\n'
-                '    "lip_sync_match": "String",\n'
-                '    "visual_artifacts": "String describing specific findings"\n'
-                "  }\n"
+                f'    {detail_keys},\n'
+                '    "visual_artifacts": "String describing specific forensic findings"\n'
+                '  }\n'
                 "}"
             )
             
