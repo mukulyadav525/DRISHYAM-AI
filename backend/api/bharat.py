@@ -87,16 +87,60 @@ def report_scam_ussd(phone_number: str, scam_type: str = "General", lang: str = 
         "message": content['report_success'].format(case_id=case_id)
     }
 
-@router.post("/ivr/call", response_model=dict)
-def handle_ivr_call(caller_num: str, state_code: str = "TN"):
-    """T6 requirement: IVR Lang based on state code."""
-    lang = "hi"
-    if state_code == "TN": lang = "ta"
+@router.post("/report/comprehensive", response_model=dict)
+def report_scam_comprehensive(
+    reporter_num: str,
+    category: str,
+    scam_type: str,
+    amount: str = "0",
+    platform: str = "Unknown",
+    description: str = "",
+    db: Session = Depends(get_db)
+):
+    """T6 requirement: Comprehensive scam reporting with detailed metadata."""
+    case_id = f"REF-{uuid.uuid4().hex[:8].upper()}"
     
-    content = MENU_LANGUAGES.get(lang, MENU_LANGUAGES["hi"])
+    new_report = CrimeReport(
+        report_id=case_id,
+        category=category,
+        scam_type=scam_type,
+        amount=amount,
+        platform=platform,
+        priority="HIGH" if float(amount.replace(',', '')) > 50000 else "MEDIUM",
+        reporter_num=reporter_num,
+        status="PENDING",
+        metadata_json={
+            "description": description,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "source": "1930_HELPLINE_WIZARD",
+            "section_65b_status": "GENERATED"
+        }
+    )
+    db.add(new_report)
+    db.commit()
+    
     return {
-        "audio_url": f"/static/audio/ivr_greeting_{lang}.mp3",
-        "transcript": content["greeting"],
-        "options": [1, 2, 3],
-        "call_id": str(uuid.uuid4())
+        "status": "success",
+        "case_id": case_id,
+        "fir_copy_url": f"/api/bharat/fir/{case_id}",
+        "message": f"Incident logged successfully. FIR {case_id} generated."
+    }
+
+@router.get("/fir/{case_id}", response_model=dict)
+def get_digital_fir(case_id: str, db: Session = Depends(get_db)):
+    """Simulate Section 65B Digital FIR retrieval."""
+    report = db.query(CrimeReport).filter(CrimeReport.report_id == case_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="Case not found")
+        
+    return {
+        "case_id": report.report_id,
+        "timestamp": report.created_at.isoformat(),
+        "section_65b_certified": True,
+        "digital_signature": "DRISHYAM-AI-SECURE-SIG-772",
+        "details": {
+            "category": report.category,
+            "loss": report.amount,
+            "platform": report.platform
+        }
     }
