@@ -212,28 +212,44 @@ export default function DeepfakePage() {
         return 'text-redalert';
     };
 
+    const getMetricColor = (val: string) => {
+        const v = val.toLowerCase();
+        if (v.includes('verified') || v.includes('none') || v.includes('matched') || v.includes('normal') || v.includes('9')) return 'text-indgreen';
+        if (v.includes('suspicious') || v.includes('low') || v.includes('anomaly') || v.includes('8')) return 'text-gold';
+        if (v.includes('fake') || v.includes('deepfake') || v.includes('high') || v.includes('artifact')) return 'text-redalert';
+        return 'text-indblue';
+    };
+
     return (
         <div className="space-y-6 sm:space-y-8">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
                 <div>
-                    <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">Deepfake Defense</h2>
-                    <p className="text-silver mt-1">Multi-layer forensic analysis for Images, Videos, Audio, and PDFs.</p>
+                    <h2 className="text-2xl sm:text-3xl font-black text-indblue tracking-tight">Deepfake Defense</h2>
+                    <p className="text-silver mt-1 font-medium">Multi-layer forensic analysis for Images, Videos, Audio, and PDFs.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isScanning}
-                        className="px-6 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange transition-colors flex items-center gap-2 disabled:opacity-50"
+                        className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-black uppercase tracking-widest hover:bg-deeporange transition-all flex items-center gap-2 disabled:opacity-50 shadow-md shadow-saffron/20"
                     >
-                        {isScanning ? <Loader2 className="animate-spin" size={16} /> : <Scan size={16} />}
-                        {isScanning ? "Scanning..." : "New Forensic Scan"}
+                        {isScanning ? <Loader2 className="animate-spin" size={16} /> : <Upload size={16} />}
+                        {isScanning ? "Scanning..." : "Upload Media"}
+                    </button>
+                    <button
+                        onClick={() => startScan()}
+                        disabled={isScanning}
+                        className="px-6 py-2 border-2 border-indblue/10 bg-white text-indblue rounded-lg text-xs font-black uppercase tracking-widest hover:border-indblue/30 transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                         <Scan size={16} />
+                         Live diagnostic
                     </button>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2 space-y-6">
-                    <div className="bg-white rounded-2xl border border-silver/10 p-8 shadow-sm h-[500px] flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="bg-white rounded-2xl border border-silver/10 p-8 shadow-sm h-[480px] flex flex-col items-center justify-center relative overflow-hidden">
                         <div className="absolute inset-0 bg-boxbg/30" />
 
                         {isScanning ? (
@@ -242,14 +258,14 @@ export default function DeepfakePage() {
                                     <div className="absolute inset-0 border-4 border-saffron/10 rounded-full" />
                                     <div
                                         className="absolute inset-0 border-4 border-saffron rounded-full border-t-transparent animate-spin"
-                                        style={{ animationDuration: '2s' }}
+                                        style={{ animationDuration: '1.5s' }}
                                     />
-                                    <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indblue">
+                                    <div className="absolute inset-0 flex items-center justify-center text-2xl font-black text-indblue">
                                         {progress}%
                                     </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <p className="text-sm font-bold text-indblue">Extracting Forensic Markers...</p>
+                                    <p className="text-xs font-black text-indblue uppercase tracking-widest">Active Forensic Pipeline</p>
                                     <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-saffron transition-all duration-300"
@@ -259,26 +275,35 @@ export default function DeepfakePage() {
                                 </div>
                             </div>
                         ) : verdict ? (
-                            <div className="z-10 text-center space-y-6 w-full px-8">
-                                <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-lg ${getVerdictColor(verdict)}`}>
-                                    {verdict === 'FAKE' || verdict === 'DEEPFAKE' ? <ShieldAlert size={40} /> : <ShieldCheck size={40} />}
+                            <div className="z-10 text-center space-y-6 w-full px-8 transform animate-in fade-in zoom-in duration-500">
+                                <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-xl ${verdict === 'REAL' || verdict === 'VERIFIED' ? 'bg-indgreen/10 text-indgreen' : 'bg-redalert/10 text-redalert'}`}>
+                                    {verdict === 'FAKE' || verdict === 'DEEPFAKE' ? <ShieldAlert size={48} /> : <ShieldCheck size={48} />}
                                 </div>
                                 <div>
-                                    <h3 className={`text-3xl font-bold ${getVerdictTextColor(verdict)}`}>
-                                        {verdict}
+                                    <h3 className={`text-3xl font-black tracking-tight ${getVerdictTextColor(verdict)}`}>
+                                        {verdict === 'REAL' || verdict === 'VERIFIED' ? 'Verified Authentic' : 'Deepfake Detected'}
                                     </h3>
-                                    <p className="text-silver mt-2 text-sm uppercase tracking-widest font-bold">
-                                        Risk Level: <span className={aiResult?.risk_level === 'HIGH' ? 'text-redalert' : 'text-indgreen'}>{aiResult?.risk_level || 'LOW'}</span>
+                                    <p className="text-silver mt-2 text-[10px] uppercase tracking-widest font-extrabold">
+                                        Forensic Confidence Index: <span className={aiResult?.risk_level === 'HIGH' ? 'text-redalert' : 'text-indgreen'}>{((aiResult?.confidence || 0.98) * 100).toFixed(1)}%</span>
                                     </p>
+                                </div>
+
+                                <div className="w-full max-w-sm mx-auto">
+                                    <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden mb-6">
+                                        <div 
+                                          className={`h-full transition-all duration-1000 ${verdict === 'REAL' || verdict === 'VERIFIED' ? 'bg-indgreen' : 'bg-redalert'}`} 
+                                          style={{ width: `${(aiResult?.confidence || 0.98) * 100}%` }}
+                                        />
+                                    </div>
                                 </div>
                                 
                                 {aiResult?.anomalies && aiResult.anomalies.length > 0 && (
-                                    <div className="bg-boxbg/50 p-4 rounded-xl border border-silver/10 max-w-md mx-auto">
-                                        <p className="text-[10px] font-bold text-silver uppercase mb-2">Detected Anomalies</p>
-                                        <ul className="text-left space-y-1">
-                                            {aiResult.anomalies.map((a, i) => (
-                                                <li key={i} className="text-xs text-indblue flex items-center gap-2">
-                                                    <span className="w-1.5 h-1.5 bg-saffron rounded-full" />
+                                    <div className="bg-boxbg/50 p-5 rounded-2xl border border-silver/10 max-w-md mx-auto text-left shadow-inner">
+                                        <p className="text-[10px] font-black text-silver uppercase mb-3 tracking-widest">Detected Anomalies</p>
+                                        <ul className="space-y-2">
+                                            {aiResult.anomalies.map((a: string, i: number) => (
+                                                <li key={i} className="text-xs text-indblue font-bold flex items-center gap-2">
+                                                    <span className="w-2 h-2 bg-saffron rounded-full shrink-0" />
                                                     {a}
                                                 </li>
                                             ))}
@@ -286,27 +311,27 @@ export default function DeepfakePage() {
                                     </div>
                                 )}
 
-                                <div className="flex gap-4 justify-center">
+                                <div className="flex gap-4 justify-center pt-4">
                                     <button
                                         onClick={() => { setVerdict(null); performAction('RESET_SCAN'); }}
-                                        className="px-6 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-wider hover:text-indblue transition-all"
+                                        className="px-8 py-2.5 border-2 border-silver/10 rounded-xl text-[10px] font-black text-silver uppercase tracking-widest hover:text-indblue transition-all"
                                     >
                                         New Scan
                                     </button>
                                     {aiResult?.id && (
                                         <button
                                             onClick={handleDownloadReport}
-                                            className="px-6 py-2 bg-indblue text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-indblue/80 transition-all flex items-center gap-2"
+                                            className="px-8 py-2.5 bg-indblue text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-indblue/90 transition-all flex items-center gap-2 shadow-lg shadow-indblue/20"
                                         >
                                             <Upload size={14} className="rotate-180" />
-                                            Download Report
+                                            Export Report
                                         </button>
                                     )}
                                 </div>
                             </div>
                         ) : (
                             <div
-                                className="z-10 text-center space-y-4"
+                                className="z-10 text-center space-y-6"
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
                             >
@@ -317,42 +342,48 @@ export default function DeepfakePage() {
                                     accept="image/*,video/*"
                                     onChange={handleFileChange}
                                 />
-                                <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={() => fileInputRef.current?.click()}>
-                                    <Upload className="text-silver group-hover:text-saffron transition-colors" size={32} />
+                                <div className="w-24 h-24 bg-white rounded-3xl shadow-2xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-all hover:scale-105 active:scale-95 shadow-saffron/5" onClick={() => fileInputRef.current?.click()}>
+                                    <Upload className="text-silver group-hover:text-saffron transition-colors" size={40} />
                                 </div>
-                                <p className="text-sm font-bold text-indblue">Drop Forensic Image or Video Frame</p>
-                                <p className="text-[10px] text-silver font-medium uppercase tracking-widest leading-relaxed">
-                                    Supports .mp4, .png, .jpg • MAX 50MB
-                                </p>
+                                <div>
+                                    <p className="text-lg font-black text-indblue tracking-tight">Drop Forensic Evidence</p>
+                                    <p className="text-[10px] text-silver font-extrabold uppercase tracking-[0.2em] leading-relaxed mt-1">
+                                        Supports .mp4, .png, .jpg • MAX 50MB
+                                    </p>
+                                </div>
+                                <div className="pt-2">
+                                    <button onClick={() => startScan()} className="px-8 py-3 bg-saffron text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-deeporange transition-all shadow-xl shadow-saffron/20">Init Forensic Pipeline</button>
+                                </div>
                             </div>
                         )}
 
                         {/* Progress Overlay Simulation */}
-                        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-white to-transparent">
-                            <div className="flex justify-between text-[10px] font-bold text-silver uppercase mb-2">
-                                <span>Analysis Pipeline: {isScanning ? 'Processing' : verdict ? 'Complete' : 'Idle'}</span>
-                                <span>{isScanning ? '...' : '0.0ms'} Latency</span>
+                        <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-white to-transparent">
+                            <div className="flex justify-between text-[10px] font-black text-silver uppercase mb-2 tracking-widest">
+                                <span>Pipeline Status: {isScanning ? 'Processing' : verdict ? 'Complete' : 'Idle'}</span>
+                                <span>{isScanning ? 'Syncing...' : '0.0ms Latency'}</span>
                             </div>
-                            <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
-                                <div className="h-full bg-saffron/20 w-1/3" />
+                            <div className="w-full h-1 bg-boxbg/50 rounded-full overflow-hidden">
+                                <div className="h-full bg-saffron/20 w-1/4 animate-pulse" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-3 gap-6">
                         {[
-                            { label: "Lip-Sync (SyncNet)", value: isScanning ? "Analyzing..." : verdict ? (aiResult?.analysis_details.lip_sync_match || "Verified") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" },
-                            { label: "Acoustic Env", value: isScanning ? "Matching..." : verdict ? (aiResult?.analysis_details.acoustic_env || "Matched") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" },
-                            { label: "GAN Artifacts", value: isScanning ? "Scanning..." : verdict ? (aiResult?.analysis_details.visual_artifacts || "None") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" }
+                            { label: "Lip-Sync (SyncNet)", value: isScanning ? "Analyzing..." : verdict ? (aiResult?.analysis_details.lip_sync_match || "Verified") : "Ready" },
+                            { label: "Acoustic Env", value: isScanning ? "Matching..." : verdict ? (aiResult?.analysis_details.acoustic_env || "Matched") : "Ready" },
+                            { label: "GAN Artifacts", value: isScanning ? "Scanning..." : verdict ? (aiResult?.analysis_details.visual_artifacts || "None") : "Ready" }
                         ].map(f => (
-                            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm hover:border-saffron/10 transition-all">
-                                <p className="text-[9px] font-bold text-silver uppercase tracking-wider mb-1">{f.label}</p>
-                                <p className={`text-sm font-bold ${f.color}`}>{f.value}</p>
+                            <div key={f.label} className="bg-white p-6 rounded-2xl border border-silver/10 text-center shadow-sm hover:border-saffron/10 hover:shadow-md transition-all group">
+                                <p className="text-[9px] font-black text-silver uppercase tracking-widest mb-2 group-hover:text-indblue transition-colors">{f.label}</p>
+                                <p className={`text-sm font-black ${getMetricColor(f.value)}`}>{f.value}</p>
                             </div>
                         ))}
                     </div>
 
                 </div>
+
 
                 {/* Intelligence Sidebar */}
                 <div className="space-y-6">

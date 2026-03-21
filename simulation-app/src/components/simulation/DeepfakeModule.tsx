@@ -6,6 +6,7 @@ import {
   ShieldCheck,
   FileWarning,
   Brain,
+  Scan,
   Loader2
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
@@ -128,43 +129,82 @@ export default function DeepfakeModule({
     }
   };
 
+  const getMetricColor = (val: string) => {
+    const v = val.toLowerCase();
+    if (v.includes('verified') || v.includes('none') || v.includes('matched') || v.includes('normal') || v.includes('9')) return 'text-indgreen';
+    if (v.includes('suspicious') || v.includes('low') || v.includes('anomaly') || v.includes('8')) return 'text-gold';
+    if (v.includes('fake') || v.includes('deepfake') || v.includes('high') || v.includes('artifact')) return 'text-redalert';
+    return 'text-indblue';
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 w-full max-w-6xl mt-4">
-      <div className="lg:col-span-2 space-y-6">
-        <div className="bg-white rounded-2xl border border-silver/10 p-8 shadow-sm h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+      <div className="space-y-6">
+        <div className="bg-white rounded-2xl border border-silver/10 p-6 sm:p-8 shadow-sm min-h-[400px] flex flex-col items-center justify-center relative overflow-hidden">
           <div className="absolute inset-0 bg-boxbg/30" />
+          
           {isDeepfakeScanning ? (
             <div className="z-10 text-center space-y-6 w-full max-w-xs">
               <div className="relative w-32 h-32 mx-auto">
                 <div className="absolute inset-0 border-4 border-saffron/10 rounded-full" />
-                <div className="absolute inset-0 border-4 border-saffron rounded-full border-t-transparent animate-spin" style={{ animationDuration: '2s' }} />
-                <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indblue">{scanProgress}%</div>
-              </div>
-              <div className="space-y-2">
-                <p className="text-sm font-bold text-indblue">Extracting Forensic Markers...</p>
-                <div className="w-full h-1.5 bg-boxbg rounded-full overflow-hidden">
-                  <div className="h-full bg-saffron transition-all duration-300" style={{ width: `${scanProgress}%` }} />
+                <div className="absolute inset-0 border-4 border-saffron rounded-full border-t-transparent animate-spin" style={{animationDuration: '1.5s'}} />
+                <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold text-indblue">
+                  {scanProgress}%
                 </div>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-indblue uppercase tracking-widest">Active Forensic Scan</p>
+                <p className="text-[10px] text-silver font-bold uppercase">Decrypting Latent Visual Signatures...</p>
               </div>
             </div>
           ) : deepfakeVerdict ? (
-            <div className="z-10 text-center space-y-6">
-              <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-lg ${deepfakeVerdict === 'DEEPFAKE' ? 'bg-redalert/10 text-redalert' : 'bg-indgreen/10 text-indgreen'}`}>
-                {deepfakeVerdict === 'DEEPFAKE' ? <ShieldAlert size={48} /> : <ShieldCheck size={48} />}
+            <div className="z-10 text-center space-y-4 w-full px-4 transform animate-in fade-in zoom-in duration-500">
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-xl ${deepfakeVerdict === 'VERIFIED' ? 'bg-indgreen/10 text-indgreen' : 'bg-redalert/10 text-redalert'}`}>
+                {deepfakeVerdict === 'VERIFIED' ? <ShieldCheck size={40} /> : <ShieldAlert size={40} />}
               </div>
               <div>
-                <h3 className={`text-2xl font-bold ${deepfakeVerdict === 'DEEPFAKE' ? 'text-redalert' : 'text-indgreen'}`}>{deepfakeVerdict === 'DEEPFAKE' ? 'Deepfake Detected' : 'Verified Identity'}</h3>
-                <p className="text-silver mt-2">Forensic analysis complete.</p>
+                <h3 className={`text-2xl font-black tracking-tight ${deepfakeVerdict === 'VERIFIED' ? 'text-indgreen' : 'text-redalert'}`}>
+                  {deepfakeVerdict === 'VERIFIED' ? 'Verified Authentic' : 'Deepfake Detected'}
+                </h3>
+                <p className="text-[10px] text-silver mt-1 uppercase font-extrabold tracking-widest">
+                  Forensic analysis complete.
+                </p>
               </div>
-              <button onClick={() => { setDeepfakeVerdict(null); performAction('RESET_SCAN'); }} className="px-4 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-wider hover:text-indblue">Reset Scan</button>
+              
+              <div className="mt-4 pt-4 border-t border-silver/5">
+                 <div className="flex justify-between items-center mb-1">
+                    <span className="text-[9px] font-bold text-silver uppercase">Forensic Confidence</span>
+                    <span className="text-[9px] font-bold text-indblue">{(deepfakeAiResult?.confidence * 100 || 98).toFixed(1)}%</span>
+                 </div>
+                 <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full transition-all duration-1000 ${deepfakeVerdict === 'VERIFIED' ? 'bg-indgreen' : 'bg-redalert'}`} 
+                      style={{ width: `${(deepfakeAiResult?.confidence * 100 || 98)}%` }}
+                    />
+                 </div>
+              </div>
+
+              <button
+                onClick={() => { setDeepfakeVerdict(null); performAction('RESET_SCAN'); }}
+                className="mt-4 px-6 py-2 border border-silver/10 rounded-lg text-[10px] font-extrabold text-silver uppercase tracking-widest hover:text-indblue transition-all"
+              >
+                Reset Scan
+              </button>
             </div>
           ) : (
             <div className="z-10 text-center space-y-4">
-              <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,application/pdf" onChange={(e) => e.target.files?.[0] && startDeepfakeScan(e.target.files[0])} />
-              <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group cursor-pointer hover:border-saffron/40 transition-colors" onClick={() => fileInputRef.current?.click()}><FileWarning className="text-silver group-hover:text-saffron transition-colors" size={32} /></div>
-              <p className="text-sm font-bold text-indblue">Drop Forensic Media or Documents</p>
-              <p className="text-[10px] text-silver font-medium uppercase tracking-widest leading-relaxed">Supports .mp4, .png, .mp3, .pdf • MAX 50MB</p>
-              <button onClick={() => startDeepfakeScan()} className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-deeporange transition-all">START FORENSIC SCAN</button>
+              <div className="w-20 h-20 bg-white rounded-2xl shadow-xl flex items-center justify-center mx-auto border border-silver/10 group animate-pulse">
+                <Scan className="text-silver group-hover:text-saffron transition-colors" size={32} />
+              </div>
+              <div>
+                <p className="text-sm font-black text-indblue uppercase tracking-tight">Forensic Lab Ready</p>
+                <p className="text-[9px] text-silver font-bold uppercase tracking-widest mt-1">Upload Media or Start Diagnostic</p>
+              </div>
+              <div className="flex gap-3 justify-center pt-2">
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*,video/*,audio/*,application/pdf" onChange={(e) => e.target.files?.[0] && startDeepfakeScan(e.target.files[0])} />
+                <button onClick={() => fileInputRef.current?.click()} className="px-6 py-2 bg-saffron text-white rounded-lg text-xs font-bold uppercase tracking-widest hover:bg-deeporange transition-all">UPLOAD MEDIA</button>
+                <button onClick={() => startDeepfakeScan()} className="px-6 py-2 border border-silver/10 rounded-lg text-xs font-bold text-silver uppercase tracking-widest hover:text-indblue transition-all">LIVE DIAGNOSTIC</button>
+              </div>
             </div>
           )}
         </div>
@@ -173,15 +213,14 @@ export default function DeepfakeModule({
             { label: "Lip-Sync (SyncNet)", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready" },
             { label: "Acoustic Env", value: isDeepfakeScanning ? "Matching..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.acoustic_env || "Matched") : "Ready" },
             { label: "GAN Artifacts", value: isDeepfakeScanning ? "Scanning..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.visual_artifacts || "None") : "Ready" },
-            { label: "Forensic Confidence", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? `${((deepfakeAiResult?.confidence || 0.98) * 100).toFixed(1)}%` : "Ready" }
+            { label: "Signal Robustness", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.signal_robustness || "98.2%") : "Ready" }
           ].map(f => (
-            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm">
-              <p className="text-[9px] font-extrabold text-silver uppercase tracking-wider mb-1">{f.label}</p>
-              <p className={`text-xs font-black ${deepfakeVerdict === 'DEEPFAKE' ? 'text-redalert' : 'text-indblue'}`}>{f.value}</p>
+            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm hover:border-saffron/20 transition-all cursor-default group">
+              <p className="text-[9px] font-extrabold text-silver uppercase tracking-wider mb-1 group-hover:text-indblue transition-colors">{f.label}</p>
+              <p className={`text-xs font-black ${getMetricColor(f.value)}`}>{f.value}</p>
             </div>
           ))}
         </div>
-
       </div>
       <div className="space-y-6">
         <div className="bg-white rounded-2xl border border-silver/10 p-6 shadow-sm">
