@@ -33,41 +33,76 @@ def perform_forensic_analysis(upload_id: int):
         with open(upload.file_path, "rb") as f:
             content = f.read()
 
-        # 1. Traditional Forensic Extraction
-        forensic_data = forensic_engine.extract_metadata(content, upload.filename, upload.mime_type)
+        # 1. External AI Analysis (Railway DRISHYAM-ULTIMATE-V3)
+        import httpx
+        from core.config import settings
         
-        # 2. AI Analysis (Multimodal Gemini) - Synchronous wrapper for Celery
-        import asyncio
-        ai_data = asyncio.run(vision_engine.analyze_multimodal_forensic(
-            content, 
-            mime_type=upload.mime_type, 
-            filename=upload.filename
-        ))
-        
-        # 3. Consolidate Results
-        verdict = ai_data.get("verdict", "VERIFIED")
-        final_verdict = "REAL" if verdict == "VERIFIED" else "FAKE"
-        if len(forensic_data["anomalies"]) > 0 and final_verdict == "REAL":
-            final_verdict = "SUSPICIOUS"
+        # We'll poll the external API until finished (since this is already a background worker)
+        # Use a short timeout for the initial upload
+        with open(upload.file_path, "rb") as f:
+            files = {"file": (upload.filename, f, upload.mime_type)}
+            headers = {"X-API-KEY": settings.DEEPFAKE_API_KEY}
+            response = httpx.post(
+                f"{settings.DEEPFAKE_API_URL}/analyze",
+                headers=headers,
+                files=files,
+                timeout=60.0 # Allow time for upload
+            )
 
-        confidence = ai_data.get("confidence", 0.90)
+        if response.status_code != 200:
+            raise Exception(f"External Deepfake API error: {response.text}")
+
+        job_data = response.json()
+        external_job_id = job_data.get("job_id")
+        
+        # 2. Poll the external job until done
+        import time
+        max_retries = 30
+        result_data = None
+        for _ in range(max_retries):
+            status_res = httpx.get(
+                f"{settings.DEEPFAKE_API_URL}/status/{external_job_id}",
+                headers=headers,
+                timeout=10.0
+            )
+            if status_res.status_code == 200:
+                poll_data = status_res.json()
+                if poll_data["status"] == "done":
+                    result_data = poll_data
+                    break
+                elif poll_data["status"] == "failed":
+                    raise Exception(f"External job {external_job_id} failed")
+            time.sleep(5)
+        
+        if not result_data:
+            raise Exception(f"External job {external_job_id} timed out")
+
+        # 3. Consolidate Results
+        forensic_result = result_data.get("result", {})
+        metrics = result_data.get("metrics", {})
+        
+        verdict = forensic_result.get("verdict", "VERIFIED")
+        final_verdict = "REAL" if verdict == "VERIFIED" else "FAKE"
+        
+        confidence = forensic_result.get("confidence", 0.90)
         risk_level = "LOW"
         if final_verdict == "FAKE": risk_level = "HIGH"
-        elif final_verdict == "SUSPICIOUS": risk_level = "MEDIUM"
-
-        anomalies = forensic_data["anomalies"]
-        if "visual_artifacts" in ai_data.get("analysis_details", {}):
-            anomalies.append(ai_data["analysis_details"]["visual_artifacts"])
-
+        
         # 4. Update Database
         upload.verdict = final_verdict
         upload.confidence_score = confidence
         upload.risk_level = risk_level
         upload.metadata_json = {
-            "forensic": forensic_data,
-            "ai": ai_data
+            "external_job_id": external_job_id,
+            "ai": {
+                "verdict": verdict,
+                "confidence": confidence,
+                "analysis_details": forensic_result.get("analysis_details", {}),
+                "metrics": metrics
+            }
         }
         upload.status = "COMPLETED"
+
 
         # Create Crime Report if Fake
         if final_verdict == "FAKE":

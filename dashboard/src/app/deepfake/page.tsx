@@ -29,12 +29,15 @@ interface ForensicResult {
     risk_level: 'LOW' | 'MEDIUM' | 'HIGH';
     anomalies: string[];
     analysis_details: {
-        blink_frequency: string;
-        temporal_consistency: string;
-        lip_sync_match: string;
-        visual_artifacts: string;
+        lip_sync_match?: string;
+        acoustic_env?: string;
+        visual_artifacts?: string;
+        blink_frequency?: string;
+        temporal_consistency?: string;
+        [key: string]: any;
     };
 }
+
 
 export default function DeepfakePage() {
     const { performAction } = useActions();
@@ -338,16 +341,17 @@ export default function DeepfakePage() {
 
                     <div className="grid grid-cols-3 gap-4">
                         {[
-                            { label: "Blink Frequency", value: isScanning ? "Analyzing..." : verdict ? (aiResult?.analysis_details.blink_frequency || "Normal") : "Ready", color: verdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
-                            { label: "Temporal Consistency", value: isScanning ? "Calculating..." : verdict ? (aiResult?.analysis_details.temporal_consistency || "98.2%") : "Ready", color: verdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" },
-                            { label: "Lip-Sync Match", value: isScanning ? "Validating..." : verdict ? (aiResult?.analysis_details.lip_sync_match || "Verified") : "Ready", color: verdict === 'DEEPFAKE' ? "text-redalert" : "text-indgreen" }
+                            { label: "Lip-Sync (SyncNet)", value: isScanning ? "Analyzing..." : verdict ? (aiResult?.analysis_details.lip_sync_match || "Verified") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" },
+                            { label: "Acoustic Env", value: isScanning ? "Matching..." : verdict ? (aiResult?.analysis_details.acoustic_env || "Matched") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" },
+                            { label: "GAN Artifacts", value: isScanning ? "Scanning..." : verdict ? (aiResult?.analysis_details.visual_artifacts || "None") : "Ready", color: (verdict === 'FAKE' || verdict === 'DEEPFAKE') ? "text-redalert" : "text-indgreen" }
                         ].map(f => (
-                            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center">
+                            <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm hover:border-saffron/10 transition-all">
                                 <p className="text-[9px] font-bold text-silver uppercase tracking-wider mb-1">{f.label}</p>
                                 <p className={`text-sm font-bold ${f.color}`}>{f.value}</p>
                             </div>
                         ))}
                     </div>
+
                 </div>
 
                 {/* Intelligence Sidebar */}

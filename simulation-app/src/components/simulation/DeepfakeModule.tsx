@@ -170,10 +170,10 @@ export default function DeepfakeModule({
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           {[
-            { label: "Blink Frequency", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.blink_frequency || "Normal") : "Ready" },
-            { label: "Temporal Sync", value: isDeepfakeScanning ? "Calculating..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.temporal_consistency || "98.2%") : "Ready" },
-            { label: "Correctness Prob", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? `${((deepfakeAiResult?.probability || 0.85) * 100).toFixed(1)}%` : "Ready" },
-            { label: "False +ve Rate", value: isDeepfakeScanning ? "Estimating..." : deepfakeVerdict ? `${((deepfakeAiResult?.false_positive_rate || 0.02) * 100).toFixed(2)}%` : "Ready" }
+            { label: "Lip-Sync (SyncNet)", value: isDeepfakeScanning ? "Analyzing..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.lip_sync_match || "Verified") : "Ready" },
+            { label: "Acoustic Env", value: isDeepfakeScanning ? "Matching..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.acoustic_env || "Matched") : "Ready" },
+            { label: "GAN Artifacts", value: isDeepfakeScanning ? "Scanning..." : deepfakeVerdict ? (deepfakeAiResult?.analysis_details?.visual_artifacts || "None") : "Ready" },
+            { label: "Forensic Confidence", value: isDeepfakeScanning ? "Assessing..." : deepfakeVerdict ? `${((deepfakeAiResult?.confidence || 0.98) * 100).toFixed(1)}%` : "Ready" }
           ].map(f => (
             <div key={f.label} className="bg-white p-4 rounded-xl border border-silver/10 text-center shadow-sm">
               <p className="text-[9px] font-extrabold text-silver uppercase tracking-wider mb-1">{f.label}</p>
@@ -181,6 +181,7 @@ export default function DeepfakeModule({
             </div>
           ))}
         </div>
+
       </div>
       <div className="space-y-6">
         <div className="bg-white rounded-2xl border border-silver/10 p-6 shadow-sm">

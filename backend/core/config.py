@@ -36,6 +36,10 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = Field("sqlite:///./drishyam.db", env="DATABASE_URL")
     
+    # Deepfake Forensic API (Railway)
+    DEEPFAKE_API_URL: str = Field("https://deepfake-production-39b6.up.railway.app", env="DEEPFAKE_API_URL")
+    DEEPFAKE_API_KEY: str = Field("drishyam_admin_2026", env="DEEPFAKE_API_KEY")
+    
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
         uri = self.DATABASE_URL
