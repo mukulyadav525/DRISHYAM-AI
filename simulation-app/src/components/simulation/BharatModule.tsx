@@ -177,27 +177,7 @@ export default function BharatModule({
   };
 
   return (
-    <div className="flex flex-col bg-white items-center w-full h-[100dvh] overflow-hidden relative">
-      
-      {/* Dynamic Header */}
-      <div className="w-full pt-6 pb-2 text-center relative z-20 flex flex-col items-center">
-            <Link href="/" className="absolute left-8 top-8 flex items-center gap-2 text-[8px] font-black text-indblue/40 uppercase tracking-widest hover:text-indblue transition-all group">
-                <X size={12} className="group-hover:rotate-90 transition-all duration-300" /> Back to Hub
-            </Link>
-
-            <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col items-center mb-1">
-                <div className="flex items-center gap-2 px-3 py-1 bg-indblue/5 rounded-full border border-indblue/10 mb-2">
-                    <ShieldCheck size={10} className="text-indblue" />
-                    <span className="text-[7px] font-black text-indblue uppercase tracking-[0.2em]">Active Node: FIN_SEC</span>
-                </div>
-                <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-                    <span className="text-saffron">DRISHYAM</span> 
-                    <span className="text-indblue">Bharat Layer</span>
-                </h1>
-            </motion.div>
-      </div>
-
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-12 w-full h-full max-h-[85dvh] px-4 -mt-4">
+    <div className="flex flex-col lg:flex-row items-center justify-center gap-12 w-full h-full max-h-[90dvh] px-4">
         
         {/* iPhone 16 Mockup */}
         <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-[720px] scale-[0.9] lg:scale-100 origin-center">
@@ -421,7 +401,6 @@ export default function BharatModule({
             <p className="text-center text-[7px] font-bold text-indblue/10 uppercase tracking-[0.5em]">Protocol Alpha V2.4.4</p>
         </div>
 
-      </div>
     </div>
   );
 }
