@@ -21,6 +21,9 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
+SESSION_LAST_SEEN_WRITE_INTERVAL = timedelta(seconds=30)
+
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
@@ -80,11 +83,20 @@ async def get_current_user(
                 headers={"WWW-Authenticate": "Bearer"},
             )
 
-        session_row.last_seen_at = _utcnow()
+        now = _utcnow()
+        should_commit = False
+        if (
+            session_row.last_seen_at is None
+            or now - session_row.last_seen_at >= SESSION_LAST_SEEN_WRITE_INTERVAL
+        ):
+            session_row.last_seen_at = now
+            should_commit = True
         if payload.get("mfa_verified", False) and session_row.auth_stage != "MFA_VERIFIED":
             session_row.auth_stage = "MFA_VERIFIED"
-            session_row.verified_at = session_row.verified_at or _utcnow()
-        db.commit()
+            session_row.verified_at = session_row.verified_at or now
+            should_commit = True
+        if should_commit:
+            db.commit()
 
     return user
 

@@ -88,7 +88,15 @@ async def lifespan(app: FastAPI):
         
         # 1. Ensure Schema Compliance (migrations for existing tables)
         from core.database import ensure_schema_compliance
+        from core.access_control import seed_access_policies
+
         ensure_schema_compliance()
+        db = SessionLocal()
+        try:
+            # Ensure default access policies exist once at startup without overwriting DB-managed edits.
+            seed_access_policies(db)
+        finally:
+            db.close()
         if settings.ENABLE_BOOTSTRAP_DATA:
             logger.warning("[STARTUP] Bootstrap data mode is enabled. Seeding development records.")
             db = SessionLocal()
@@ -100,9 +108,7 @@ async def lifespan(app: FastAPI):
                     _seed_pipeline,
                     _seed_support,
                 )
-                from core.access_control import seed_access_policies
 
-                seed_access_policies(db)
                 _seed_pipeline(db)
                 _seed_billing(db)
                 _seed_support(db)

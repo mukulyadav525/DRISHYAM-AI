@@ -20,7 +20,7 @@ from core.auth import (
     PRIVILEGED_ROLES,
 )
 from core.audit import log_audit
-from core.access_control import build_access_manifest
+from core.access_control import build_access_manifest, build_pending_access_manifest
 from models.database import AgencySession, User, UserRole
 
 router = APIRouter()
@@ -173,6 +173,11 @@ def login(
             "risk_level": device_context["risk_level"],
         },
     )
+    access_manifest = (
+        build_pending_access_manifest(user.role)
+        if requires_mfa
+        else build_access_manifest(db, user)
+    )
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -182,7 +187,7 @@ def login(
         "mfa_required": requires_mfa,
         "mfa_verified": not requires_mfa,
         "session_id": session_uid,
-        "access": build_access_manifest(db, user),
+        "access": access_manifest,
     }
 
 @router.post("/mfa/verify", response_model=Token)

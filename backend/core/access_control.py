@@ -299,7 +299,7 @@ def _normalize_scope(value: str | None) -> str:
     return (value or "").strip().lower()
 
 
-def seed_access_policies(db: Session):
+def seed_access_policies(db: Session, sync_existing: bool = False):
     changed = False
     for payload in DEFAULT_AGENCY_POLICIES:
         existing = db.query(AgencyAccessPolicy).filter(AgencyAccessPolicy.policy_id == payload["policy_id"]).first()
@@ -308,10 +308,11 @@ def seed_access_policies(db: Session):
             changed = True
             continue
 
-        for key, value in payload.items():
-            if getattr(existing, key) != value:
-                setattr(existing, key, value)
-                changed = True
+        if sync_existing:
+            for key, value in payload.items():
+                if getattr(existing, key) != value:
+                    setattr(existing, key, value)
+                    changed = True
 
     if changed:
         db.commit()
@@ -345,14 +346,31 @@ def _rank_sensitivity(value: str | None) -> int:
     return SENSITIVITY_ORDER.get((value or "MEDIUM").upper(), SENSITIVITY_ORDER["MEDIUM"])
 
 
-def evaluate_agency_access(
-    db: Session,
+def load_active_policies(db: Session) -> list[AgencyAccessPolicy]:
+    return (
+        db.query(AgencyAccessPolicy)
+        .filter(AgencyAccessPolicy.active.is_(True))
+        .order_by(AgencyAccessPolicy.created_at.asc(), AgencyAccessPolicy.id.asc())
+        .all()
+    )
+
+
+def load_or_seed_active_policies(db: Session) -> list[AgencyAccessPolicy]:
+    policies = load_active_policies(db)
+    if policies:
+        return policies
+
+    seed_access_policies(db)
+    return load_active_policies(db)
+
+
+def _evaluate_policy_list(
+    policies: list[AgencyAccessPolicy],
     user: User,
     action: str,
     resource: str,
     attrs: dict | None = None,
 ) -> dict:
-    seed_access_policies(db)
     attrs = attrs or {}
 
     action = action.upper()
@@ -360,13 +378,6 @@ def evaluate_agency_access(
     segment = (attrs.get("segment") or "*").upper()
     region = (attrs.get("region") or "INDIA").upper()
     sensitivity = (attrs.get("sensitivity") or "MEDIUM").upper()
-
-    policies = (
-        db.query(AgencyAccessPolicy)
-        .filter(AgencyAccessPolicy.active.is_(True))
-        .order_by(AgencyAccessPolicy.created_at.asc(), AgencyAccessPolicy.id.asc())
-        .all()
-    )
 
     deny_reason = f"No active policy allows {user.role} to {action} {resource}."
     for policy in policies:
@@ -424,6 +435,17 @@ def evaluate_agency_access(
     }
 
 
+def evaluate_agency_access(
+    db: Session,
+    user: User,
+    action: str,
+    resource: str,
+    attrs: dict | None = None,
+) -> dict:
+    policies = load_or_seed_active_policies(db)
+    return _evaluate_policy_list(policies, user, action=action, resource=resource, attrs=attrs)
+
+
 def authorize_agency_access(
     db: Session,
     user: User,
@@ -438,14 +460,13 @@ def authorize_agency_access(
 
 
 def build_access_manifest(db: Session, user: User) -> dict:
-    seed_access_policies(db)
-
+    policies = load_or_seed_active_policies(db)
     page_decisions = []
     allowed_pages = []
     allowed_resources = set()
 
     for page in DASHBOARD_PAGE_CATALOG:
-        decision = evaluate_agency_access(db, user, action="READ", resource=page["resource"])
+        decision = _evaluate_policy_list(policies, user, action="READ", resource=page["resource"])
         is_allowed = bool(decision["allowed"])
         page_decisions.append({
             "path": page["path"],
@@ -463,5 +484,16 @@ def build_access_manifest(db: Session, user: User) -> dict:
         "allowed_pages": allowed_pages,
         "allowed_resources": sorted(allowed_resources),
         "pages": page_decisions,
+        "generated_at": _utcnow().isoformat(),
+    }
+
+
+def build_pending_access_manifest(role: str) -> dict:
+    return {
+        "role": role,
+        "role_label": ROLE_LABELS.get(role, role.title()),
+        "allowed_pages": [],
+        "allowed_resources": [],
+        "pages": [],
         "generated_at": _utcnow().isoformat(),
     }
