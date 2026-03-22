@@ -80,7 +80,7 @@ export default function HistoryPage() {
     };
 
     const filteredHistory = (history || []).filter(item => {
-        const matchesSearch = item.filename?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesSearch = (item.filename || '').toLowerCase().includes(searchTerm.toLowerCase());
         const matchesFilter =
             filterMode === 'ALL' ||
             (filterMode === 'HIGH_RISK' && item.risk === 'HIGH') ||

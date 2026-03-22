@@ -84,7 +84,11 @@ export default function DetectionGrid() {
     }, []);
 
     const filteredCalls = (calls || []).filter(call => {
-        const matchesSearch = call.number?.includes(searchQuery) || call.location?.toLowerCase().includes(searchQuery.toLowerCase());
+        const normalizedSearch = searchQuery.toLowerCase();
+        const matchesSearch =
+            !searchQuery ||
+            (call.number || '').includes(searchQuery) ||
+            (call.location || '').toLowerCase().includes(normalizedSearch);
         const matchesRisk = filterRisk === 'ALL' || call.status === 'Scam';
         return matchesSearch && matchesRisk;
     });

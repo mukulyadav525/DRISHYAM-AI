@@ -107,7 +107,8 @@ export default function InoculationPage() {
       });
 
       const payload = res.ok ? await res.json() : null;
-      const steps = payload?.steps || data?.scenarios?.[scenario]?.steps || [];
+      const rawSteps = payload?.steps || data?.scenarios?.[scenario]?.steps || [];
+      const steps = Array.isArray(rawSteps) ? rawSteps.filter((step): step is string => typeof step === "string" && step.trim().length > 0) : [];
       setActiveDrillId(payload?.drill_id || null);
 
       let step = 0;
@@ -294,7 +295,7 @@ export default function InoculationPage() {
                 <p className="text-silver/30 italic">Target selection required...</p>
               ) : (
                 logs.map((log, index) => (
-                  <p key={index} className={log.includes("[SCORE]") ? "text-saffron font-bold" : "text-white"}>
+                  <p key={index} className={(typeof log === "string" && log.includes("[SCORE]")) ? "text-saffron font-bold" : "text-white"}>
                     {log}
                   </p>
                 ))

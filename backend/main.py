@@ -74,6 +74,21 @@ else:
     logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("drishyam.main")
 
+
+def _cors_allowlist() -> list[str]:
+    configured = [origin.strip() for origin in settings.CORS_ORIGINS if isinstance(origin, str) and origin.strip() and origin.strip() != "*"]
+    defaults = [
+        "https://drishyam-dashboard.netlify.app",
+        "https://drishyam-ai-production.up.railway.app",
+        "http://localhost:3000",
+        "http://localhost:3001",
+    ]
+    deduped: list[str] = []
+    for origin in [*configured, *defaults]:
+        if origin not in deduped:
+            deduped.append(origin)
+    return deduped
+
 @contextlib.asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Database Setup
@@ -142,10 +157,12 @@ if RateLimitExceeded is not None:
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origin_regex=r"https://.*\.vercel\.app|https://.*\.railway\.app|https://.*\.netlify\.app|http://localhost:300[0-1]",
+    allow_origins=_cors_allowlist(),
+    allow_origin_regex=r"^https://([a-zA-Z0-9-]+\.)*(vercel\.app|railway\.app|netlify\.app)$|^http://localhost:300[0-1]$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Secure Headers Middleware

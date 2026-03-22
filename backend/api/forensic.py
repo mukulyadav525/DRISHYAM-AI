@@ -147,6 +147,7 @@ async def upload_and_analyze_deepfake(
         raise HTTPException(status_code=500, detail=str(e))
 
 @router.get("/report/{upload_id}")
+@router.get("/report/{upload_id}/", include_in_schema=False)
 async def download_report(
     upload_id: int,
     current_user: User = Depends(get_current_verified_user),
