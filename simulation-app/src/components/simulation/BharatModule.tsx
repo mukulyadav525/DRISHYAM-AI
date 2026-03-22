@@ -36,7 +36,6 @@ import {
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
 import { getAuthHeaders } from "@/lib/auth";
 
 interface BharatModuleProps {
@@ -273,31 +272,20 @@ export default function BharatModule({
   };
 
   return (
-    <div className="flex flex-col bg-white items-center w-full h-[100dvh] overflow-hidden relative">
-      
-      {/* Dynamic Header */}
-      <div className="w-full pt-6 pb-2 text-center relative z-20 flex flex-col items-center">
-            <Link href="/" className="absolute left-8 top-8 flex items-center gap-2 text-[8px] font-black text-indblue/40 uppercase tracking-widest hover:text-indblue transition-all group">
-                <X size={12} className="group-hover:rotate-90 transition-all duration-300" /> Back to Hub
-            </Link>
-
-            <motion.div initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="flex flex-col items-center mb-1">
-                <div className="flex items-center gap-2 px-3 py-1 bg-indblue/5 rounded-full border border-indblue/10 mb-2">
-                    <ShieldCheck size={10} className="text-indblue" />
-                    <span className="text-[7px] font-black text-indblue uppercase tracking-[0.2em]">Active Node: FIN_SEC</span>
-                </div>
-                <h1 className="text-3xl font-black tracking-tight flex items-center gap-2">
-                    <span className="text-saffron">DRISHYAM</span> 
-                    <span className="text-indblue">Bharat Layer</span>
-                </h1>
-            </motion.div>
+    <div className="w-full rounded-[2.5rem] border border-indblue/10 bg-[radial-gradient(circle_at_top,rgba(0,33,106,0.05),rgba(255,255,255,0.98)_50%)] px-3 py-4 shadow-[0_24px_70px_-40px_rgba(0,33,106,0.35)] sm:px-5">
+      <div className="mx-auto mb-5 max-w-3xl text-center">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-saffron">Low-bandwidth citizen routing</p>
+        <p className="mt-2 text-sm leading-relaxed text-silver">
+          Dial <span className="font-black text-indblue">1930</span> for guided reporting or
+          launch <span className="font-black text-indblue">*1930#</span> for the USSD incident path. Every step writes the complaint into the live backend workflow.
+        </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center justify-center gap-12 w-full h-full max-h-[85dvh] px-4 -mt-4">
+      <div className="flex flex-col xl:flex-row items-center justify-center gap-8 xl:gap-10 w-full px-1 pb-2">
         
         {/* iPhone 16 Mockup */}
-        <div className="relative shrink-0 flex flex-col items-center justify-center h-full max-h-[720px] scale-[0.9] lg:scale-100 origin-center">
-            <div className="relative w-[340px] h-full max-h-[680px] rounded-[3.5rem] p-1.5 bg-[#f5f5f5] border-[10px] border-white shadow-[0_50px_100px_-20px_rgba(0,33,106,0.15)] ring-2 ring-indblue/5 overflow-hidden flex flex-col">
+        <div className="relative shrink-0 flex flex-col items-center justify-center scale-[0.88] sm:scale-[0.94] xl:scale-100 origin-center">
+            <div className="relative w-[340px] h-[680px] rounded-[3.5rem] p-1.5 bg-[#f5f5f5] border-[10px] border-white shadow-[0_50px_100px_-20px_rgba(0,33,106,0.15)] ring-2 ring-indblue/5 overflow-hidden flex flex-col">
                 <div className="absolute top-4 left-1/2 -translate-x-1/2 w-20 h-5 bg-indblue rounded-full z-[100] flex items-center justify-center px-3 shadow-md border border-white/10">
                     <div className="flex gap-1 items-center"><div className="w-0.5 h-0.5 rounded-full bg-saffron animate-ping" /><div className="w-8 h-px bg-white/20 rounded-full" /></div>
                 </div>
@@ -501,7 +489,7 @@ export default function BharatModule({
         </div>
 
         {/* Tactical Keypad */}
-        <div className="flex flex-col gap-6 w-full max-w-[300px] shrink-0 h-full max-h-[640px] justify-center scale-95 lg:scale-110 origin-center drop-shadow-2xl">
+        <div className="flex w-full max-w-[320px] shrink-0 flex-col gap-5 self-center scale-[0.92] sm:scale-100 xl:scale-105 origin-center drop-shadow-2xl">
             <div className="bg-white rounded-[2rem] p-5 border border-indblue/5 shadow-xl relative overflow-hidden ring-1 ring-indblue/[0.02]">
                 <div className="absolute top-0 right-0 p-4 opacity-[0.03] text-indblue"><Cpu size={64} /></div>
                 <div className="flex items-center gap-4">

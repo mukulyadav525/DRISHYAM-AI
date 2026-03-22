@@ -176,6 +176,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
   const [isNavigating, startTransition] = useTransition();
   const [homeData, setHomeData] = useState<AppHomeData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busyState, setBusyState] = useState<string | null>(null);
   const [district, setDistrict] = useState("Delhi NCR");
   const [language, setLanguage] = useState("en");
@@ -207,6 +208,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
     if (showSpinner) {
       setIsLoading(true);
     }
+    setLoadError(null);
     try {
       const data = (await request("/citizen/app-home")) as AppHomeData;
       setHomeData(data);
@@ -217,7 +219,9 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
       setLowBandwidth(data.profile.low_bandwidth);
     } catch (error: any) {
       console.error("Citizen home fetch failed:", error);
-      toast.error(error.message || "Could not load citizen protection center.");
+      const message = error.message || "Could not load citizen protection center.";
+      setLoadError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -356,12 +360,41 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
     startTransition(() => setActiveFeature(feature));
   };
 
-  if (isLoading || !homeData) {
+  if (isLoading) {
     return (
       <div className="flex min-h-screen w-full items-center justify-center px-6 py-12">
         <div className="rounded-[2rem] border border-indblue/10 bg-white px-8 py-10 text-center shadow-2xl">
           <Loader2 size={28} className="mx-auto mb-4 animate-spin text-indblue" />
           <p className="text-sm font-bold text-indblue">Loading your citizen protection center...</p>
+          <p className="mt-2 text-xs font-medium text-silver">Checking live alerts, trust-circle status, and recovery readiness.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!homeData) {
+    return (
+      <div className="flex min-h-screen w-full items-center justify-center px-6 py-12">
+        <div className="max-w-md rounded-[2rem] border border-indblue/10 bg-white px-8 py-10 text-center shadow-2xl">
+          <ShieldAlert size={28} className="mx-auto mb-4 text-saffron" />
+          <p className="text-base font-black text-indblue">Protection center is temporarily unavailable</p>
+          <p className="mt-2 text-sm font-medium leading-relaxed text-silver">
+            {loadError || "We could not load the citizen dashboard cleanly."}
+          </p>
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              onClick={() => void loadHome()}
+              className="flex-1 rounded-2xl bg-indblue px-4 py-3 text-[11px] font-black uppercase tracking-[0.24em] text-white transition hover:bg-indblue/90"
+            >
+              Retry
+            </button>
+            <button
+              onClick={endSession}
+              className="flex-1 rounded-2xl border border-silver/15 px-4 py-3 text-[11px] font-black uppercase tracking-[0.24em] text-indblue transition hover:bg-boxbg"
+            >
+              Reset Session
+            </button>
+          </div>
         </div>
       </div>
     );

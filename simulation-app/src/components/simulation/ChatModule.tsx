@@ -533,8 +533,8 @@ export default function ChatModule({
   const entities = summary?.live_summary?.key_entities || [];
 
   return (
-    <div className="flex flex-col lg:flex-row items-start justify-center gap-6 lg:gap-8 w-full">
-      <div className="relative w-full max-w-[320px] h-[560px] sm:h-[620px] bg-charcoal rounded-[3rem] border-[10px] border-charcoal shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] overflow-hidden shrink-0">
+    <div className="grid w-full items-start gap-4 xl:grid-cols-[320px_minmax(0,1fr)] xl:gap-6">
+      <div className="relative mx-auto w-full max-w-[320px] h-[560px] sm:h-[620px] bg-charcoal rounded-[3rem] border-[10px] border-charcoal shadow-[0_40px_80px_-20px_rgba(0,0,0,0.15)] overflow-hidden shrink-0 xl:mx-0">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-charcoal rounded-b-2xl z-30" />
         <div className="relative w-full h-full bg-white flex flex-col">
           {callState === "idle" && (
@@ -849,11 +849,11 @@ export default function ChatModule({
         <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-silver/20 rounded-full" />
       </div>
 
-      <div className="w-full lg:flex-1 space-y-4">
+      <div className="min-w-0 space-y-4">
         {callState === "active" || callState === "success" ? (
           <>
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-              <div className="xl:col-span-2 p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
+            <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.35fr)_minmax(280px,0.85fr)]">
+              <div className="p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
                 <div className="flex items-center justify-between gap-4 mb-4">
                   <div>
                     <h4 className="text-[10px] font-black text-indblue uppercase tracking-[0.2em]">Live Summary Feed</h4>
@@ -928,7 +928,7 @@ export default function ChatModule({
               </div>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+            <div className="grid grid-cols-1 gap-4 2xl:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
               <div className="p-5 bg-white rounded-[2rem] border border-silver/10 shadow-sm">
                 <div className="flex items-center justify-between gap-4 mb-4">
                   <div>
