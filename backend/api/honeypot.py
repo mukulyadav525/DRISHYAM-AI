@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from core.ai import honeypot_ai
 from core.intel_engine import intel_engine
-from models.database import HoneypotSession, HoneypotMessage
+from models.database import CrimeReport, HoneypotSession, HoneypotMessage, NotificationLog, RecoveryCase
 import uuid
 import datetime
 from typing import Optional, List
@@ -108,6 +108,65 @@ def _build_session_summary(session: HoneypotSession, messages: List[HoneypotMess
             for message in messages[-20:]
         ],
         "updated_at": now.isoformat(),
+    }
+
+
+def _build_case_routing(db: Session, session: HoneypotSession) -> dict:
+    routing = (session.metadata_json or {}).get("routing", {}) if isinstance(session.metadata_json, dict) else {}
+    route_report_ids = set(routing.get("report_ids", []) or [])
+    route_case_id = routing.get("recovery_case_id")
+
+    reports = []
+    recent_reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(60).all()
+    for report in recent_reports:
+        metadata = report.metadata_json or {}
+        if report.report_id in route_report_ids or metadata.get("session_id") == session.session_id:
+            reports.append(
+                {
+                    "report_id": report.report_id,
+                    "category": report.category,
+                    "priority": report.priority,
+                    "status": report.status,
+                    "platform": report.platform,
+                    "created_at": report.created_at.isoformat() if report.created_at else None,
+                }
+            )
+
+    notifications = []
+    recent_notifications = db.query(NotificationLog).order_by(NotificationLog.sent_at.desc()).limit(60).all()
+    for row in recent_notifications:
+        metadata = row.metadata_json or {}
+        if metadata.get("session_id") == session.session_id:
+            notifications.append(
+                {
+                    "recipient": row.recipient,
+                    "channel": row.channel,
+                    "template_id": row.template_id,
+                    "status": row.status,
+                    "sent_at": row.sent_at.isoformat() if row.sent_at else None,
+                }
+            )
+
+    recovery_case = None
+    if route_case_id:
+        case = db.query(RecoveryCase).filter(RecoveryCase.incident_id == route_case_id).first()
+        if case:
+            recovery_case = {
+                "incident_id": case.incident_id,
+                "bank_status": case.bank_status,
+                "rbi_status": case.rbi_status,
+                "insurance_status": case.insurance_status,
+                "legal_aid_status": case.legal_aid_status,
+                "updated_at": case.updated_at.isoformat() if case.updated_at else None,
+            }
+
+    return {
+        "routed_agencies": routing.get("routed_agencies", []),
+        "report_ids": list(route_report_ids),
+        "reports": reports,
+        "notifications_created": routing.get("notifications_created", len(notifications)),
+        "notifications": notifications,
+        "recovery_case": recovery_case,
     }
 
 @router.post("/session/start")
@@ -283,7 +342,9 @@ async def get_honeypot_session_summary(sid: str, db: Session = Depends(get_db)):
         .order_by(HoneypotMessage.timestamp.asc())
         .all()
     )
-    return _build_session_summary(session, messages)
+    summary = _build_session_summary(session, messages)
+    summary["routing"] = _build_case_routing(db, session)
+    return summary
 
 @router.post("/session/end")
 async def end_honeypot_session(body: dict, db: Session = Depends(get_db)):
@@ -292,15 +353,32 @@ async def end_honeypot_session(body: dict, db: Session = Depends(get_db)):
     if session_id:
         # Trigger IntelEngine for analysis and multi-agency reporting
         intel_result = await intel_engine.process_session_completion(session_id, db)
+    session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first() if session_id else None
+    messages = []
+    if session:
+        messages = (
+            db.query(HoneypotMessage)
+            .filter(HoneypotMessage.session_id == session.id)
+            .order_by(HoneypotMessage.timestamp.asc())
+            .all()
+        )
+    session_summary = _build_session_summary(session, messages) if session else None
+    if session_summary and session:
+        session_summary["routing"] = _build_case_routing(db, session)
         
     return {
         "session_id": session_id,
-        "transcript_id": f"TX-{uuid.uuid4().hex[:6].upper()}",
-        "scammer_profile_id": f"PROF-{uuid.uuid4().hex[:6].upper()}",
-        "fir_packet_ready": True,
+        "transcript_id": f"TX-{session_id or uuid.uuid4().hex[:6].upper()}",
+        "scammer_profile_id": (intel_result or {}).get("analysis", {}).get("key_entities", [None])[0],
+        "fir_packet_ready": bool((intel_result or {}).get("fir_generated", False)),
         "intelligence_report": "AUTOMATED_DISSEMINATION_COMPLETE",
         "analysis": intel_result.get("analysis") if intel_result else None,
         "reports_created": intel_result.get("reports_created", 0) if intel_result else 0,
+        "report_ids": intel_result.get("report_ids", []) if intel_result else [],
+        "routed_agencies": intel_result.get("routed_agencies", []) if intel_result else [],
+        "notifications_created": intel_result.get("notifications_created", 0) if intel_result else 0,
+        "recovery_case_id": intel_result.get("recovery_case_id") if intel_result else None,
+        "session_summary": session_summary,
     }
 
 @router.post("/direct-conclude")

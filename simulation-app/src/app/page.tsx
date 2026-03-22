@@ -139,7 +139,7 @@ export default function SimulationPortal() {
 
   // Fetch Personas for Chat
   useEffect(() => {
-    if (personas.length > 0) return;
+    if (authStatus !== "approved" || activeFeature !== "chat" || personas.length > 0) return;
 
     const controller = new AbortController();
     const fetchPersonas = async () => {
@@ -164,7 +164,7 @@ export default function SimulationPortal() {
     };
     fetchPersonas();
     return () => controller.abort();
-  }, [personas.length]);
+  }, [activeFeature, authStatus, personas.length]);
 
   // Poll for Admin Approval
   useEffect(() => {

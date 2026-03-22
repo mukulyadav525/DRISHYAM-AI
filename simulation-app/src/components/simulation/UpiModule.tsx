@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
+import { getAuthHeaders, getStoredAuth } from "@/lib/auth";
 
 interface UpiModuleProps {
   performAction: (action: string, detail?: string) => any;
@@ -34,6 +35,41 @@ export default function UpiModule({
   const [qrScanning, setQrScanning] = useState(false);
   const [forensicResult, setForensicResult] = useState<any>(null);
   const [upiStats, setUpiStats] = useState<any>(null);
+  const [isProtecting, setIsProtecting] = useState(false);
+
+  const routeProtection = async (payload: {
+    vpa: string;
+    source: string;
+    source_case_id?: string;
+    description: string;
+    bank_name?: string;
+  }) => {
+    setIsProtecting(true);
+    try {
+      const response = await fetch(`${API_BASE}/upi/protect`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders(),
+        },
+        body: JSON.stringify({
+          ...payload,
+          phone_number: getStoredAuth()?.username,
+        }),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.detail || "Could not notify bank and police.");
+      }
+      toast.success("Bank and police were notified.");
+      return data;
+    } catch (error: any) {
+      toast.error(error.message || "Could not notify bank and police.");
+      return null;
+    } finally {
+      setIsProtecting(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUPIStats = async () => {
@@ -61,10 +97,13 @@ export default function UpiModule({
       });
       if (res.ok) {
         setLookupResult(await res.json());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "Lookup failed");
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Lookup failed:", e);
-      toast.error("NPCI Gateway Timeout");
+      toast.error(e.message || "NPCI Gateway Timeout");
     } finally {
       setIsLookingUp(false);
     }
@@ -100,13 +139,20 @@ export default function UpiModule({
       const res = await fetch(`${API_BASE}/upi/scan-message`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: messageText })
+        body: JSON.stringify({
+          message: messageText,
+          phone_number: getStoredAuth()?.username,
+        })
       });
       if (res.ok) {
         setScanResult(await res.json());
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "Could not scan the message");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error scanning message:", error);
+      toast.error(error.message || "Could not scan the message.");
     } finally {
       setIsMessageScanning(false);
     }
@@ -132,9 +178,13 @@ export default function UpiModule({
         const data = await res.json();
         setForensicResult(data);
         performAction('SCAN_QR', data.is_safe === false ? 'MALICIOUS_QR_FOUND' : 'SAFE_QR_SCANNED');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data?.detail || "Could not scan the QR image");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("QR Scan failed:", err);
+      toast.error(err.message || "QR Scan failed.");
     } finally {
       setQrScanning(false);
     }
@@ -207,8 +257,33 @@ export default function UpiModule({
                             >
                               Generate Grievance
                             </button>
+                            <button
+                              onClick={async () => {
+                                const routed = await routeProtection({
+                                  vpa: upiId,
+                                  source: "lookup",
+                                  description: lookupResult?.reason || "Flagged VPA lookup from citizen UPI Armor.",
+                                  bank_name: lookupResult?.bank_name,
+                                });
+                                if (routed) {
+                                  setLookupResult((current: any) => ({ ...current, routed }));
+                                }
+                              }}
+                              disabled={isProtecting}
+                              className="bg-indblue text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-charcoal transition-all disabled:opacity-50"
+                            >
+                              {isProtecting ? "Routing..." : "Notify Bank & Police"}
+                            </button>
                           </div>
                         )}
+                        {lookupResult?.routed?.routed ? (
+                          <div className="mt-4 rounded-2xl border border-indblue/10 bg-white/70 p-4">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-indblue">Protection Routed</p>
+                            <p className="mt-2 text-xs font-bold text-charcoal">
+                              Bank case: {lookupResult.routed.bank_case_id} | Police case: {lookupResult.routed.police_case_id}
+                            </p>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </div>
@@ -235,6 +310,14 @@ export default function UpiModule({
                       <div className="mt-2 text-[10px] font-mono bg-white/50 p-3 rounded border border-silver/10 break-all">{forensicResult.payload}</div>
                     </div>
                   </div>
+                  {forensicResult.routed?.routed ? (
+                    <div className="mb-4 rounded-2xl border border-indblue/10 bg-white/70 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indblue">Routed To Operations</p>
+                      <p className="mt-2 text-xs font-bold text-charcoal">
+                        Bank case: {forensicResult.routed.bank_case_id} | Police case: {forensicResult.routed.police_case_id}
+                      </p>
+                    </div>
+                  ) : null}
                   <button onClick={() => setForensicResult(null)} className="text-[10px] font-black text-indblue uppercase tracking-widest">Scan Alternative QR</button>
                 </div>
               )}
@@ -255,6 +338,14 @@ export default function UpiModule({
                       <p className="text-[10px] text-charcoal font-bold mt-1">Pattern: {scanResult.pattern_detected}</p>
                     </div>
                   </div>
+                  {scanResult.routed?.routed ? (
+                    <div className="mt-4 rounded-2xl border border-indblue/10 bg-white/70 p-4">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indblue">Routed To Operations</p>
+                      <p className="mt-2 text-xs font-bold text-charcoal">
+                        Bank case: {scanResult.routed.bank_case_id} | Police case: {scanResult.routed.police_case_id}
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
               )}
             </div>

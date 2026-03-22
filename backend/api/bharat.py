@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
 from models.database import CrimeReport, NotificationLog
@@ -9,6 +10,27 @@ import datetime
 logger = logging.getLogger("drishyam.bharat")
 
 router = APIRouter()
+
+
+class ComprehensiveBharatReportRequest(BaseModel):
+    reporter_num: str | None = None
+    category: str | None = None
+    scam_type: str | None = None
+    amount: str | None = None
+    platform: str | None = None
+    description: str | None = None
+    channel: str | None = None
+    lang: str | None = None
+    region: str | None = None
+    bank_name: str | None = None
+    impersonated_name: str | None = None
+    id_type: str | None = None
+    leak_location: str | None = None
+    handle_link: str | None = None
+    utr_id: str | None = None
+    fake_handle: str | None = None
+    pii_details: str | None = None
+    scam_link: str | None = None
 
 REGION_DIRECTORY = {
     "north": {"name": "North India (Haryana/Punjab)", "short_name": "North Grid"},
@@ -281,6 +303,41 @@ def _serialize_incident(report: CrimeReport) -> dict:
     }
 
 
+def _agency_targets_for_report(report_category: str, scam_type: str) -> list[str]:
+    targets = ["police:national_cyber_cell"]
+    if report_category == "bank" or "financial" in scam_type.lower() or "upi" in scam_type.lower():
+        targets.append("bank:nodal_freeze_desk")
+    if report_category == "telecom" or "sim" in scam_type.lower() or "call" in scam_type.lower():
+        targets.append("telecom:trace_desk")
+    return targets
+
+
+def _log_operational_notifications(
+    db: Session,
+    report_category: str,
+    scam_type: str,
+    case_id: str,
+    reporter_num: str,
+    metadata: dict,
+) -> list[str]:
+    recipients = _agency_targets_for_report(report_category, scam_type)
+    for recipient in recipients:
+        db.add(
+            NotificationLog(
+                recipient=recipient,
+                channel="OPS_EVENT",
+                template_id="BHARAT_CASE_ROUTED",
+                status="DELIVERED",
+                metadata_json={
+                    "case_id": case_id,
+                    "reporter": _mask_phone(reporter_num),
+                    **metadata,
+                },
+            )
+        )
+    return recipients
+
+
 @router.get("/languages", response_model=dict)
 def get_bharat_languages():
     return {
@@ -515,6 +572,14 @@ def report_scam_ussd(
     )
     db.add(new_report)
     _log_sms_notification(db, phone_number, sms_template, {"case_id": case_id})
+    routed_to = _log_operational_notifications(
+        db,
+        "police",
+        scam_type,
+        case_id,
+        phone_number,
+        {"channel": "USSD", "language": language_code, "region": normalized_region},
+    )
     db.commit()
 
     logger.info("USSD report logged for %s in %s (%s)", phone_number, normalized_region, language_code)
@@ -524,6 +589,7 @@ def report_scam_ussd(
         "case_id": case_id,
         "message": content["report_success"].format(case_id=case_id),
         "sms_preview": sms_template,
+        "routed_to": routed_to,
         "next_step": "Regional IVR callback queued",
     }
 
@@ -562,6 +628,14 @@ def report_scam_ivr(
     )
     db.add(new_report)
     _log_sms_notification(db, phone_number, sms_template, {"case_id": case_id})
+    routed_to = _log_operational_notifications(
+        db,
+        "police",
+        scam_type,
+        case_id,
+        phone_number,
+        {"channel": "IVR", "language": language_code, "region": normalized_region},
+    )
     db.commit()
 
     logger.info("IVR report queued for %s in %s (%s)", phone_number, normalized_region, language_code)
@@ -572,13 +646,14 @@ def report_scam_ivr(
         "message": content["report_success"].format(case_id=case_id),
         "ivr_ticket": f"CB-{uuid.uuid4().hex[:5].upper()}",
         "sms_preview": sms_template,
+        "routed_to": routed_to,
     }
 
 
 @router.post("/report/comprehensive", response_model=dict)
 def report_scam_comprehensive(
-    reporter_num: str,
-    category: str,
+    reporter_num: str | None = None,
+    category: str | None = None,
     scam_type: str = "Citizen Report",
     amount: str = "0",
     platform: str = "Unknown",
@@ -586,9 +661,24 @@ def report_scam_comprehensive(
     channel: str = "IVR",
     lang: str = "hi",
     region: str = "north",
+    payload: ComprehensiveBharatReportRequest | None = Body(default=None),
     db: Session = Depends(get_db),
 ):
     """Comprehensive reporting flow shared by the simulation wizard and dashboard."""
+    if payload:
+        reporter_num = payload.reporter_num or reporter_num
+        category = payload.category or category
+        scam_type = payload.scam_type or scam_type
+        amount = payload.amount or amount
+        platform = payload.platform or platform
+        description = payload.description or description
+        channel = payload.channel or channel
+        lang = payload.lang or lang
+        region = payload.region or region
+
+    if not reporter_num or not category:
+        raise HTTPException(status_code=400, detail="reporter_num and category are required")
+
     case_id = f"REF-{uuid.uuid4().hex[:8].upper()}"
     normalized_region = _normalize_region(region)
     language_code, language_content = _normalize_language(lang)
@@ -601,6 +691,28 @@ def report_scam_comprehensive(
     resolved_scam_type = category if normalized_category not in category_map else scam_type
 
     sms_template = _build_sms_template("case_registered", language_code, normalized_region, case_id)
+    extra_context = payload.model_dump(exclude_none=True) if payload else {}
+    report_metadata = {
+        "description": description,
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "source": "1930_HELPLINE_WIZARD",
+        "section_65b_status": "GENERATED",
+        "channel": normalized_channel,
+        "language": language_code,
+        "language_name": language_content["name"],
+        "region": normalized_region,
+        "template_id": sms_template["template_id"],
+        "bank_name": extra_context.get("bank_name"),
+        "impersonated_name": extra_context.get("impersonated_name"),
+        "id_type": extra_context.get("id_type"),
+        "leak_location": extra_context.get("leak_location"),
+        "handle_link": extra_context.get("handle_link"),
+        "utr_id": extra_context.get("utr_id"),
+        "fake_handle": extra_context.get("fake_handle"),
+        "pii_details": extra_context.get("pii_details"),
+        "scam_link": extra_context.get("scam_link"),
+        "raw_context": extra_context,
+    }
 
     new_report = CrimeReport(
         report_id=case_id,
@@ -611,20 +723,23 @@ def report_scam_comprehensive(
         priority="HIGH" if amount_value > 50000 else "MEDIUM",
         reporter_num=reporter_num,
         status="PENDING",
-        metadata_json={
-            "description": description,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "source": "1930_HELPLINE_WIZARD",
-            "section_65b_status": "GENERATED",
-            "channel": normalized_channel,
-            "language": language_code,
-            "language_name": language_content["name"],
-            "region": normalized_region,
-            "template_id": sms_template["template_id"],
-        },
+        metadata_json=report_metadata,
     )
     db.add(new_report)
     _log_sms_notification(db, reporter_num, sms_template, {"case_id": case_id})
+    routed_to = _log_operational_notifications(
+        db,
+        report_category,
+        resolved_scam_type,
+        case_id,
+        reporter_num,
+        {
+            "channel": normalized_channel,
+            "language": language_code,
+            "region": normalized_region,
+            "amount": amount,
+        },
+    )
     db.commit()
 
     return {
@@ -633,6 +748,8 @@ def report_scam_comprehensive(
         "fir_copy_url": f"/api/v1/bharat/fir/{case_id}",
         "message": f"Incident logged successfully. FIR {case_id} generated.",
         "sms_preview": sms_template,
+        "routed_to": routed_to,
+        "saved_context": report_metadata,
     }
 
 

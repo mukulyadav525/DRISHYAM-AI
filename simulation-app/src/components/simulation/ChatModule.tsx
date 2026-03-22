@@ -205,6 +205,33 @@ export default function ChatModule({
 
     setIsTestCallLoading(true);
     try {
+      let activeSessionId = sessionId;
+      if (!activeSessionId) {
+        const sessionResponse = await fetch(`${API_BASE}/honeypot/sessions`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            persona: selectedPersona?.id || "Elderly Uncle",
+            customer_id: customerId,
+            caller_num: testPhoneNumber,
+          }),
+        });
+        if (!sessionResponse.ok) {
+          throw new Error("Could not initialize a live call session");
+        }
+        const sessionDataResponse = await sessionResponse.json();
+        activeSessionId = sessionDataResponse.session_id;
+        setSessionId(sessionDataResponse.session_id);
+        setSessionData({
+          id: sessionDataResponse.session_id,
+          caller: sessionDataResponse.caller_num || testPhoneNumber,
+          location: sessionDataResponse.location || "National relay grid",
+          riskBand: sessionDataResponse.risk_band || "HIGH",
+          threatPattern: sessionDataResponse.threat_pattern || "Suspicious fraud script",
+          citizenBanner: sessionDataResponse.citizen_banner || "Suspicious caller detected.",
+        });
+      }
+
       const token = getStoredToken();
       const res = await fetch(`${API_BASE}/twilio/call`, {
         method: "POST",
@@ -215,6 +242,8 @@ export default function ChatModule({
         body: JSON.stringify({
           to_number: testPhoneNumber,
           persona: selectedPersona?.id || "Elderly Uncle",
+          session_id: activeSessionId,
+          customer_id: customerId,
         }),
       });
 
@@ -224,6 +253,7 @@ export default function ChatModule({
       }
 
       toast.success("DRISHYAM AI is dialing your phone now.");
+      setCallState("warning");
     } catch (error: any) {
       console.error("Test call error:", error);
       toast.error(error.message || "Unable to place test call.");
@@ -767,6 +797,36 @@ export default function ChatModule({
                   </div>
                 </div>
               </div>
+              {analysis?.session_summary?.routing ? (
+                <div className="w-full bg-white rounded-2xl border border-silver/10 shadow-lg p-4">
+                  <p className="text-[8px] font-black uppercase tracking-widest text-indblue">Routing Summary</p>
+                  <p className="mt-3 text-xs font-bold text-charcoal">
+                    Agencies: {(analysis.session_summary.routing.routed_agencies || []).join(" | ") || "Pending"}
+                  </p>
+                  {(analysis.session_summary.routing.reports || []).length > 0 ? (
+                    <div className="mt-3 space-y-2">
+                      {analysis.session_summary.routing.reports.map((report: any) => (
+                        <div key={report.report_id} className="rounded-xl border border-silver/10 bg-boxbg px-3 py-2">
+                          <p className="text-[10px] font-black text-indblue uppercase">
+                            {report.category} | {report.report_id}
+                          </p>
+                          <p className="mt-1 text-[10px] font-bold text-charcoal">
+                            {report.platform} | {report.priority}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                  {analysis.session_summary.routing.recovery_case ? (
+                    <div className="mt-3 rounded-xl border border-indblue/10 bg-indblue/5 px-3 py-3">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indblue">Recovery Case</p>
+                      <p className="mt-1 text-xs font-bold text-charcoal">
+                        {analysis.session_summary.routing.recovery_case.incident_id} | {analysis.session_summary.routing.recovery_case.bank_status}
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="w-full space-y-3">
                 <button
                   onClick={toggleBlock}

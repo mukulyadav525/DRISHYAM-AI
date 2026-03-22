@@ -32,6 +32,7 @@ class InitiateCallRequest(BaseModel):
     to_number: str = Field(..., description="Phone number to call (E.164 format, e.g. +919876543210)")
     persona: Optional[str] = Field(None, description="AI persona to use during the call. If None, the AI will adapt dynamically.")
     session_id: Optional[str] = Field(None, description="Optional honeypot session ID to link this call to")
+    customer_id: Optional[str] = Field(None, description="Citizen phone number or session identifier")
 
 
 class HandoffCallRequest(BaseModel):
@@ -86,14 +87,32 @@ async def initiate_call(
     try:
         # Create a honeypot session for this call
         session_id = req.session_id or str(uuid.uuid4())
-
-        db_session = HoneypotSession(
-            session_id=session_id,
-            caller_num=req.to_number,
-            persona=req.persona,
-            status="active",
-        )
-        db.add(db_session)
+        db_session = db.query(HoneypotSession).filter(HoneypotSession.session_id == session_id).first()
+        if db_session:
+            db_session.caller_num = req.to_number
+            db_session.customer_id = req.customer_id or db_session.customer_id
+            db_session.persona = req.persona or db_session.persona
+            db_session.status = "active"
+            db_session.direction = "outgoing"
+            db_session.metadata_json = {
+                **(db_session.metadata_json or {}),
+                "live_phone_test": True,
+                "twilio_requested_at": datetime.datetime.utcnow().isoformat(),
+            }
+        else:
+            db_session = HoneypotSession(
+                session_id=session_id,
+                caller_num=req.to_number,
+                customer_id=req.customer_id,
+                persona=req.persona,
+                status="active",
+                direction="outgoing",
+                metadata_json={
+                    "live_phone_test": True,
+                    "twilio_requested_at": datetime.datetime.utcnow().isoformat(),
+                },
+            )
+            db.add(db_session)
 
         # Log the action
         user_id = current_user.id if current_user else None
@@ -104,6 +123,7 @@ async def initiate_call(
             metadata_json={
                 "persona": req.persona,
                 "session_id": session_id,
+                "customer_id": req.customer_id,
             },
             status="initiated",
         )
@@ -126,6 +146,7 @@ async def initiate_call(
             "call_sid": call_info["call_sid"],
             "stream_id": call_info["stream_id"],
             "persona": req.persona,
+            "session_id": session_id,
         }
 
     except RuntimeError as e:

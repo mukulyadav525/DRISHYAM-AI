@@ -8,10 +8,154 @@ from sqlalchemy.orm import Session
 
 from core.auth import get_current_verified_user
 from core.database import get_db
-from models.database import CrimeReport, HoneypotEntity, NPCILog, SystemAction, User
+from models.database import CrimeReport, HoneypotEntity, NPCILog, NotificationLog, SystemAction, User
 from core.audit import log_audit
 
 router = APIRouter()
+
+
+def _normalize_phone(phone_number: str | None) -> str:
+    digits = "".join(ch for ch in str(phone_number or "") if ch.isdigit())
+    if len(digits) >= 10:
+        return digits[-10:]
+    return str(phone_number or "").strip()
+
+
+def _ensure_upi_report(
+    db: Session,
+    *,
+    category: str,
+    vpa: str,
+    priority: str,
+    reporter_num: str | None,
+    scam_type: str,
+    platform: str,
+    route_source: str,
+    extra_metadata: dict | None = None,
+) -> CrimeReport:
+    recent = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(80).all()
+    for report in recent:
+        metadata = report.metadata_json or {}
+        if (
+            report.category == category
+            and metadata.get("vpa") == vpa
+            and metadata.get("route_source") == route_source
+            and report.status == "PENDING"
+        ):
+            return report
+
+    report = CrimeReport(
+        report_id=f"{category[:3].upper()}-{uuid.uuid4().hex[:6].upper()}",
+        category=category,
+        scam_type=scam_type,
+        platform=platform,
+        priority=priority,
+        reporter_num=reporter_num,
+        status="PENDING",
+        metadata_json={
+            "vpa": vpa,
+            "route_source": route_source,
+            **(extra_metadata or {}),
+        },
+    )
+    db.add(report)
+    db.flush()
+    return report
+
+
+def _route_upi_incident(
+    db: Session,
+    *,
+    vpa: str,
+    reporter_num: str | None,
+    priority: str,
+    source: str,
+    description: str,
+    bank_name: str | None = None,
+    existing_bank_report: CrimeReport | None = None,
+    extra_metadata: dict | None = None,
+) -> dict:
+    normalized_vpa = (vpa or "").strip().lower()
+    reporter = _normalize_phone(reporter_num)
+    shared_metadata = {
+        "vpa": normalized_vpa,
+        "description": description,
+        "bank_name": bank_name or "Unknown Bank",
+        "reporter_num": reporter or reporter_num,
+        **(extra_metadata or {}),
+    }
+
+    bank_report = existing_bank_report or _ensure_upi_report(
+        db,
+        category="bank",
+        vpa=normalized_vpa,
+        priority=priority,
+        reporter_num=reporter or reporter_num,
+        scam_type="UPI_FRAUD_ALERT",
+        platform="UPI_ARMOR",
+        route_source=source,
+        extra_metadata=shared_metadata,
+    )
+    if existing_bank_report:
+        bank_report.metadata_json = {
+            **(bank_report.metadata_json or {}),
+            "vpa": normalized_vpa,
+            "route_source": source,
+            **shared_metadata,
+        }
+
+    police_report = _ensure_upi_report(
+        db,
+        category="police",
+        vpa=normalized_vpa,
+        priority=priority,
+        reporter_num=reporter or reporter_num,
+        scam_type="UPI_FRAUD_ALERT",
+        platform="UPI_ARMOR",
+        route_source=source,
+        extra_metadata=shared_metadata,
+    )
+
+    notifications = [
+        NotificationLog(
+            recipient=f"bank:{str(bank_name or 'unknown_bank').lower().replace(' ', '_')}",
+            channel="OPS_EVENT",
+            template_id="UPI_BANK_ESCALATION",
+            status="DELIVERED",
+            metadata_json={"case_id": bank_report.report_id, **shared_metadata},
+        ),
+        NotificationLog(
+            recipient="police:cyber_cell",
+            channel="OPS_EVENT",
+            template_id="UPI_POLICE_ESCALATION",
+            status="DELIVERED",
+            metadata_json={"case_id": police_report.report_id, **shared_metadata},
+        ),
+    ]
+    if reporter:
+        notifications.append(
+            NotificationLog(
+                recipient=reporter,
+                channel="SMS",
+                template_id="UPI_CITIZEN_ALERT",
+                status="DELIVERED",
+                metadata_json={
+                    "vpa": normalized_vpa,
+                    "case_id": police_report.report_id,
+                    "message": "Suspicious UPI activity routed to bank and police. Do not approve unknown requests.",
+                },
+            )
+        )
+    for row in notifications:
+        db.add(row)
+
+    return {
+        "routed": True,
+        "bank_case_id": bank_report.report_id,
+        "police_case_id": police_report.report_id,
+        "notifications_created": len(notifications),
+        "agencies": ["bank", "police"],
+    }
 
 @router.get("/integration/status")
 async def get_upi_integration_status(db: Session = Depends(get_db)):
@@ -75,7 +219,8 @@ async def upi_verify(body: dict, db: Session = Depends(get_db)):
             "reason": npci_status.get("message") if npci_status.get("status_code") != "00" else f"Linked to scam cluster via AI Interceptor. Score: {entity.risk_score if entity else 0.8}",
             "npci_block_ref": npci_status.get("npci_ref"),
             "npci_status": npci_status.get("status"),
-            "bank_name": npci_status.get("bank_name")
+            "bank_name": npci_status.get("bank_name"),
+            "recommended_next_action": "Notify bank and police immediately, then freeze the beneficiary if confirmed malicious.",
         }
         
     return {
@@ -84,8 +229,30 @@ async def upi_verify(body: dict, db: Session = Depends(get_db)):
         "risk_level": "LOW",
         "reason": "Clear / No suspicious history in DRISHYAM nodes",
         "npci_status": "ACTIVE",
-        "bank_name": npci_status.get("bank_name")
+        "bank_name": npci_status.get("bank_name"),
+        "recommended_next_action": "No urgent escalation required.",
     }
+
+
+@router.post("/protect")
+async def upi_protect(body: dict, db: Session = Depends(get_db)):
+    vpa = str(body.get("vpa") or "").strip().lower()
+    if not vpa:
+        return {"routed": False, "detail": "VPA is required"}
+
+    route_result = _route_upi_incident(
+        db,
+        vpa=vpa,
+        reporter_num=body.get("phone_number"),
+        priority=str(body.get("priority") or "HIGH"),
+        source=str(body.get("source") or "lookup"),
+        description=str(body.get("description") or "Citizen requested immediate bank and police escalation from UPI Armor."),
+        bank_name=body.get("bank_name"),
+        extra_metadata={"source_case_id": body.get("source_case_id")},
+    )
+    db.commit()
+    log_audit(db, None, "UPI_PROTECT_ESCALATION", vpa, metadata=route_result)
+    return route_result
 
 @router.post("/npci/direct-block")
 async def upi_npci_direct_block(body: dict, db: Session = Depends(get_db)):
@@ -243,6 +410,16 @@ async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
     except:
         conf_val = 0
 
+    for match in set(re.findall(r"\b[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\b", message)):
+        entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == match.lower()).first()
+        extracted_vpas.append(
+            {
+                "vpa": match.lower(),
+                "status": "RISK" if entity else "SAFE",
+                "bank_name": "Flagged Registry" if entity else "No direct registry hit",
+            }
+        )
+
     if is_scam:
         new_report = CrimeReport(
             report_id=case_id,
@@ -255,17 +432,21 @@ async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
             metadata_json={"content": message, "analysis": ai_result}
         )
         db.add(new_report)
-        db.commit()
-
-    for match in set(re.findall(r"\b[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\b", message)):
-        entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == match.lower()).first()
-        extracted_vpas.append(
-            {
-                "vpa": match.lower(),
-                "status": "RISK" if entity else "SAFE",
-                "bank_name": "Flagged Registry" if entity else "No direct registry hit",
-            }
+        db.flush()
+        routed = _route_upi_incident(
+            db,
+            vpa=extracted_vpas[0]["vpa"] if extracted_vpas else f"unknown-{case_id.lower()}@upi",
+            reporter_num=phone,
+            priority="HIGH" if conf_val > 80 else "MEDIUM",
+            source="message_scan",
+            description=str(ai_result.get("pattern", "UPI fraud message pattern detected")),
+            bank_name=None,
+            existing_bank_report=new_report,
+            extra_metadata={"message_case_id": case_id, "message_excerpt": message[:240]},
         )
+        db.commit()
+    else:
+        routed = {"routed": False, "agencies": [], "notifications_created": 0}
 
     return {
         "is_scam": is_scam,
@@ -275,6 +456,7 @@ async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
         "pattern_detected": ai_result.get("pattern"),
         "case_id": case_id,
         "extracted_vpas": extracted_vpas,
+        "routed": routed,
     }
 
 @router.post("/scan-qr")
@@ -302,6 +484,20 @@ async def upi_scan_qr(file: UploadFile = File(...), db: Session = Depends(get_db
         }
     )
     db.add(new_report)
+    db.flush()
+    routed = {"routed": False, "agencies": [], "notifications_created": 0}
+    if suspicious:
+        routed = _route_upi_incident(
+            db,
+            vpa=vpa,
+            reporter_num=None,
+            priority="CRITICAL",
+            source="qr_scan",
+            description="Suspicious QR payload mapped to a risky beneficiary VPA.",
+            bank_name=None,
+            existing_bank_report=new_report,
+            extra_metadata={"qr_case_id": case_id, "sha256": digest},
+        )
     db.commit()
     
     log_audit(db, None, "QR_SCAN_COMPLETED", vpa, metadata={"case_id": case_id, "sha256": digest, "suspicious": suspicious})
@@ -323,6 +519,7 @@ async def upi_scan_qr(file: UploadFile = File(...), db: Session = Depends(get_db
             "tls": not suspicious,
             "merchant": not suspicious,
         },
+        "routed": routed,
     }
 
 

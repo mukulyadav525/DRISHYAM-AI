@@ -37,6 +37,7 @@ import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
+import { getAuthHeaders } from "@/lib/auth";
 
 interface BharatModuleProps {
   customerId: string;
@@ -66,7 +67,13 @@ export default function BharatModule({
     scam_link: ""
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmittingUssd, setIsSubmittingUssd] = useState(false);
   const [caseId, setCaseId] = useState<string | null>(null);
+  const [language, setLanguage] = useState("hi");
+  const [region, setRegion] = useState("north");
+  const [ussdMenuText, setUssdMenuText] = useState("Loading regional low-bandwidth menu...");
+  const [smsPreview, setSmsPreview] = useState<string | null>(null);
+  const [routedTo, setRoutedTo] = useState<string[]>([]);
   
   const [phoneState, setPhoneState] = useState<'HOME' | 'DIALER' | 'USSD' | 'WIZARD'>('HOME');
   const [currentTime, setCurrentTime] = useState("");
@@ -81,6 +88,22 @@ export default function BharatModule({
     return () => clearInterval(interval);
   }, []);
 
+  const openUssdFlow = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/bharat/ussd/menu?lang=${encodeURIComponent(language)}&region=${encodeURIComponent(region)}`);
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload?.detail || "Could not load regional USSD menu");
+      }
+      setUssdMenuText(payload.text || "DRISHYAM Bharat menu");
+      setPhoneState("USSD");
+      setUssdStep(0);
+      setUssdInput("");
+    } catch (error: any) {
+      toast.error(error.message || "Could not load the Bharat USSD flow.");
+    }
+  };
+
   const handleKeyPress = (key: string) => {
     if (phoneState === 'WIZARD' && reportingStep === 2 && reportData.category === 'Financial Fraud') {
         if (!isNaN(Number(key))) {
@@ -93,8 +116,12 @@ export default function BharatModule({
         const next = prev + key;
         if (phoneState === 'HOME') setPhoneState('DIALER');
         
-        if (next === '1930' || next === '*1930#') {
+        if (next === '1930') {
           triggerReportingFlow();
+          return "";
+        }
+        if (next === '*1930#') {
+          void openUssdFlow();
           return "";
         }
         return next;
@@ -114,15 +141,19 @@ export default function BharatModule({
     setPhoneState('WIZARD');
     setReportingStep(1);
     setUssdInput("");
+    setCaseId(null);
+    setSmsPreview(null);
+    setRoutedTo([]);
   };
 
   const handleOkSubmit = async () => {
     if (phoneState === 'DIALER') {
-      if (ussdInput === '1930' || ussdInput === '*1930#') {
+      if (ussdInput === '1930') {
         triggerReportingFlow();
+      } else if (ussdInput === '*1930#') {
+        await openUssdFlow();
       } else if (ussdInput.startsWith('*') && ussdInput.endsWith('#')) {
-        setPhoneState('USSD');
-        setUssdStep(1);
+        await openUssdFlow();
       } else {
         toast.error("Dial 1930 for Helpline");
         setPhoneState('HOME');
@@ -131,13 +162,63 @@ export default function BharatModule({
       return;
     }
 
-    if (phoneState === 'USSD' && ussdStep < ussdFlow.length - 1) {
-      setUssdStep(prev => prev + 1);
-      setUssdInput("");
-    } else if (phoneState === 'USSD' && ussdStep === ussdFlow.length - 1) {
-      setPhoneState('HOME');
-      setUssdStep(0);
-      setUssdInput("");
+    if (phoneState === 'USSD') {
+      if (ussdStep === 0) {
+        if (ussdInput !== "1") {
+          toast.error("Select 1 to report a cyber crime.");
+          return;
+        }
+        setUssdStep(1);
+        setUssdInput("");
+        return;
+      }
+
+      if (ussdStep === 1) {
+        const scamMap: Record<string, string> = {
+          "1": "KYC/Bank Fraud",
+          "2": "Jobs/Investment",
+          "3": "Sextortion",
+          "4": "Other",
+        };
+        const selectedCategory = scamMap[ussdInput];
+        if (!selectedCategory) {
+          toast.error("Select a valid scam category.");
+          return;
+        }
+
+        setIsSubmittingUssd(true);
+        try {
+          const response = await fetch(
+            `${API_BASE}/bharat/ussd/report?phone_number=${encodeURIComponent(customerId)}&scam_type=${encodeURIComponent(selectedCategory)}&lang=${encodeURIComponent(language)}&region=${encodeURIComponent(region)}`,
+            {
+              method: "POST",
+              headers: getAuthHeaders(),
+            },
+          );
+          const payload = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(payload?.detail || "Could not register the USSD complaint.");
+          }
+          setCaseId(payload.case_id);
+          setSmsPreview(payload?.sms_preview?.text || null);
+          setRoutedTo(payload?.routed_to || []);
+          setUssdStep(2);
+          setUssdInput("");
+          toast.success("USSD complaint registered.");
+        } catch (error: any) {
+          toast.error(error.message || "Could not register the USSD complaint.");
+        } finally {
+          setIsSubmittingUssd(false);
+        }
+        return;
+      }
+
+      if (ussdStep === 2) {
+        setPhoneState('HOME');
+        setUssdStep(0);
+        setUssdInput("");
+      }
+      return;
     }
 
     if (phoneState === 'WIZARD') {
@@ -148,29 +229,44 @@ export default function BharatModule({
   };
 
   const ussdFlow = [
-    { title: "DRISHYAM AI NODE", content: "1. Report Cyber Crime\n2. Verify UPI ID\n3. Emergency Broadcast\n4. Digital Saathi" },
+    { title: "DRISHYAM AI NODE", content: ussdMenuText },
     { title: "REPORT SCAM", content: "Select Scam Category:\n1. KYC/Bank Fraud\n2. Jobs/Investment\n3. Sextortion\n4. Other" },
-    { title: "PROCESSING...", content: "Sending report to National Command Center..." },
-    { title: "SUCCESS", content: "Case Logged Successfully.\nFIR (65B) sent via SMS." }
+    { title: "SUCCESS", content: `Case logged successfully.\nCase ID: ${caseId || "Pending"}\nFIR (65B) queued via SMS.` }
   ];
 
   const submitFinalReport = async () => {
     setIsSubmitting(true);
     try {
-      const authStr = localStorage.getItem('drishyam_auth');
-      const token = authStr ? JSON.parse(authStr).token : null;
-      const res = await fetch(`${API_BASE}/bharat/report/comprehensive?reporter_num=${customerId}&category=${reportData.category}&amount=${reportData.amount || "0"}&platform=${reportData.platform || "Simulated"}&description=${reportData.description || "Simulated Report"}`, {
+      const res = await fetch(`${API_BASE}/bharat/report/comprehensive`, {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          reporter_num: customerId,
+          category: reportData.category,
+          scam_type: reportData.category,
+          amount: reportData.amount || "0",
+          platform: reportData.platform || "Simulated",
+          description: reportData.description || "Simulated Report",
+          channel: "IVR",
+          lang: language,
+          region,
+          ...reportData,
+        }),
       });
-      if (res.ok) {
-        const data = await res.json();
-        setCaseId(data.case_id);
-        setReportingStep(5);
-        toast.success("Cyber Incident Registered");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(data?.detail || "Could not register the incident");
       }
-    } catch (e) {
-      toast.error("Submission failed.");
+      setCaseId(data.case_id);
+      setSmsPreview(data?.sms_preview?.text || null);
+      setRoutedTo(data?.routed_to || []);
+      setReportingStep(5);
+      toast.success("Cyber incident registered.");
+    } catch (e: any) {
+      toast.error(e.message || "Submission failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -253,7 +349,7 @@ export default function BharatModule({
                                     <div className="h-12 bg-white rounded-xl border border-indblue/5 flex items-center px-4 font-mono text-saffron text-base font-black shadow-inner">❯ {ussdInput || "Wait..."}</div>
                                     <div className="flex justify-between px-2">
                                         <button className="text-[8px] font-black text-silver uppercase tracking-widest hover:text-indblue" onClick={() => { setPhoneState('HOME'); setUssdStep(0); }}>Abort</button>
-                                        <button className="text-[8px] font-black text-saffron uppercase tracking-widest hover:text-indblue" onClick={handleOkSubmit}>Confirm</button>
+                                        <button className="text-[8px] font-black text-saffron uppercase tracking-widest hover:text-indblue disabled:opacity-50" disabled={isSubmittingUssd} onClick={handleOkSubmit}>{isSubmittingUssd ? "Routing..." : "Confirm"}</button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -265,6 +361,20 @@ export default function BharatModule({
                                     <div className="flex items-center justify-between mb-4 relative z-10">
                                         <div className="flex items-center gap-2"><ShieldCheck size={16} className="text-saffron" /><span className="text-[8px] font-black uppercase tracking-widest opacity-80">Helpline 1930</span></div>
                                         <button onClick={() => setPhoneState('HOME')} className="w-8 h-8 flex items-center justify-center bg-white/10 rounded-xl hover:bg-white/20 transition-all"><X size={14} /></button>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 mb-4 relative z-10">
+                                        <select value={language} onChange={(e) => setLanguage(e.target.value)} className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white outline-none">
+                                            <option value="hi" className="text-charcoal">Hindi</option>
+                                            <option value="en" className="text-charcoal">English</option>
+                                            <option value="bn" className="text-charcoal">Bengali</option>
+                                            <option value="ta" className="text-charcoal">Tamil</option>
+                                        </select>
+                                        <select value={region} onChange={(e) => setRegion(e.target.value)} className="rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white outline-none">
+                                            <option value="north" className="text-charcoal">North</option>
+                                            <option value="east" className="text-charcoal">East</option>
+                                            <option value="west" className="text-charcoal">West</option>
+                                            <option value="south" className="text-charcoal">South</option>
+                                        </select>
                                     </div>
                                     <div className="flex justify-between gap-1 mb-2 relative z-10">
                                       {[1, 2, 3, 4].map(s => (<div key={s} className={`flex-1 h-0.5 rounded-full transition-all duration-700 ${reportingStep >= s ? 'bg-saffron' : 'bg-white/10'}`} />))}
@@ -368,6 +478,13 @@ export default function BharatModule({
                                             <h3 className="text-xl font-black text-indblue mb-2 tracking-tight uppercase">Logged</h3>
                                             <div className="px-5 py-2.5 bg-indblue text-white rounded-xl mb-8 shadow-md border border-white/20"><p className="text-[9px] font-black uppercase tracking-widest font-mono">{caseId}</p></div>
                                             <p className="text-[7px] text-indblue/40 font-black uppercase tracking-[0.2em] max-w-[200px] mx-auto leading-relaxed mb-10">Routed to forensic lab Alpha-4. SMS Confirmation Sent.</p>
+                                            {(routedTo.length > 0 || smsPreview) && (
+                                                <div className="w-full mb-4 rounded-2xl border border-indblue/10 bg-indblue/[0.02] px-4 py-4 text-left">
+                                                    <p className="text-[7px] font-black uppercase tracking-[0.2em] text-indblue/40">Routing Summary</p>
+                                                    {routedTo.length > 0 ? <p className="mt-2 text-[9px] font-black text-indblue uppercase">{routedTo.join(" | ")}</p> : null}
+                                                    {smsPreview ? <p className="mt-3 text-[8px] font-bold text-charcoal/60 normal-case">{smsPreview}</p> : null}
+                                                </div>
+                                            )}
                                             <button onClick={() => setPhoneState('HOME')} className="w-full py-4 bg-indblue text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-xl">End Session</button>
                                         </div>
                                     )}
