@@ -3,29 +3,63 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.audit import log_audit
+from models.database import RecoveryCase
 import datetime
 import uuid
 from typing import Optional
 
 router = APIRouter()
 
+
+def _get_or_create_case(db: Session, incident_id: str | None) -> RecoveryCase:
+    lookup_id = incident_id or f"INC-{uuid.uuid4().hex[:6].upper()}"
+    case = db.query(RecoveryCase).filter(RecoveryCase.incident_id == lookup_id).first()
+    if case:
+        return case
+
+    case = RecoveryCase(
+        user_id=None,
+        incident_id=lookup_id,
+        bank_status="PENDING",
+        rbi_status="NOT_STARTED",
+        insurance_status="NOT_STARTED",
+        legal_aid_status="NOT_STARTED",
+        total_recovered=0.0,
+    )
+    db.add(case)
+    db.flush()
+    return case
+
 @router.post("/bank-dispute/generate")
 async def generate_bank_dispute(body: dict, db: Session = Depends(get_db)):
+    case = _get_or_create_case(db, body.get("incident_id"))
+    case.bank_status = "INVESTIGATING"
+    case.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    log_audit(db, case.user_id, "BANK_DISPUTE_GENERATED", case.incident_id, metadata={"language": body.get("language", "en")})
     return {
         "letter_id": f"DISP-{uuid.uuid4().hex[:6].upper()}",
         "letter_url": "/api/v1/recovery/download-pdf",
         "legally_formatted": True,
         "pre_filled_with_evidence": True,
-        "language": body.get("language", "en")
+        "language": body.get("language", "en"),
+        "incident_id": case.incident_id,
+        "bank_status": case.bank_status,
     }
 
 @router.post("/rbi-ombudsman/generate")
 async def generate_rbi_ombudsman(body: dict, db: Session = Depends(get_db)):
+    case = _get_or_create_case(db, body.get("incident_id"))
+    case.rbi_status = "READY_FOR_SUBMISSION"
+    case.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    log_audit(db, case.user_id, "RBI_OMBUDSMAN_GENERATED", case.incident_id)
     return {
         "complaint_id": f"RBI-{uuid.uuid4().hex[:6].upper()}",
         "ombudsman_portal_url": "https://cms.rbi.org.in",
         "evidence_attached": True,
-        "submission_status": "READY_FOR_SUBMISSION"
+        "submission_status": case.rbi_status,
+        "incident_id": case.incident_id,
     }
 
 @router.get("/case/status")
@@ -58,15 +92,28 @@ async def get_case_status(incident_id: str, db: Session = Depends(get_db)):
 
 @router.post("/nalsa/check-eligibility")
 async def check_nalsa_eligibility(body: dict, db: Session = Depends(get_db)):
+    case = _get_or_create_case(db, body.get("incident_id"))
+    case.legal_aid_status = "REFERRED"
+    case.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    log_audit(db, case.user_id, "LEGAL_AID_REFERRED", case.incident_id, metadata={"phone_number": body.get("phone_number")})
     return {
         "eligible_for_free_aid": True,
         "nearest_nalsa_centre": "Delhi Legal Services Authority",
         "referral_letter_generated": True,
-        "appointment_booked": True
+        "appointment_booked": True,
+        "incident_id": case.incident_id,
+        "legal_aid_status": case.legal_aid_status,
     }
 
 @router.post("/mental-health/refer")
 async def mental_health_refer(body: dict, db: Session = Depends(get_db)):
+    incident_id = body.get("incident_id")
+    if incident_id:
+        case = _get_or_create_case(db, incident_id)
+        case.updated_at = datetime.datetime.utcnow()
+        db.commit()
+        log_audit(db, case.user_id, "MENTAL_HEALTH_REFERRED", case.incident_id, metadata={"phone_number": body.get("phone_number")})
     return {
         "referral_id": f"MH-{uuid.uuid4().hex[:6].upper()}",
         "partner_org": "NIMHANS Cyber Support",
@@ -77,12 +124,19 @@ async def mental_health_refer(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/insurance/auto-claim")
 async def insurance_auto_claim(body: dict, db: Session = Depends(get_db)):
+    case = _get_or_create_case(db, body.get("incident_id"))
+    case.insurance_status = "SUBMITTED"
+    case.updated_at = datetime.datetime.utcnow()
+    db.commit()
+    log_audit(db, case.user_id, "INSURANCE_CLAIM_PREPARED", case.incident_id)
     return {
         "claim_id": f"INS-{uuid.uuid4().hex[:6].upper()}",
         "documents_generated": ["FIR_COPY", "DISPUTE_LETTER"],
         "submitted_to_insurer": True,
         "status_tracking_active": True,
-        "rs_recovered_counter_updated": True
+        "rs_recovered_counter_updated": True,
+        "incident_id": case.incident_id,
+        "insurance_status": case.insurance_status,
     }
 
 @router.get("/download-pdf")

@@ -29,6 +29,7 @@ export default function CommandPage() {
     const { performAction, downloadSimulatedFile } = useActions();
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [showElevatedOnly, setShowElevatedOnly] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -44,7 +45,7 @@ export default function CommandPage() {
         fetchStats();
     }, []);
 
-    const statePerformance = data?.state_performance || [];
+    const statePerformance = (data?.state_performance || []).filter((item: any) => !showElevatedOnly || item.trend === 'up');
 
     const alerts = data?.alerts || [];
 
@@ -110,8 +111,11 @@ export default function CommandPage() {
                                 <Globe className="text-indblue" size={24} />
                                 <h3 className="text-xl font-bold text-indblue">State-level Response Matrix</h3>
                             </div>
-                            <button className="flex items-center gap-2 p-2 bg-boxbg rounded-xl border border-silver/10 text-[10px] font-bold text-indblue">
-                                <Filter size={14} /> FILTER BY AGENT
+                            <button
+                                onClick={() => setShowElevatedOnly((current) => !current)}
+                                className="flex items-center gap-2 p-2 bg-boxbg rounded-xl border border-silver/10 text-[10px] font-bold text-indblue"
+                            >
+                                <Filter size={14} /> {showElevatedOnly ? "SHOW ALL STATES" : "SHOW ELEVATED ONLY"}
                             </button>
                         </div>
 

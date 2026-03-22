@@ -577,6 +577,51 @@ async def get_score_stats(
     }
 
 
+@router.get("/stats/score/history")
+async def get_score_history(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    _route_access(db, current_user, "score")
+    citizens = (
+        db.query(User)
+        .filter(User.role == "common", User.is_active.is_(True))
+        .order_by(User.drishyam_score.desc(), User.created_at.desc())
+        .limit(12)
+        .all()
+    )
+    score_actions = (
+        db.query(SystemAction)
+        .filter(SystemAction.action_type.in_(["REFRESH_SCORE", "START_DRILL", "INOCULATION_DRILL", "FREEZE_VPA"]))
+        .order_by(SystemAction.created_at.desc())
+        .limit(12)
+        .all()
+    )
+
+    return {
+        "citizens": [
+            {
+                "username": citizen.username,
+                "full_name": citizen.full_name,
+                "score": citizen.drishyam_score or 0,
+                "phone_number": citizen.phone_number,
+                "created_at": citizen.created_at.isoformat() if citizen.created_at else None,
+            }
+            for citizen in citizens
+        ],
+        "recent_actions": [
+            {
+                "action_type": action.action_type,
+                "target_id": action.target_id,
+                "status": action.status,
+                "created_at": action.created_at.isoformat() if action.created_at else None,
+                "metadata": action.metadata_json or {},
+            }
+            for action in score_actions
+        ],
+    }
+
+
 @router.get("/stats/score/compute")
 async def compute_score(
     uid: str,

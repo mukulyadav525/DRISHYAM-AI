@@ -32,13 +32,38 @@ interface Cluster {
     calls: number;
 }
 
+interface VoiceStressProfile {
+    stress_score: number;
+    script_reading_fatigue: number;
+    shift_change_detected: boolean;
+    operator_consistency: string;
+}
+
+interface CareerProfile {
+    profile_id: string;
+    career_timeline: { date: string; role: string }[];
+    hierarchy_level: string;
+    promotion_detected: boolean;
+    total_attempts_estimated: number;
+}
+
+interface ProsecutionProfile {
+    readiness_score: number;
+    court_ready: boolean;
+    gaps: string[];
+    economic_damage_inr: number;
+    sentencing_recommendation: string;
+}
 
 export default function ProfilingPage() {
-    const { performAction } = useActions();
+    const { performAction, downloadSimulatedFile } = useActions();
     const [selectedCluster, setSelectedCluster] = useState<string | null>(null);
     const [isExporting, setIsExporting] = useState(false);
     const [clusters, setClusters] = useState<Cluster[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [voiceStress, setVoiceStress] = useState<VoiceStressProfile | null>(null);
+    const [careerProfile, setCareerProfile] = useState<CareerProfile | null>(null);
+    const [prosecutionProfile, setProsecutionProfile] = useState<ProsecutionProfile | null>(null);
 
     useEffect(() => {
         const fetchClusters = async () => {
@@ -54,10 +79,66 @@ export default function ProfilingPage() {
         fetchClusters();
     }, []);
 
-    const handleExport = () => {
+    useEffect(() => {
+        if (!selectedCluster) {
+            setVoiceStress(null);
+            setCareerProfile(null);
+            setProsecutionProfile(null);
+            return;
+        }
+
+        const loadClusterProfiles = async () => {
+            const body = JSON.stringify({ cluster_id: selectedCluster });
+            const headers = { "Content-Type": "application/json" };
+            const [voiceRes, careerRes, prosecutionRes] = await Promise.all([
+                fetch(`${API_BASE}/profiling/voice-stress/analyse`, { method: "POST", headers, body }),
+                fetch(`${API_BASE}/profiling/career-graph/build`, { method: "POST", headers, body }),
+                fetch(`${API_BASE}/profiling/prosecution/score`, { method: "POST", headers, body }),
+            ]);
+
+            if (voiceRes.ok) setVoiceStress(await voiceRes.json());
+            if (careerRes.ok) setCareerProfile(await careerRes.json());
+            if (prosecutionRes.ok) setProsecutionProfile(await prosecutionRes.json());
+        };
+
+        loadClusterProfiles().catch((error) => {
+            console.error("Cluster profile load failed:", error);
+        });
+    }, [selectedCluster]);
+
+    const selectedClusterData = clusters.find((cluster) => cluster.id === selectedCluster) || null;
+    const heatmapBars = Array.from({ length: 24 }).map((_, index) => {
+        const base = selectedClusterData ? selectedClusterData.calls : 8;
+        return 25 + ((base + index * 7) % 60);
+    });
+
+    const handleExport = async () => {
+        if (!selectedClusterData) {
+            toast.error("Select a cluster first");
+            return;
+        }
         setIsExporting(true);
-        performAction('EXPORT_INTERPOL');
-        setTimeout(() => setIsExporting(false), 2000);
+        try {
+            await performAction('EXPORT_INTERPOL', selectedClusterData.id, {
+                location: selectedClusterData.location,
+                linked_vpas: selectedClusterData.linkedVPAs,
+                honeypot_hits: selectedClusterData.calls,
+                risk_level: selectedClusterData.risk,
+            });
+            await downloadSimulatedFile('INTERPOL_DOSSIER', 'json', {
+                targetId: selectedClusterData.id,
+                context: {
+                    cluster_id: selectedClusterData.id,
+                    location: selectedClusterData.location,
+                    linked_vpas: selectedClusterData.linkedVPAs,
+                    honeypot_hits: selectedClusterData.calls,
+                    risk_level: selectedClusterData.risk,
+                    entities: careerProfile?.career_timeline || [],
+                },
+            });
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     if (isLoading && clusters.length === 0) {
@@ -159,7 +240,7 @@ export default function ProfilingPage() {
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
-                                        <span className={`text-[8px] font-bold px-2 py-1 rounded uppercase ${c.risk === 'CRITICAL' ? 'bg-redalert text-white' : 'bg-indblue/10 text-indblue'}`}>
+                                    <span className={`text-[8px] font-bold px-2 py-1 rounded uppercase ${c.risk === 'CRITICAL' ? 'bg-redalert text-white' : 'bg-indblue/10 text-indblue'}`}>
                                             {c.risk} Risk
                                         </span>
                                         <ChevronRight size={16} className="text-silver group-hover:translate-x-1 transition-transform" />
@@ -184,28 +265,41 @@ export default function ProfilingPage() {
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-saffron">
                                     <span>Voice Stress Level</span>
-                                    <span>--</span>
+                                    <span>{voiceStress ? `${voiceStress.stress_score}%` : "--"}</span>
                                 </div>
                                 <div className="h-12 flex gap-1 items-end">
-                                    {/* Empty state for voice stress level */}
+                                    {Array.from({ length: 8 }).map((_, index) => {
+                                        const value = voiceStress ? Math.max(10, Math.min(100, voiceStress.stress_score - index * 6)) : 8;
+                                        return (
+                                            <div
+                                                key={index}
+                                                className="flex-1 rounded-t bg-saffron/70"
+                                                style={{ height: `${value}%` }}
+                                            />
+                                        );
+                                    })}
                                 </div>
                             </div>
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest text-indgreen">
                                     <span>Aggression Index</span>
-                                    <span>--</span>
+                                    <span>{voiceStress ? `${Math.round(voiceStress.script_reading_fatigue * 100)}%` : "--"}</span>
                                 </div>
                                 <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <div className="h-full bg-indgreen w-[0%]" />
+                                    <div className="h-full bg-indgreen" style={{ width: `${Math.round((voiceStress?.script_reading_fatigue || 0) * 100)}%` }} />
                                 </div>
-                                <p className="text-[10px] italic opacity-60">Technique detected: Awaiting Analysis...</p>
+                                <p className="text-[10px] italic opacity-60">
+                                    Technique detected: {voiceStress ? voiceStress.operator_consistency.replaceAll("_", " ") : "Awaiting Analysis..."}
+                                </p>
                             </div>
                         </div>
 
                         <div className="p-4 bg-black/20 rounded-2xl border border-white/5 font-mono text-[10px] space-y-1">
                             <p className="text-indgreen">// Behavioral Attribution</p>
                             <p className="opacity-60 text-white leading-loose">
-                                Awaiting real-time call analysis...
+                                {careerProfile
+                                    ? `${careerProfile.hierarchy_level} profile with ${careerProfile.total_attempts_estimated} estimated attempts.`
+                                    : "Awaiting real-time call analysis..."}
                             </p>
                         </div>
                     </div>
@@ -225,15 +319,20 @@ export default function ProfilingPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center text-[10px] font-bold text-silver uppercase">
                                     <span>Prosecution Readiness</span>
-                                    <span className="text-indblue">--%</span>
+                                    <span className="text-indblue">{prosecutionProfile ? `${prosecutionProfile.readiness_score}%` : "--%"}</span>
                                 </div>
                                 <div className="h-2 w-full bg-boxbg rounded-full overflow-hidden">
-                                    <div className="h-full bg-indblue w-[0%]" />
+                                    <div className="h-full bg-indblue" style={{ width: `${prosecutionProfile?.readiness_score || 0}%` }} />
                                 </div>
                             </div>
 
                             <div className="space-y-3">
-                                {/* Empty state for prosecution readiness tools */}
+                                {(prosecutionProfile?.gaps || []).map((gap) => (
+                                    <div key={gap} className="p-3 bg-boxbg rounded-xl border border-silver/5">
+                                        <p className="text-[10px] font-bold uppercase text-silver">Gap</p>
+                                        <p className="text-[11px] font-bold text-charcoal mt-1">{gap}</p>
+                                    </div>
+                                ))}
                             </div>
 
                             <button
@@ -275,11 +374,11 @@ export default function ProfilingPage() {
                             <h4 className="font-bold text-indblue text-sm uppercase tracking-tight text-xs">Operational Shift-Change</h4>
                         </div>
                         <div className="grid grid-cols-12 gap-1 h-32 items-end">
-                            {Array.from({ length: 24 }).map((_, i) => (
+                            {heatmapBars.map((height, i) => (
                                 <div
                                     key={i}
                                     className={`w-full rounded-t-sm transition-all duration-500 ${i > 8 && i < 20 ? 'bg-indblue' : 'bg-silver/10'}`}
-                                    style={{ height: `${Math.random() * 80 + 20}%` }}
+                                    style={{ height: `${height}%` }}
                                 />
                             ))}
                         </div>
@@ -289,7 +388,11 @@ export default function ProfilingPage() {
                             <span>23:59</span>
                         </div>
                         <div className="mt-4 p-3 bg-indblue/5 rounded-xl border border-indblue/10">
-                            <p className="text-[10px] font-bold text-indblue leading-snug">Awaiting sufficient cluster data to generate temporal patterns.</p>
+                            <p className="text-[10px] font-bold text-indblue leading-snug">
+                                {selectedClusterData
+                                    ? `${selectedClusterData.id} is mapped to ${selectedClusterData.calls} honeypot hits and ${selectedClusterData.linkedVPAs} linked VPAs.`
+                                    : "Select a cluster to generate temporal patterns."}
+                            </p>
                         </div>
                     </div>
                 </div>

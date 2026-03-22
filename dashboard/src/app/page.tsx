@@ -152,6 +152,43 @@ export default function OverviewPage() {
     }
   };
 
+  const handleCustomerAuditDownload = async () => {
+    await downloadSimulatedFile("CITIZEN_SCORE_AUDIT", "pdf", {
+      targetId: searchData?.uid?.toString() || searchData?.name || undefined,
+      context: {
+        citizen_id: searchData?.uid || searchData?.name || "UNKNOWN_CITIZEN",
+        computed_score: searchData?.score,
+      },
+    });
+  };
+
+  const handleStatSegmentDownload = async (type: "scams" | "citizens" | "savings" | "threats") => {
+    if (type === "scams") {
+      await downloadSimulatedFile("FORENSIC_AUDIT", "pdf");
+      return;
+    }
+    if (type === "citizens") {
+      await downloadSimulatedFile("CITIZEN_SCORE_AUDIT", "pdf", {
+        context: {
+          citizen_id: searchData?.uid || "NATIONAL_GRID",
+          computed_score: data?.stats?.citizens_protected,
+        },
+      });
+      return;
+    }
+    if (type === "savings") {
+      await downloadSimulatedFile("IMPACT_REPORT", "pdf");
+      return;
+    }
+    await downloadSimulatedFile("FRAUD_GRAPH_EVIDENCE", "pdf", {
+      context: {
+        root_entity: data?.live_feed?.[0]?.location || "THREAT_GRID",
+        node_count: data?.hotspots?.length || 0,
+        edge_count: data?.live_feed?.length || 0,
+      },
+    });
+  };
+
 
   if (isLoading && !data) {
     return (
@@ -341,6 +378,7 @@ export default function OverviewPage() {
         isOpen={isSearchModalOpen}
         onClose={() => setIsSearchModalOpen(false)}
         data={searchData}
+        onDownload={() => void handleCustomerAuditDownload()}
       />
 
       <LiveTicker
@@ -354,6 +392,7 @@ export default function OverviewPage() {
         type={selectedStatType}
         data={data}
         onActionClick={handleModalActionClick}
+        onDownload={(type) => void handleStatSegmentDownload(type)}
       />
 
       <ManagementOverlay 

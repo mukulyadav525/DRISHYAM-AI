@@ -58,7 +58,7 @@ export default function SimulationPortal() {
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { performAction } = useActions();
+  const { performAction, downloadSimulatedFile } = useActions();
 
   useEffect(() => {
     const originalFetch = window.fetch.bind(window);
@@ -307,7 +307,7 @@ export default function SimulationPortal() {
           )}
 
           {activeFeature === 'upi' && (
-            <UpiModule performAction={performAction} />
+            <UpiModule performAction={performAction} downloadSimulatedFile={downloadSimulatedFile} />
           )}
 
           {activeFeature === 'bharat' && (

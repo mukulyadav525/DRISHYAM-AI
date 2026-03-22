@@ -36,6 +36,16 @@ interface DrillScorecard {
   channel: string;
 }
 
+interface DrillHistoryItem {
+  action_id: number;
+  target_id?: string | null;
+  action_type: string;
+  status: string;
+  scenario?: string | null;
+  created_at?: string | null;
+  scorecard?: DrillScorecard | null;
+}
+
 export default function InoculationPage() {
   const { performAction } = useActions();
   const [phone, setPhone] = useState("");
@@ -45,6 +55,8 @@ export default function InoculationPage() {
   const [data, setData] = useState<InoculationStats | null>(null);
   const [scorecard, setScorecard] = useState<DrillScorecard | null>(null);
   const [activeDrillId, setActiveDrillId] = useState<string | null>(null);
+  const [drillHistory, setDrillHistory] = useState<DrillHistoryItem[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -123,6 +135,14 @@ export default function InoculationPage() {
     }
   }, [logs]);
 
+  const fetchHistory = async () => {
+    const res = await fetch(`${API_BASE}/inoculation/history`);
+    if (res.ok) {
+      const payload = await res.json();
+      setDrillHistory(Array.isArray(payload?.items) ? payload.items : []);
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
@@ -132,14 +152,40 @@ export default function InoculationPage() {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => performAction("VIEW_HISTORY")}
+            onClick={async () => {
+              await performAction("VIEW_HISTORY", "INOCULATION");
+              await fetchHistory();
+              setShowHistory((current) => !current);
+            }}
             className="px-4 py-2 bg-white border border-silver/10 rounded-lg text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors"
           >
             <History size={16} className="text-silver" />
-            Simulation History
+            {showHistory ? "Hide History" : "Simulation History"}
           </button>
         </div>
       </div>
+
+      {showHistory && (
+        <div className="bg-white rounded-2xl border border-silver/10 p-6 shadow-sm">
+          <h3 className="font-bold text-indblue mb-4">Recent Drill Runs</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {drillHistory.length === 0 ? (
+              <p className="text-sm text-silver">No drill history captured yet.</p>
+            ) : drillHistory.map((item) => (
+              <div key={item.action_id} className="p-4 rounded-2xl bg-boxbg border border-silver/10">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-indblue">{item.scenario || item.action_type}</p>
+                <p className="text-sm font-bold text-charcoal mt-1">{item.target_id || "Sandbox citizen"}</p>
+                <p className="text-[11px] text-silver mt-2">
+                  {item.created_at ? new Date(item.created_at).toLocaleString() : "Unknown time"} · {item.status}
+                </p>
+                {item.scorecard?.readiness_score ? (
+                  <p className="text-[11px] text-indgreen mt-2 font-bold">Readiness {item.scorecard.readiness_score}%</p>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-2xl border border-silver/10 p-5">

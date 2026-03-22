@@ -161,3 +161,28 @@ async def get_inoculation_scenarios(db: Session = Depends(get_db)):
             }
         ]
     }
+
+
+@router.get("/history")
+async def get_inoculation_history(db: Session = Depends(get_db)):
+    actions = (
+        db.query(SystemAction)
+        .filter(SystemAction.action_type.in_(["START_DRILL", "INOCULATION_DRILL"]))
+        .order_by(SystemAction.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    return {
+        "items": [
+            {
+                "action_id": action.id,
+                "target_id": action.target_id,
+                "action_type": action.action_type,
+                "status": action.status,
+                "scenario": (action.metadata_json or {}).get("scenario"),
+                "created_at": action.created_at.isoformat() if action.created_at else None,
+                "scorecard": (action.metadata_json or {}).get("scorecard"),
+            }
+            for action in actions
+        ]
+    }

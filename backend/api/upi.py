@@ -1,13 +1,14 @@
 import datetime
 import hashlib
+import re
 import uuid
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 from sqlalchemy.orm import Session
 
 from core.auth import get_current_verified_user
 from core.database import get_db
-from models.database import CrimeReport, SystemAction, User
+from models.database import CrimeReport, HoneypotEntity, NPCILog, SystemAction, User
 from core.audit import log_audit
 
 router = APIRouter()
@@ -179,6 +180,16 @@ async def upi_freeze(
             status="success",
         )
     )
+    db.add(
+        NPCILog(
+            vpa=vpa,
+            action="FREEZE",
+            status_code="00",
+            message="Freeze request dispatched from UPI shield",
+            reference_id=lock_id,
+            metadata_json={"case_id": case_id, "operator": current_user.username},
+        )
+    )
     db.commit()
     
     # [AC-M9-01] Audit Logging for Financial Freeze
@@ -201,6 +212,7 @@ async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
     
     message = body.get("message", "")
     phone = body.get("phone_number", "UNKNOWN")
+    extracted_vpas = []
     
     # 1. Use AI for Pattern Detection
     prompt = (
@@ -245,13 +257,24 @@ async def upi_scan_message(body: dict, db: Session = Depends(get_db)):
         db.add(new_report)
         db.commit()
 
+    for match in set(re.findall(r"\b[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\b", message)):
+        entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == match.lower()).first()
+        extracted_vpas.append(
+            {
+                "vpa": match.lower(),
+                "status": "RISK" if entity else "SAFE",
+                "bank_name": "Flagged Registry" if entity else "No direct registry hit",
+            }
+        )
+
     return {
         "is_scam": is_scam,
         "verdict": ai_result.get("verdict"),
         "confidence": conf_val,
         "reason": ai_result.get("pattern"),
         "pattern_detected": ai_result.get("pattern"),
-        "case_id": case_id
+        "case_id": case_id,
+        "extracted_vpas": extracted_vpas,
     }
 
 @router.post("/scan-qr")
@@ -287,10 +310,85 @@ async def upi_scan_qr(file: UploadFile = File(...), db: Session = Depends(get_db
         "is_safe": not suspicious,
         "is_fraudulent": suspicious,
         "vpa": vpa,
-        "payload": None,
+        "payload": f"upi://pay?pa={vpa}&pn=DRISHYAM_SCAN&tn={case_id}",
         "risk_score": 0.92 if suspicious else 0.18,
         "warning": "Potential QR fraud indicators detected." if suspicious else "No high-risk QR indicators detected from the uploaded file.",
-        "case_id": case_id
+        "case_id": case_id,
+        "risk_factors": [
+            "CRITICAL: QR payload mapped to a newly seen beneficiary VPA.",
+            "HIGH: Uploaded artefact matches suspicious checksum heuristics.",
+        ] if suspicious else ["Payload structure and beneficiary mapping look consistent."],
+        "checks": {
+            "payload": True,
+            "tls": not suspicious,
+            "merchant": not suspicious,
+        },
+    }
+
+
+@router.get("/history")
+async def get_upi_history(
+    vpa: str = Query(..., min_length=3),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_verified_user),
+):
+    normalized_vpa = vpa.strip().lower()
+    reports = []
+    for report in db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(30).all():
+        metadata = report.metadata_json or {}
+        if metadata.get("vpa") == normalized_vpa:
+            reports.append(report)
+
+    npci_logs = (
+        db.query(NPCILog)
+        .filter(NPCILog.vpa == normalized_vpa)
+        .order_by(NPCILog.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    freeze_actions = (
+        db.query(SystemAction)
+        .filter(SystemAction.action_type == "FREEZE_VPA", SystemAction.target_id == normalized_vpa)
+        .order_by(SystemAction.created_at.desc())
+        .limit(20)
+        .all()
+    )
+    entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == normalized_vpa).first()
+
+    log_audit(db, current_user.id, "VIEW_VPA_HISTORY_API", normalized_vpa)
+
+    return {
+        "vpa": normalized_vpa,
+        "risk_status": "FLAGGED" if entity else "CLEAR",
+        "risk_score": entity.risk_score if entity else 0.0,
+        "reports": [
+            {
+                "report_id": report.report_id,
+                "scam_type": report.scam_type,
+                "priority": report.priority,
+                "status": report.status,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+            }
+            for report in reports
+        ],
+        "npci_events": [
+            {
+                "reference_id": row.reference_id,
+                "action": row.action,
+                "status_code": row.status_code,
+                "message": row.message,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+            }
+            for row in npci_logs
+        ],
+        "freeze_actions": [
+            {
+                "action_id": row.id,
+                "created_at": row.created_at.isoformat() if row.created_at else None,
+                "metadata": row.metadata_json or {},
+            }
+            for row in freeze_actions
+        ],
     }
 
 @router.get("/stats")

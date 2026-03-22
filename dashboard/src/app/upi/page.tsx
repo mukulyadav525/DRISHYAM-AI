@@ -37,6 +37,31 @@ interface UPIStats {
     threat_feed: UPIThreat[];
 }
 
+interface VPAHistory {
+    vpa: string;
+    risk_status: string;
+    risk_score: number;
+    reports: {
+        report_id: string;
+        scam_type: string;
+        priority: string;
+        status: string;
+        created_at?: string | null;
+    }[];
+    npci_events: {
+        reference_id: string;
+        action: string;
+        status_code: string;
+        message?: string | null;
+        created_at?: string | null;
+    }[];
+    freeze_actions: {
+        action_id: number;
+        created_at?: string | null;
+        metadata?: Record<string, unknown>;
+    }[];
+}
+
 export default function UPIPage() {
     const { performAction } = useActions();
     const [upiId, setUpiId] = useState("");
@@ -52,6 +77,8 @@ export default function UPIPage() {
     const [messageText, setMessageText] = useState("");
     const [isScanning, setIsScanning] = useState(false);
     const [scanResult, setScanResult] = useState<any>(null);
+    const [vpaHistory, setVpaHistory] = useState<VPAHistory | null>(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -69,6 +96,7 @@ export default function UPIPage() {
         if (!upiId) return;
         setIsLookingUp(true);
         setLookupResult(null);
+        setVpaHistory(null);
         
         try {
             const result = await performAction('VPA_LOOKUP', upiId);
@@ -135,6 +163,20 @@ export default function UPIPage() {
         } finally {
             setQrScanning(false);
             e.target.value = ""; // reset input
+        }
+    };
+
+    const handleViewHistory = async () => {
+        if (!upiId) return;
+        setHistoryLoading(true);
+        try {
+            await performAction('VIEW_VPA_HISTORY', upiId);
+            const res = await fetch(`${API_BASE}/upi/history?vpa=${encodeURIComponent(upiId)}`);
+            if (res.ok) {
+                setVpaHistory(await res.json());
+            }
+        } finally {
+            setHistoryLoading(false);
         }
     };
 
@@ -223,11 +265,53 @@ export default function UPIPage() {
                                                             onClick={() => performAction('FREEZE_VPA', upiId)}
                                                             className="text-[10px] font-bold bg-redalert text-white px-4 py-2 rounded-lg uppercase tracking-wider">Freeze Alert</button>
                                                         <button
-                                                            onClick={() => performAction('VIEW_VPA_HISTORY', upiId)}
+                                                            onClick={() => void handleViewHistory()}
                                                             className="text-[10px] font-bold border border-redalert/20 text-redalert px-4 py-2 rounded-lg uppercase tracking-wider">VPA History</button>
                                                     </div>
                                                 )}
                                             </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {vpaHistory && (
+                                    <div className="p-6 rounded-2xl border border-silver/10 bg-boxbg/40 animate-in fade-in duration-500">
+                                        <div className="flex items-center justify-between">
+                                            <div>
+                                                <p className="text-[10px] font-bold uppercase tracking-widest text-silver">Live VPA History</p>
+                                                <p className="text-sm font-black text-indblue mt-1">{vpaHistory.vpa}</p>
+                                            </div>
+                                            <span className={`text-[10px] font-bold px-3 py-1 rounded-full ${vpaHistory.risk_status === 'FLAGGED' ? 'bg-redalert text-white' : 'bg-indgreen/10 text-indgreen'}`}>
+                                                {vpaHistory.risk_status}
+                                            </span>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                                            <div className="p-3 bg-white rounded-xl border border-silver/10">
+                                                <p className="text-[10px] font-bold uppercase text-silver">Reports</p>
+                                                <p className="text-xl font-black text-indblue mt-2">{vpaHistory.reports.length}</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-xl border border-silver/10">
+                                                <p className="text-[10px] font-bold uppercase text-silver">NPCI Events</p>
+                                                <p className="text-xl font-black text-indblue mt-2">{vpaHistory.npci_events.length}</p>
+                                            </div>
+                                            <div className="p-3 bg-white rounded-xl border border-silver/10">
+                                                <p className="text-[10px] font-bold uppercase text-silver">Freeze Actions</p>
+                                                <p className="text-xl font-black text-indblue mt-2">{vpaHistory.freeze_actions.length}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="mt-4 space-y-3">
+                                            {vpaHistory.reports.slice(0, 3).map((report) => (
+                                                <div key={report.report_id} className="p-3 bg-white rounded-xl border border-silver/10">
+                                                    <p className="text-[10px] font-bold uppercase tracking-widest text-indblue">{report.report_id}</p>
+                                                    <p className="text-sm font-bold text-charcoal mt-1">{report.scam_type}</p>
+                                                    <p className="text-[10px] text-silver mt-1">{report.priority} · {report.status}</p>
+                                                </div>
+                                            ))}
+                                            {vpaHistory.reports.length === 0 && !historyLoading ? (
+                                                <p className="text-xs text-silver">No linked VPA incidents found in the current database snapshot.</p>
+                                            ) : null}
                                         </div>
                                     </div>
                                 )}
@@ -287,7 +371,7 @@ export default function UPIPage() {
 
                                                 <div className="mt-2 text-xs font-mono bg-white/50 p-2 rounded border border-silver/10 break-all text-charcoal">
                                                     <span className="text-silver font-bold uppercase block mb-1 text-[9px]">Decoded Payload:</span>
-                                                    {forensicResult.payload}
+                                                    {forensicResult.payload || forensicResult.vpa}
                                                 </div>
 
                                                 {forensicResult.risk_factors && forensicResult.risk_factors.length > 0 && (

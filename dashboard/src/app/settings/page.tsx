@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
     AlertTriangle,
     Clock3,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { API_BASE } from "@/config/api";
+import { useActions } from "@/hooks/useActions";
 
 interface SessionStatus {
     username: string;
@@ -76,7 +78,9 @@ interface ConsentSummaryResponse {
 }
 
 export default function SettingsPage() {
+    const router = useRouter();
     const { user } = useAuth();
+    const { downloadSimulatedFile } = useActions();
     const [session, setSession] = useState<SessionStatus | null>(null);
     const [profile, setProfile] = useState<OperatorProfile | null>(null);
     const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
@@ -419,11 +423,17 @@ export default function SettingsPage() {
                         </div>
 
                         <div className="mt-8 flex flex-col md:flex-row gap-4">
-                            <button className="flex-1 p-4 bg-indblue text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indblue/90 transition-colors">
+                            <button
+                                onClick={() => router.push("/security")}
+                                className="flex-1 p-4 bg-indblue text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indblue/90 transition-colors"
+                            >
                                 <Scale size={18} />
                                 View Control Posture
                             </button>
-                            <button className="flex-1 p-4 bg-white border border-indblue text-indblue rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indblue/5 transition-colors">
+                            <button
+                                onClick={() => void downloadSimulatedFile("EVIDENCE_POLICY", "pdf")}
+                                className="flex-1 p-4 bg-white border border-indblue text-indblue rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indblue/5 transition-colors"
+                            >
                                 <FileText size={18} />
                                 Review Evidence Policy
                             </button>

@@ -26,6 +26,7 @@ export default function HistoryPage() {
     const [history, setHistory] = useState<ForensicHistoryItem[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterMode, setFilterMode] = useState<'ALL' | 'HIGH_RISK' | 'FAKE_ONLY'>('ALL');
 
     useEffect(() => {
         const fetchHistory = async () => {
@@ -78,9 +79,14 @@ export default function HistoryPage() {
         }
     };
 
-    const filteredHistory = (history || []).filter(item => 
-        item.filename?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const filteredHistory = (history || []).filter(item => {
+        const matchesSearch = item.filename?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesFilter =
+            filterMode === 'ALL' ||
+            (filterMode === 'HIGH_RISK' && item.risk === 'HIGH') ||
+            (filterMode === 'FAKE_ONLY' && item.verdict === 'FAKE');
+        return matchesSearch && matchesFilter;
+    });
 
     const getVerdictStyle = (v: string) => {
         if (v === 'REAL') return 'bg-indgreen/10 text-indgreen';
@@ -107,9 +113,12 @@ export default function HistoryPage() {
                     />
                 </div>
                 <div className="flex gap-2">
-                    <button className="flex items-center gap-2 px-4 py-2 bg-white border border-silver/10 rounded-xl text-xs font-bold text-silver hover:text-indblue transition-all">
+                    <button
+                        onClick={() => setFilterMode((current) => current === 'ALL' ? 'HIGH_RISK' : current === 'HIGH_RISK' ? 'FAKE_ONLY' : 'ALL')}
+                        className="flex items-center gap-2 px-4 py-2 bg-white border border-silver/10 rounded-xl text-xs font-bold text-silver hover:text-indblue transition-all"
+                    >
                         <Filter size={14} />
-                        Filter
+                        {filterMode === 'ALL' ? 'All Results' : filterMode === 'HIGH_RISK' ? 'High Risk' : 'Fake Only'}
                     </button>
                 </div>
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Download,
     FileText,
@@ -98,6 +98,9 @@ export default function FraudGraphPage() {
     const [query, setQuery] = useState("");
     const [isLoading, setIsLoading] = useState(true);
     const [isSearching, setIsSearching] = useState(false);
+    const [zoomLevel, setZoomLevel] = useState(1);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const graphContainerRef = useRef<HTMLDivElement | null>(null);
 
     const loadSpotlight = async (entity?: string) => {
         const search = entity?.trim();
@@ -155,6 +158,39 @@ export default function FraudGraphPage() {
             setIsSearching(false);
         }
     };
+
+    const handleZoom = async (direction: "IN" | "OUT") => {
+        await performAction("GRAPH_ZOOM", direction);
+        setZoomLevel((current) => {
+            const next = direction === "IN" ? current + 0.1 : current - 0.1;
+            return Math.min(1.6, Math.max(0.7, Number(next.toFixed(2))));
+        });
+    };
+
+    const handleMaximize = async () => {
+        await performAction("GRAPH_MAXIMIZE");
+        const container = graphContainerRef.current;
+        if (!container) {
+            return;
+        }
+
+        if (document.fullscreenElement === container) {
+            await document.exitFullscreen();
+            setIsFullscreen(false);
+            return;
+        }
+
+        await container.requestFullscreen();
+        setIsFullscreen(true);
+    };
+
+    useEffect(() => {
+        const syncFullscreen = () => {
+            setIsFullscreen(document.fullscreenElement === graphContainerRef.current);
+        };
+        document.addEventListener("fullscreenchange", syncFullscreen);
+        return () => document.removeEventListener("fullscreenchange", syncFullscreen);
+    }, []);
 
     if (isLoading && !graph) {
         return (
@@ -219,25 +255,25 @@ export default function FraudGraphPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 min-h-[620px]">
-                <div className="lg:col-span-3 bg-white rounded-2xl border border-silver/10 flex flex-col relative overflow-hidden">
+                <div ref={graphContainerRef} className="lg:col-span-3 bg-white rounded-2xl border border-silver/10 flex flex-col relative overflow-hidden">
                     <div className="absolute top-6 left-6 z-10 space-y-2">
                         <div className="bg-white/90 backdrop-blur p-2 rounded-lg border border-silver/10 shadow-xl">
                             <div className="flex flex-col gap-2">
                                 <button
-                                    onClick={() => performAction("GRAPH_ZOOM", "IN")}
+                                    onClick={() => void handleZoom("IN")}
                                     className="p-2 hover:bg-boxbg rounded text-indblue transition-colors"
                                 >
                                     <ZoomIn size={18} />
                                 </button>
                                 <button
-                                    onClick={() => performAction("GRAPH_ZOOM", "OUT")}
+                                    onClick={() => void handleZoom("OUT")}
                                     className="p-2 hover:bg-boxbg rounded text-indblue transition-colors"
                                 >
                                     <ZoomOut size={18} />
                                 </button>
                                 <div className="h-px bg-silver/10 mx-1" />
                                 <button
-                                    onClick={() => performAction("GRAPH_MAXIMIZE")}
+                                    onClick={() => void handleMaximize()}
                                     className="p-2 hover:bg-boxbg rounded text-indblue transition-colors"
                                 >
                                     <Maximize2 size={18} />
@@ -255,7 +291,7 @@ export default function FraudGraphPage() {
                     </div>
 
                     <div className="flex-1 bg-boxbg/30 relative">
-                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 860 620">
+                        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 860 620" style={{ transform: `scale(${zoomLevel})`, transformOrigin: "center center" }}>
                             {displayEdges.map((edge, index) => {
                                 const sourceIndex = displayNodes.findIndex((node) => node.id === edge.source);
                                 const targetIndex = displayNodes.findIndex((node) => node.id === edge.target);
@@ -302,6 +338,7 @@ export default function FraudGraphPage() {
                                 </div>
                                 <p className="text-xs font-bold text-indblue">{t("graph_active")}</p>
                                 <p className="text-[10px] text-silver mt-1">Recent honeypot entities and graph links are live.</p>
+                                <p className="text-[10px] text-indblue mt-2 font-bold">Zoom {Math.round(zoomLevel * 100)}% {isFullscreen ? "· Fullscreen" : ""}</p>
                             </div>
                         </div>
                     </div>
@@ -311,7 +348,10 @@ export default function FraudGraphPage() {
                             <div className="w-2 h-2 rounded-full bg-indgreen" /> Node Health Stable
                         </div>
                         <button
-                            onClick={() => performAction("REFRESH_CORRELATIONS", spotlight?.root_entity || graph?.root_entity)}
+                            onClick={async () => {
+                                await performAction("REFRESH_CORRELATIONS", spotlight?.root_entity || graph?.root_entity);
+                                await loadSpotlight(spotlight?.root_entity || graph?.root_entity);
+                            }}
                             className="text-[10px] font-bold text-indblue uppercase tracking-widest hover:text-saffron transition-colors"
                         >
                             {t("refresh_correlations")}

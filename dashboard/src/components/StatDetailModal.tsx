@@ -9,9 +9,10 @@ interface StatDetailModalProps {
     type: "scams" | "citizens" | "savings" | "threats" | null;
     data: any;
     onActionClick?: (action: string) => void;
+    onDownload?: (type: "scams" | "citizens" | "savings" | "threats") => void;
 }
 
-export default function StatDetailModal({ isOpen, onClose, type, data, onActionClick }: StatDetailModalProps) {
+export default function StatDetailModal({ isOpen, onClose, type, data, onActionClick, onDownload }: StatDetailModalProps) {
     if (!type || !data) return null;
 
     const config = {
@@ -140,7 +141,10 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                                         <span className="text-[10px] font-bold uppercase tracking-wider">Confidence: 99.4%</span>
                                     </div>
                                 </div>
-                                <button className="flex items-center gap-2 px-6 py-3 bg-boxbg text-indblue border border-silver/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-silver/10 transition-all">
+                                <button
+                                    onClick={() => onDownload?.(type)}
+                                    className="flex items-center gap-2 px-6 py-3 bg-boxbg text-indblue border border-silver/20 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-silver/10 transition-all"
+                                >
                                     <Download size={14} /> Download Segment
                                 </button>
                             </div>

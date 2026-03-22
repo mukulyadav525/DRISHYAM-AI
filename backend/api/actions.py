@@ -7,9 +7,15 @@ from core.auth import get_current_verified_user
 from models.database import (
     AdminApproval,
     CrimeReport,
+    HoneypotMessage,
     HoneypotEntity,
+    HoneypotPersona,
+    HoneypotSession,
+    MuleAd,
+    NPCILog,
     RecoveryCase,
     ScamCluster,
+    SuspiciousNumber,
     SystemAction,
     SystemAuditLog,
     User,
@@ -59,7 +65,7 @@ def _resolve_file_type(filename: str | None, file_type: str | None = None) -> st
 
 def _build_export_filename(category: str, file_type: str, target_id: str | None = None) -> str:
     label = _normalize_export_category(target_id or category)
-    extension = "pdf" if file_type.lower() not in {"pdf", "txt", "zip"} else file_type.lower()
+    extension = "pdf" if file_type.lower() not in {"pdf", "txt", "zip", "json"} else file_type.lower()
     return f"DRISHYAM_{label}.{extension}"
 
 
@@ -259,6 +265,84 @@ def _playbook_sections(category: str) -> list[dict[str, Any]]:
     return [{"heading": "Operational Guidance", "bullets": bullets}]
 
 
+def _build_interpol_export_payload(
+    db: Session,
+    cluster_id: str | None,
+    context: dict[str, Any],
+    current_user: User,
+) -> dict[str, Any]:
+    cluster_lookup = (cluster_id or context.get("cluster_id") or "").strip()
+    cluster = None
+    if cluster_lookup:
+        cluster = (
+            db.query(ScamCluster)
+            .filter((ScamCluster.cluster_id == cluster_lookup) | (ScamCluster.location == cluster_lookup))
+            .first()
+        )
+
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all()
+    related_reports: list[CrimeReport] = []
+    for report in reports:
+        metadata = report.metadata_json or {}
+        if cluster_lookup and cluster_lookup in {
+            report.report_id,
+            report.platform,
+            metadata.get("cluster_id"),
+            metadata.get("location"),
+        }:
+            related_reports.append(report)
+            continue
+        if cluster and cluster.location and cluster.location.lower() == (metadata.get("location", "") or "").lower():
+            related_reports.append(report)
+
+    indicators = []
+    if cluster:
+        indicators.append({
+            "type": "malware-analysis",
+            "name": cluster.cluster_id,
+            "description": f"{cluster.risk_level} risk scam cluster active in {cluster.location or 'unknown location'}",
+            "confidence": 85 if (cluster.risk_level or "").upper() in {"HIGH", "CRITICAL"} else 60,
+        })
+
+    for report in related_reports[:8]:
+        metadata = report.metadata_json or {}
+        indicators.append({
+            "type": "indicator",
+            "name": report.report_id,
+            "description": report.scam_type,
+            "platform": report.platform,
+            "priority": report.priority,
+            "vpa": metadata.get("vpa"),
+        })
+
+    return {
+        "export_standard": "INTERPOL_STIX_2_1",
+        "generated_at_utc": datetime.datetime.utcnow().isoformat(),
+        "generated_by": current_user.username,
+        "cluster": {
+            "cluster_id": cluster.cluster_id if cluster else cluster_lookup or "UNSPECIFIED_CLUSTER",
+            "location": cluster.location if cluster else context.get("location"),
+            "risk_level": cluster.risk_level if cluster else context.get("risk_level", "UNKNOWN"),
+            "linked_vpas": cluster.linked_vpas if cluster else context.get("linked_vpas", 0),
+            "honeypot_hits": cluster.honeypot_hits if cluster else context.get("honeypot_hits", 0),
+        },
+        "cases": [
+            {
+                "report_id": report.report_id,
+                "category": report.category,
+                "scam_type": report.scam_type,
+                "platform": report.platform,
+                "priority": report.priority,
+                "status": report.status,
+                "created_at": report.created_at.isoformat() if report.created_at else None,
+            }
+            for report in related_reports[:10]
+        ],
+        "indicators": indicators,
+        "entities": context.get("entities") or [],
+    }
+
+
 def _build_export_artifact(
     db: Session,
     current_user: User,
@@ -434,6 +518,72 @@ def _build_export_artifact(
         filename = _build_export_filename(normalized, "pdf")
         return pdf_bytes, "application/pdf", filename
 
+    if normalized == "EVIDENCE_POLICY":
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            "Evidence Handling Policy",
+            subtitle="Court-readiness and privacy handling controls for DRISHYAM exports.",
+            summary={
+                "Document": "Evidence Policy",
+                "Requested By": current_user.username,
+                "Policy Version": "2026.03",
+            },
+            sections=[
+                {
+                    "heading": "Collection Controls",
+                    "bullets": [
+                        "Every export must be tied to an authenticated operator session.",
+                        "Section 65B certification accompanies court-facing electronic evidence.",
+                        "Generated documents inherit the originating case or graph metadata when available.",
+                    ],
+                },
+                {
+                    "heading": "Disclosure Controls",
+                    "bullets": [
+                        "Citizen access is consent-bound and auditable.",
+                        "Sensitive documents should be shared only with the authorized agency role.",
+                        "Audit logs and chain-of-custody records must remain intact for downstream review.",
+                    ],
+                },
+            ],
+        )
+        filename = _build_export_filename("EVIDENCE_POLICY", "pdf")
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized == "INTERPOL_DOSSIER":
+        payload = _build_interpol_export_payload(db, target_id, context, current_user)
+        if resolved_file_type == "json":
+            filename = _build_export_filename("INTERPOL_DOSSIER", "json", target_id)
+            return json.dumps(payload, indent=2).encode("utf-8"), "application/json", filename
+
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            "Interpol Intelligence Dossier",
+            subtitle="Cross-border dossier generated from the live scam cluster workspace.",
+            summary={
+                "Cluster": payload["cluster"]["cluster_id"],
+                "Location": payload["cluster"]["location"] or "Unknown",
+                "Risk Level": payload["cluster"]["risk_level"],
+                "Linked Cases": len(payload["cases"]),
+            },
+            sections=[
+                {
+                    "heading": "Indicators",
+                    "bullets": [
+                        f"{indicator['name']}: {indicator['description']}"
+                        for indicator in payload["indicators"]
+                    ] or ["No indicators were available for this dossier."],
+                },
+                {
+                    "heading": "Linked Cases",
+                    "bullets": [
+                        f"{case['report_id']} · {case['scam_type']} · {case['priority']}"
+                        for case in payload["cases"]
+                    ] or ["No linked reports found for this cluster."],
+                },
+            ],
+        )
+        filename = _build_export_filename("INTERPOL_DOSSIER", "pdf", target_id)
+        return pdf_bytes, "application/pdf", filename
+
     pdf_bytes = pdf_report_generator.generate_structured_report(
         normalized.replace("_", " ").title(),
         subtitle="General DRISHYAM export generated from the current operational context.",
@@ -524,7 +674,6 @@ async def perform_action(
         
         if action_type == "SCAN_MULE_FEED":
             # Simulate Intercepting new Ads
-            from models.database import MuleAd
             import random
             
             # Check if we already have ads, if not, or 50% chance, create a new one
@@ -547,7 +696,6 @@ async def perform_action(
             detail_data = {"new_ad_id": new_ad.id}
 
             # Also create a CrimeReport for centralized tracking
-            from models.database import CrimeReport
             new_report = CrimeReport(
                 report_id=f"MLE-{uuid.uuid4().hex[:6].upper()}",
                 category="police",
@@ -562,7 +710,6 @@ async def perform_action(
             db.add(new_report)
 
         elif action_type == "VPA_LOOKUP" and req.target_id:
-            from models.database import HoneypotEntity
             vpa = req.target_id.lower()
             entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
             
@@ -575,6 +722,34 @@ async def perform_action(
             }
             user_msg = f"VPA Analysis for {vpa} Complete. Risk: {'HIGH' if is_flagged else 'LOW'}"
 
+        elif action_type == "FREEZE_VPA" and req.target_id:
+            vpa = req.target_id.lower()
+            case_id = (req.metadata or {}).get("case_id") or f"FRZ-{uuid.uuid4().hex[:6].upper()}"
+            lock_id = f"LCK-{uuid.uuid4().hex[:6].upper()}"
+            matching_report = None
+            for report in db.query(CrimeReport).filter(CrimeReport.category == "bank").order_by(CrimeReport.created_at.desc()).all():
+                metadata = report.metadata_json or {}
+                if metadata.get("vpa") == vpa:
+                    matching_report = report
+                    break
+            db.add(
+                NPCILog(
+                    vpa=vpa,
+                    action="FREEZE",
+                    status_code="00",
+                    message="Freeze request dispatched from action console",
+                    reference_id=lock_id,
+                    metadata_json={"case_id": case_id, "operator": current_user.username},
+                )
+            )
+            detail_data = {
+                "vpa": vpa,
+                "case_id": case_id,
+                "lock_id": lock_id,
+                "value_protected": matching_report.amount if matching_report and matching_report.amount else "₹0",
+            }
+            user_msg = f"Financial Freeze Request Dispatched for {vpa}. Case {case_id}."
+
         elif action_type == "DECOMPILE_AGENT":
             # Simulated forensic attribution
             detail_data = {
@@ -584,6 +759,150 @@ async def perform_action(
                 "related_cases": 14
             }
             user_msg = f"Forensic Attribution for {req.target_id or 'Agent'} Complete."
+
+        elif action_type in {"BLOCK", "BLOCK_NUMBER"} and req.target_id:
+            target = req.target_id.strip()
+            number_like = bool(re.search(r"\d{5,}", target))
+            if number_like:
+                suspicious = db.query(SuspiciousNumber).filter(SuspiciousNumber.phone_number == target).first()
+                if suspicious:
+                    suspicious.reputation_score = max(suspicious.reputation_score or 0.0, 0.94)
+                    suspicious.report_count = (suspicious.report_count or 0) + 1
+                    suspicious.last_seen = datetime.datetime.utcnow()
+                else:
+                    suspicious = SuspiciousNumber(
+                        phone_number=target,
+                        reputation_score=0.94,
+                        category="telecom_block",
+                        report_count=1,
+                        last_seen=datetime.datetime.utcnow(),
+                    )
+                    db.add(suspicious)
+
+                report_id = f"TEL-{uuid.uuid4().hex[:6].upper()}"
+                db.add(
+                    CrimeReport(
+                        report_id=report_id,
+                        category="telecom",
+                        scam_type="Suspicious Caller Block",
+                        platform="VOICE_CALL",
+                        priority="HIGH",
+                        reporter_num=target,
+                        status="BLOCKED",
+                        metadata_json={"source": req.metadata or {}, "blocked_by": current_user.username},
+                    )
+                )
+                detail_data = {
+                    "number": target,
+                    "status": "BLOCKED",
+                    "report_id": report_id,
+                    "reputation_score": suspicious.reputation_score,
+                }
+                user_msg = f"Telecom block issued for {target}."
+
+        elif action_type == "ROUTE_TO_HONEYPOT" and req.target_id:
+            session_id = f"H-{uuid.uuid4().hex[:6].upper()}"
+            persona = (req.metadata or {}).get("persona") or "ELDERLY_UNCLE"
+            caller_num = req.target_id
+            session = HoneypotSession(
+                session_id=session_id,
+                user_id=current_user.id,
+                caller_num=caller_num,
+                persona=persona,
+                status="active",
+                direction="handoff",
+                handoff_timestamp=datetime.datetime.utcnow(),
+                metadata_json={
+                    "origin_location": (req.metadata or {}).get("location"),
+                    "source": (req.metadata or {}).get("source"),
+                    "citizen_safe": True,
+                },
+            )
+            db.add(session)
+            detail_data = {
+                "session_id": session_id,
+                "caller_num": caller_num,
+                "persona": persona,
+                "status": "active",
+            }
+            user_msg = f"Honeypot handoff created for {caller_num}."
+
+        elif action_type == "PAUSE_SESSION" and req.target_id:
+            session = db.query(HoneypotSession).filter(HoneypotSession.session_id == req.target_id).first()
+            if not session:
+                raise HTTPException(status_code=404, detail="Honeypot session not found.")
+            session.status = "paused"
+            metadata = dict(session.metadata_json or {})
+            metadata["paused_at"] = datetime.datetime.utcnow().isoformat()
+            session.metadata_json = metadata
+            detail_data = {"session_id": session.session_id, "status": session.status}
+            user_msg = f"Honeypot session {session.session_id} paused."
+
+        elif action_type == "INTERVENE_SESSION" and req.target_id:
+            session = db.query(HoneypotSession).filter(HoneypotSession.session_id == req.target_id).first()
+            if not session:
+                raise HTTPException(status_code=404, detail="Honeypot session not found.")
+            session.status = "active"
+            session.direction = "handoff"
+            session.handoff_timestamp = datetime.datetime.utcnow()
+            metadata = dict(session.metadata_json or {})
+            metadata["citizen_safe"] = True
+            metadata["intervened_by"] = current_user.username
+            session.metadata_json = metadata
+            detail_data = {"session_id": session.session_id, "status": session.status, "direction": session.direction}
+            user_msg = f"AI intervention resumed for session {session.session_id}."
+
+        elif action_type == "CREATE_PERSONA":
+            persona_name = (req.metadata or {}).get("name") or f"Adaptive Persona {uuid.uuid4().hex[:4].upper()}"
+            existing_persona = db.query(HoneypotPersona).filter(HoneypotPersona.name == persona_name).first()
+            if existing_persona:
+                detail_data = {
+                    "name": existing_persona.name,
+                    "language": existing_persona.language,
+                    "speaker": existing_persona.speaker,
+                }
+                user_msg = f"Persona {existing_persona.name} is already available."
+            else:
+                persona = HoneypotPersona(
+                    name=persona_name,
+                    language=(req.metadata or {}).get("language", "hi-IN"),
+                    speaker=(req.metadata or {}).get("speaker", "Adaptive Voice"),
+                    pace=float((req.metadata or {}).get("pace", 0.95)),
+                )
+                db.add(persona)
+                detail_data = {
+                    "name": persona.name,
+                    "language": persona.language,
+                    "speaker": persona.speaker,
+                }
+                user_msg = f"Persona {persona.name} created."
+
+        elif action_type == "LAUNCH_PROBE":
+            session_id = f"PRB-{uuid.uuid4().hex[:6].upper()}"
+            probe = HoneypotSession(
+                session_id=session_id,
+                user_id=current_user.id,
+                caller_num=(req.metadata or {}).get("caller_num", f"+91-98{uuid.uuid4().int % 9000:04d}-XXX-000"),
+                persona=(req.metadata or {}).get("persona", "SKEPTICAL_YOUTH"),
+                status="active",
+                direction="outgoing",
+                metadata_json={"origin_location": "Probe Node", "citizen_safe": True},
+            )
+            db.add(probe)
+            detail_data = {"session_id": session_id, "persona": probe.persona, "status": probe.status}
+            user_msg = f"Probe {session_id} launched."
+
+        elif action_type == "OPTIMIZE_STRATEGIES":
+            total_sessions = db.query(HoneypotSession).count()
+            active_sessions = db.query(HoneypotSession).filter(HoneypotSession.status == "active").count()
+            active_personas = db.query(HoneypotPersona).count()
+            detail_data = {
+                "total_sessions": total_sessions,
+                "active_sessions": active_sessions,
+                "personas_available": active_personas,
+                "recommendation": "Prefer skeptical-youth persona for high-urgency UPI lures." if active_sessions else "Launch a fresh probe to collect more behavior samples.",
+            }
+            user_msg = "Strategy optimization finished with updated recommendation set."
 
         elif action_type in ["VIEW_FEED_DETAIL", "VIEW_DETAIL", "VIEW_INCIDENT"]:
             detail_data = {
@@ -600,7 +919,6 @@ async def perform_action(
                 "location": req.metadata.get("location", "Unknown Sector") if req.metadata else "Unknown Sector"
             }
         elif action_type == "GENERATE_RECOVERY_BUNDLE":
-            from models.database import RecoveryCase
             inc_id = f"INC-{uuid.uuid4().hex[:6].upper()}"
             
             # Create persistent recovery case
@@ -621,6 +939,144 @@ async def perform_action(
                 "incident_id": inc_id,
             }
             user_msg = f"Legal Restitution Bundle Generated (ID: {inc_id}). Tracking activated."
+
+        elif action_type == "MARK_RISK" and req.target_id:
+            vpa = req.target_id.lower()
+            entity = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == vpa).first()
+            if entity:
+                entity.risk_score = max(entity.risk_score or 0.0, 0.96)
+                entity.last_seen = datetime.datetime.utcnow()
+            else:
+                entity = HoneypotEntity(
+                    entity_type="VPA",
+                    entity_value=vpa,
+                    risk_score=0.96,
+                )
+                db.add(entity)
+            npci_ref = f"NPCI-{uuid.uuid4().hex[:8].upper()}"
+            db.add(
+                NPCILog(
+                    vpa=vpa,
+                    action="FLAG",
+                    status_code="92",
+                    message="Marked as high risk from agency action console",
+                    reference_id=npci_ref,
+                    metadata_json={"operator": current_user.username},
+                )
+            )
+            detail_data = {"vpa": vpa, "risk_score": entity.risk_score, "npci_ref": npci_ref}
+            user_msg = f"{vpa} marked high-risk in the registry."
+
+        elif action_type == "BLOCK_IMEI":
+            detail_data = {
+                "target_range": req.target_id or "UNKNOWN_RANGE",
+                "status": "BLOCKED",
+                "zones_confirmed": 3,
+            }
+            user_msg = f"IMEI block broadcast issued for {req.target_id or 'requested range'}."
+
+        elif action_type == "INTERCEPT_MESSAGE":
+            report_id = f"MSG-{uuid.uuid4().hex[:6].upper()}"
+            message_type = req.target_id or "SUSPICIOUS_MESSAGE"
+            db.add(
+                CrimeReport(
+                    report_id=report_id,
+                    category="bank",
+                    scam_type=message_type,
+                    platform="MESSAGE_INTERCEPTOR",
+                    priority="HIGH",
+                    status="PENDING",
+                    metadata_json=req.metadata or {},
+                )
+            )
+            detail_data = {"report_id": report_id, "status": "QUEUED", "message_type": message_type}
+            user_msg = f"Message intercept queued as {report_id}."
+
+        elif action_type == "VIEW_VPA_HISTORY" and req.target_id:
+            vpa = req.target_id.lower()
+            reports = []
+            for report in db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(25).all():
+                metadata = report.metadata_json or {}
+                if metadata.get("vpa") == vpa:
+                    reports.append(report)
+            npci_logs = (
+                db.query(NPCILog)
+                .filter(NPCILog.vpa == vpa)
+                .order_by(NPCILog.created_at.desc())
+                .limit(10)
+                .all()
+            )
+            freeze_actions = (
+                db.query(SystemAction)
+                .filter(SystemAction.action_type == "FREEZE_VPA", SystemAction.target_id == vpa)
+                .order_by(SystemAction.created_at.desc())
+                .limit(10)
+                .all()
+            )
+            detail_data = {
+                "vpa": vpa,
+                "reports": [
+                    {
+                        "report_id": report.report_id,
+                        "scam_type": report.scam_type,
+                        "priority": report.priority,
+                        "status": report.status,
+                        "created_at": report.created_at.isoformat() if report.created_at else None,
+                    }
+                    for report in reports
+                ],
+                "npci_events": [
+                    {
+                        "reference_id": row.reference_id,
+                        "action": row.action,
+                        "status_code": row.status_code,
+                        "message": row.message,
+                        "created_at": row.created_at.isoformat() if row.created_at else None,
+                    }
+                    for row in npci_logs
+                ],
+                "freeze_actions": [
+                    {
+                        "action_id": row.id,
+                        "created_at": row.created_at.isoformat() if row.created_at else None,
+                        "metadata": row.metadata_json or {},
+                    }
+                    for row in freeze_actions
+                ],
+            }
+            user_msg = f"Loaded VPA history for {vpa}."
+
+        elif action_type == "VIEW_CASE" and req.target_id:
+            report = _find_report_by_id(db, req.target_id)
+            payload = _report_lookup_payload(report, fallback_id=req.target_id)
+            detail_data = {
+                **payload,
+                "timeline": [
+                    f"{payload['created_at']}: Complaint created",
+                    f"{datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}: Evidence packet reviewed",
+                ],
+            }
+            user_msg = f"Case dossier {payload['case_id']} loaded."
+
+        elif action_type == "VIEW_INTEL" and req.target_id:
+            session = db.query(HoneypotSession).filter(HoneypotSession.session_id == req.target_id).first()
+            if session:
+                messages = (
+                    db.query(HoneypotMessage)
+                    .filter(HoneypotMessage.session_id == session.id)
+                    .order_by(HoneypotMessage.timestamp.desc())
+                    .limit(5)
+                    .all()
+                )
+                detail_data = {
+                    "session_id": session.session_id,
+                    "caller_num": session.caller_num,
+                    "status": session.status,
+                    "persona": session.persona,
+                    "recent_messages": [message.content for message in reversed(messages) if message.content],
+                    "created_at": session.created_at.isoformat() if session.created_at else None,
+                }
+                user_msg = f"Live intelligence for {session.session_id} loaded."
         elif action_type == "CONNECT_TICKER":
             detail_data = {
                 "ticker_items": [

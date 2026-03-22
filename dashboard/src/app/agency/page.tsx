@@ -68,6 +68,8 @@ export default function AgencyPage() {
     const [data, setData] = useState<AgencyData | null>(null);
     const [loading, setLoading] = useState(true);
     const [frozenVPAs, setFrozenVPAs] = useState<Set<string>>(new Set());
+    const [selectedCaseDetail, setSelectedCaseDetail] = useState<any>(null);
+    const [selectedIntelDetail, setSelectedIntelDetail] = useState<any>(null);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -215,9 +217,11 @@ export default function AgencyPage() {
                                                 GENERATE DISPUTE LETTER
                                             </button>
                                             <button
-                                                onClick={() => {
-                                                    performAction('VIEW_CASE', c.id);
-                                                    toast.success(`Case ${c.id} dossier loaded. Type: ${c.type}, Amount: ${c.amount}, Platform: ${c.platform}`, { duration: 4000 });
+                                                onClick={async () => {
+                                                    const result = await performAction('VIEW_CASE', c.id);
+                                                    if (result?.detail) {
+                                                        setSelectedCaseDetail(result.detail);
+                                                    }
                                                 }}
                                                 className="p-2 bg-indblue text-white rounded-xl shadow-lg group-hover:bg-indblue/90 transition-all">
                                                 <ChevronRight size={18} />
@@ -226,6 +230,19 @@ export default function AgencyPage() {
                                     </div>
                                 ))}
                             </div>
+
+                            {selectedCaseDetail && (
+                                <div className="mt-6 p-6 rounded-3xl border border-indblue/10 bg-indblue/5">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-indblue">Loaded Case Dossier</p>
+                                    <h4 className="text-lg font-black text-charcoal mt-2">{selectedCaseDetail.case_id}</h4>
+                                    <p className="text-sm text-silver mt-2">{selectedCaseDetail.scam_type} · {selectedCaseDetail.platform}</p>
+                                    <div className="mt-4 space-y-2">
+                                        {(selectedCaseDetail.timeline || []).map((item: string) => (
+                                            <p key={item} className="text-[11px] text-charcoal">{item}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
@@ -376,9 +393,11 @@ export default function AgencyPage() {
                                                 <p className="text-[9px] text-silver font-medium mt-1">Intercepted Data Extracted</p>
                                             </div>
                                             <button
-                                                onClick={() => {
-                                                    performAction('VIEW_INTEL', sim.id);
-                                                    toast.success(`Dossier for ${sim.id} opened. Forensic analysis in progress.`);
+                                                onClick={async () => {
+                                                    const result = await performAction('VIEW_INTEL', sim.id);
+                                                    if (result?.detail) {
+                                                        setSelectedIntelDetail(result.detail);
+                                                    }
                                                 }}
                                                 className="p-3 bg-white border border-silver/10 text-indblue rounded-xl shadow-sm group-hover:bg-saffron group-hover:text-white transition-all">
                                                 <ChevronRight size={18} />
@@ -387,6 +406,19 @@ export default function AgencyPage() {
                                     </div>
                                 ))}
                             </div>
+
+                            {selectedIntelDetail && (
+                                <div className="mt-6 p-6 rounded-3xl border border-saffron/20 bg-saffron/5">
+                                    <p className="text-[10px] font-bold uppercase tracking-widest text-saffron">Live Intercept Intel</p>
+                                    <h4 className="text-lg font-black text-indblue mt-2">{selectedIntelDetail.session_id}</h4>
+                                    <p className="text-sm text-silver mt-2">{selectedIntelDetail.caller_num} · {selectedIntelDetail.persona}</p>
+                                    <div className="mt-4 space-y-2">
+                                        {(selectedIntelDetail.recent_messages || []).map((message: string, index: number) => (
+                                            <p key={`${message}-${index}`} className="text-[11px] text-charcoal">{message}</p>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import FeedModal from "@/components/FeedModal";
+import { useRouter } from "next/navigation";
 
 
 interface CallRecord {
@@ -40,6 +41,7 @@ interface DetectionStats {
 }
 
 export default function DetectionGrid() {
+    const router = useRouter();
     const { t } = useLanguage();
     const { performAction } = useActions();
     const [calls, setCalls] = useState<CallRecord[]>([]);
@@ -49,6 +51,8 @@ export default function DetectionGrid() {
     const [filterRisk, setFilterRisk] = useState<'ALL' | 'SCAM'>('ALL');
     const [selectedCall, setSelectedCall] = useState<any>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [page, setPage] = useState(1);
+    const pageSize = 5;
 
     useEffect(() => {
         const fetchData = async () => {
@@ -84,6 +88,18 @@ export default function DetectionGrid() {
         const matchesRisk = filterRisk === 'ALL' || call.status === 'Scam';
         return matchesSearch && matchesRisk;
     });
+    const totalPages = Math.max(1, Math.ceil(filteredCalls.length / pageSize));
+    const currentCalls = filteredCalls.slice((page - 1) * pageSize, page * pageSize);
+
+    useEffect(() => {
+        setPage(1);
+    }, [searchQuery, filterRisk]);
+
+    useEffect(() => {
+        if (page > totalPages) {
+            setPage(totalPages);
+        }
+    }, [page, totalPages]);
 
     return (
         <div className="space-y-6 sm:space-y-8">
@@ -165,7 +181,7 @@ export default function DetectionGrid() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-boxbg">
-                            {filteredCalls.map((call) => (
+                            {currentCalls.map((call) => (
                                 <tr key={call.id} className="hover:bg-boxbg/30 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
@@ -218,7 +234,12 @@ export default function DetectionGrid() {
                                             </button>
                                             {call.honeypot_candidate ? (
                                                 <button
-                                                    onClick={() => performAction('ROUTE_TO_HONEYPOT', call.number, { location: call.location, source: 'detection_grid' })}
+                                                    onClick={async () => {
+                                                        const result = await performAction('ROUTE_TO_HONEYPOT', call.number, { location: call.location, source: 'detection_grid' });
+                                                        if (result?.detail?.session_id) {
+                                                            router.push("/honeypot");
+                                                        }
+                                                    }}
                                                     className="text-[10px] font-bold text-redalert uppercase tracking-widest hover:text-indblue transition-colors"
                                                 >
                                                     Route
@@ -246,17 +267,35 @@ export default function DetectionGrid() {
 
                 <div className="p-4 bg-boxbg/20 flex justify-between items-center px-6">
                     <button
-                        onClick={() => performAction('PREV_PAGE')}
+                        onClick={() => {
+                            if (page > 1) {
+                                void performAction('PREV_PAGE', String(page - 1));
+                                setPage((current) => Math.max(1, current - 1));
+                            }
+                        }}
+                        disabled={page === 1}
                         className="text-[10px] font-bold text-silver uppercase hover:text-indblue transition-colors">
                         {t("previous")}
                     </button>
+                    <span className="text-[10px] font-bold text-silver uppercase tracking-widest">
+                        Page {page} / {totalPages}
+                    </span>
                     <button
-                        onClick={() => performAction('VIEW_HISTORY')}
+                        onClick={() => {
+                            void performAction('VIEW_HISTORY', 'DETECTION_GRID');
+                            router.push("/history");
+                        }}
                         className="text-[10px] font-bold text-silver uppercase tracking-widest hover:text-indblue transition-colors">
                         {t("view_history")}
                     </button>
                     <button
-                        onClick={() => performAction('NEXT_PAGE')}
+                        onClick={() => {
+                            if (page < totalPages) {
+                                void performAction('NEXT_PAGE', String(page + 1));
+                                setPage((current) => Math.min(totalPages, current + 1));
+                            }
+                        }}
+                        disabled={page === totalPages}
                         className="text-[10px] font-bold text-silver uppercase hover:text-indblue transition-colors">
                         {t("next")}
                     </button>

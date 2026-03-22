@@ -29,6 +29,23 @@ interface ScoreStats {
     factors: { label: string; value: string; percent: number }[];
 }
 
+interface ScoreHistory {
+    citizens: {
+        username: string;
+        full_name?: string | null;
+        score: number;
+        phone_number?: string | null;
+        created_at?: string | null;
+    }[];
+    recent_actions: {
+        action_type: string;
+        target_id?: string | null;
+        status: string;
+        created_at?: string | null;
+        metadata?: Record<string, unknown>;
+    }[];
+}
+
 export default function ScorePage() {
     const { performAction, downloadSimulatedFile } = useActions();
     const [citizenId, setCitizenId] = useState("");
@@ -36,17 +53,21 @@ export default function ScorePage() {
     const [shownScore, setShownScore] = useState<number | null>(null);
     const [data, setData] = useState<ScoreStats | null>(null);
     const [isRefreshing, setIsRefreshing] = useState(false);
+    const [history, setHistory] = useState<ScoreHistory | null>(null);
+    const [showHistory, setShowHistory] = useState(false);
+
+    const fetchStats = async () => {
+        const res = await fetch(`${API_BASE}/system/stats/score`);
+        if (!res.ok) {
+            throw new Error("Unable to load score stats.");
+        }
+        setData(await res.json());
+    };
 
     useEffect(() => {
-        const fetchStats = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/system/stats/score`);
-                if (res.ok) setData(await res.json());
-            } catch (error) {
-                console.error("Error fetching score stats:", error);
-            }
-        };
-        fetchStats();
+        fetchStats().catch((error) => {
+            console.error("Error fetching score stats:", error);
+        });
     }, []);
 
     const computeScore = async () => {
@@ -80,13 +101,17 @@ export default function ScorePage() {
                 </div>
                 <div className="flex gap-2">
                     <button
-                        onClick={() => {
+                        onClick={async () => {
                             setIsRefreshing(true);
-                            performAction('REFRESH_SCORE');
-                            setTimeout(() => {
-                                setIsRefreshing(false);
+                            try {
+                                await performAction('REFRESH_SCORE');
+                                await fetchStats();
                                 toast.success("Cyber Immunity Index Updated");
-                            }, 1500);
+                            } catch (error) {
+                                toast.error("Unable to refresh score analysis.");
+                            } finally {
+                                setIsRefreshing(false);
+                            }
                         }}
                         disabled={isRefreshing}
                         className="px-4 py-2 bg-white border border-silver/10 rounded-lg text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors disabled:opacity-50"
@@ -95,10 +120,19 @@ export default function ScorePage() {
                         {isRefreshing ? "Calculating..." : "Refresh Analysis"}
                     </button>
                     <button
-                        onClick={() => performAction('VIEW_SCORE_HISTORY')}
+                        onClick={async () => {
+                            setShowHistory((current) => !current);
+                            if (!history) {
+                                await performAction('VIEW_SCORE_HISTORY');
+                                const res = await fetch(`${API_BASE}/system/stats/score/history`);
+                                if (res.ok) {
+                                    setHistory(await res.json());
+                                }
+                            }
+                        }}
                         className="px-4 py-2 bg-white border border-silver/10 rounded-lg text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors">
                         <Activity size={16} className="text-silver" />
-                        View History
+                        {showHistory ? "Hide History" : "View History"}
                     </button>
                     <div className="bg-white p-3 rounded-2xl border border-silver/10 shadow-sm flex items-center gap-3">
                         <div className="w-2 h-2 rounded-full bg-indgreen animate-ping" />
@@ -106,6 +140,39 @@ export default function ScorePage() {
                     </div>
                 </div>
             </div>
+
+            {showHistory && (
+                <div className="bg-white p-6 rounded-3xl border border-silver/10 shadow-sm">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                        <div>
+                            <h4 className="text-sm font-bold text-indblue mb-4">Top Protected Citizens</h4>
+                            <div className="space-y-3">
+                                {(history?.citizens || []).map((citizen) => (
+                                    <div key={citizen.username} className="p-3 bg-boxbg rounded-xl border border-silver/10 flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-bold text-charcoal">{citizen.full_name || citizen.username}</p>
+                                            <p className="text-[10px] text-silver">{citizen.phone_number || citizen.username}</p>
+                                        </div>
+                                        <span className="text-sm font-black text-indblue">{citizen.score}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-indblue mb-4">Recent Score Signals</h4>
+                            <div className="space-y-3">
+                                {(history?.recent_actions || []).map((action, index) => (
+                                    <div key={`${action.action_type}-${index}`} className="p-3 bg-boxbg rounded-xl border border-silver/10">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-indblue">{action.action_type.replaceAll("_", " ")}</p>
+                                        <p className="text-xs text-charcoal mt-1">{action.target_id || "National score workflow"}</p>
+                                        <p className="text-[10px] text-silver mt-2">{action.created_at ? new Date(action.created_at).toLocaleString() : "Unknown time"}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
@@ -253,10 +320,10 @@ export default function ScorePage() {
                         <h4 className="font-bold text-indblue text-sm mb-4">Factor Weightage (v2.1)</h4>
                         <div className="space-y-4">
                             {[
-                                { label: 'Inoculation Drills', weight: '--', icon: Activity },
-                                { label: 'VPA Reputation', weight: '--', icon: IndianRupee },
-                                { label: 'Deepfake History', weight: '--', icon: ShieldCheck },
-                                { label: 'Report Accuracy', weight: '--', icon: BarChart3 },
+                                { label: 'Consent Completion', weight: `${Math.round(data?.factors?.[0]?.percent || 0)}%`, icon: Activity },
+                                { label: 'Trust Circle Coverage', weight: `${Math.round(data?.factors?.[1]?.percent || 0)}%`, icon: IndianRupee },
+                                { label: 'Open Recovery Exposure', weight: `${Math.round(data?.factors?.[2]?.percent || 0)}%`, icon: ShieldCheck },
+                                { label: 'Average Score', weight: `${Math.round(data?.factors?.[3]?.percent || 0)}%`, icon: BarChart3 },
                             ].map((f, i) => (
                                 <div key={i} className="flex items-center justify-between p-3 bg-boxbg rounded-xl">
                                     <div className="flex items-center gap-3">

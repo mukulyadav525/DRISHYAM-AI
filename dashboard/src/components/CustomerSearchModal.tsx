@@ -7,9 +7,10 @@ interface CustomerSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
     data: any;
+    onDownload?: () => void;
 }
 
-export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerSearchModalProps) {
+export default function CustomerSearchModal({ isOpen, onClose, data, onDownload }: CustomerSearchModalProps) {
     if (!data) return null;
 
     return (
@@ -100,7 +101,10 @@ export default function CustomerSearchModal({ isOpen, onClose, data }: CustomerS
                                     <History size={14} />
                                     <span className="text-[10px] font-bold uppercase tracking-wider">Last Activity: {data?.details?.last_active ? new Date(data.details.last_active).toLocaleString() : 'N/A'}</span>
                                 </div>
-                                <button className="px-8 py-3 bg-indblue text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-charcoal transition-all shadow-xl shadow-indblue/20">
+                                <button
+                                    onClick={onDownload}
+                                    className="px-8 py-3 bg-indblue text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-charcoal transition-all shadow-xl shadow-indblue/20"
+                                >
                                     DOWNLOAD AUDIT LOG
                                 </button>
                             </div>

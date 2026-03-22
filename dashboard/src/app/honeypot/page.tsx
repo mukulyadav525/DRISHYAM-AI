@@ -39,6 +39,14 @@ interface HoneypotStats {
     fatigue_index: string;
 }
 
+interface SessionSummary {
+    transcript?: { text: string; role: string }[];
+    live_summary?: {
+        last_scammer_message?: string | null;
+        fatigue_score?: number;
+    };
+}
+
 export default function HoneypotPage() {
     const { t } = useLanguage();
     const { performAction } = useActions();
@@ -46,33 +54,57 @@ export default function HoneypotPage() {
     const [personas, setPersonas] = useState<Persona[]>([]);
     const [stats, setStats] = useState<HoneypotStats | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [sessionSummaries, setSessionSummaries] = useState<Record<string, SessionSummary>>({});
+
+    const fetchData = async () => {
+        try {
+            const [sessionsRes, personasRes, statsRes] = await Promise.all([
+                fetch(`${API_BASE}/honeypot/sessions`),
+                fetch(`${API_BASE}/voice/personas`),
+                fetch(`${API_BASE}/honeypot/stats`)
+            ]);
+
+            const nextSessions = sessionsRes.ok ? await sessionsRes.json() : [];
+            setSessions(Array.isArray(nextSessions) ? nextSessions : []);
+
+            if (personasRes.ok) {
+                const data = await personasRes.json();
+                setPersonas(data?.personas || []);
+            }
+            if (statsRes.ok) setStats(await statsRes.json());
+
+            const summaryEntries = await Promise.all(
+                (Array.isArray(nextSessions) ? nextSessions : []).slice(0, 8).map(async (session: Session) => {
+                    const res = await fetch(`${API_BASE}/honeypot/session/${encodeURIComponent(session.session_id)}/summary`);
+                    if (!res.ok) {
+                        return [session.session_id, null] as const;
+                    }
+                    return [session.session_id, await res.json()] as const;
+                })
+            );
+            setSessionSummaries(
+                Object.fromEntries(summaryEntries.filter((entry): entry is [string, SessionSummary] => Boolean(entry[1])))
+            );
+        } catch (error) {
+            console.error("Error fetching honeypot data:", error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [sessionsRes, personasRes, statsRes] = await Promise.all([
-                    fetch(`${API_BASE}/honeypot/sessions`),
-                    fetch(`${API_BASE}/voice/personas`),
-                    fetch(`${API_BASE}/honeypot/stats`)
-                ]);
-
-                if (sessionsRes.ok) setSessions(await sessionsRes.json());
-                if (personasRes.ok) {
-                    const data = await personasRes.json();
-                    setPersonas(data?.personas || []);
-                }
-                if (statsRes.ok) setStats(await statsRes.json());
-            } catch (error) {
-                console.error("Error fetching honeypot data:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-        const interval = setInterval(fetchData, 20000);
+        void fetchData();
+        const interval = setInterval(() => {
+            void fetchData();
+        }, 20000);
         return () => clearInterval(interval);
     }, []);
+
+    const runSessionAction = async (action: string, targetId?: string, metadata?: Record<string, unknown>) => {
+        const result = await performAction(action, targetId, metadata);
+        await fetchData();
+        return result;
+    };
 
     if (isLoading && sessions.length === 0) {
         return (
@@ -92,14 +124,19 @@ export default function HoneypotPage() {
                 </div>
                 <div className="flex gap-3 flex-shrink-0">
                     <button
-                        onClick={() => performAction('OPTIMIZE_STRATEGIES')}
+                        onClick={async () => {
+                            const result = await runSessionAction('OPTIMIZE_STRATEGIES');
+                            if (result?.detail?.recommendation) {
+                                toast.success(result.detail.recommendation);
+                            }
+                        }}
                         className="px-3 sm:px-4 py-2 bg-white border border-silver/10 rounded-lg text-xs sm:text-sm font-semibold text-charcoal hover:bg-boxbg flex items-center gap-2 transition-colors">
                         <Brain size={16} className="text-saffron" />
                         <span className="hidden sm:inline">{t("optimize_strategies")}</span>
                         <span className="sm:hidden">Optimize</span>
                     </button>
                     <button
-                        onClick={() => performAction('LAUNCH_PROBE')}
+                        onClick={() => void runSessionAction('LAUNCH_PROBE')}
                         className="px-3 sm:px-4 py-2 bg-saffron text-white rounded-lg text-xs sm:text-sm font-semibold hover:bg-deeporange transition-colors">
                         {t("launch_probe")}
                     </button>
@@ -121,6 +158,15 @@ export default function HoneypotPage() {
                         <div className="divide-y divide-boxbg">
                             {(sessions || []).map((session) => (
                                 <div key={session.id} className="p-6 hover:bg-boxbg/10 transition-colors">
+                                    {(() => {
+                                        const summary = sessionSummaries[session.session_id];
+                                        const transcriptLine =
+                                            summary?.live_summary?.last_scammer_message ||
+                                            summary?.transcript?.[summary.transcript.length - 1]?.text ||
+                                            t("sample_transcript_placeholder");
+                                        const fatigueScore = summary?.live_summary?.fatigue_score;
+                                        return (
+                                            <>
                                     <div className="flex justify-between items-start mb-4">
                                         <div className="flex gap-4">
                                             <div className="w-12 h-12 rounded-xl bg-indblue/10 flex items-center justify-center text-indblue">
@@ -147,23 +193,31 @@ export default function HoneypotPage() {
                                             <Terminal size={12} /> {t("live_transcript")}
                                         </p>
                                         <p className="text-xs italic text-charcoal/80 leading-relaxed">
-                                            {t("sample_transcript_placeholder")}
+                                            {transcriptLine}
                                         </p>
+                                        {typeof fatigueScore === "number" ? (
+                                            <p className="text-[10px] font-bold text-saffron uppercase tracking-widest mt-3">
+                                                Fatigue Score {fatigueScore}%
+                                            </p>
+                                        ) : null}
                                     </div>
 
                                     <div className="flex justify-between items-center">
                                         <div className="flex gap-2">
                                             <button
-                                                onClick={() => performAction('PAUSE_SESSION', session.session_id)}
+                                                onClick={() => void runSessionAction('PAUSE_SESSION', session.session_id)}
                                                 className="p-2 bg-boxbg text-silver rounded-lg hover:text-redalert transition-colors"><Pause size={16} /></button>
                                             <button
-                                                onClick={() => performAction('INTERVENE_SESSION', session.session_id)}
+                                                onClick={() => void runSessionAction('INTERVENE_SESSION', session.session_id)}
                                                 className="p-2 bg-boxbg text-silver rounded-lg hover:text-indblue transition-colors hover:bg-indblue/5 font-bold text-[10px] uppercase px-4">{t("intervene")}</button>
                                         </div>
                                         <div className="text-[10px] font-bold text-indgreen uppercase tracking-widest flex items-center gap-1">
                                             <Mic size={12} /> {t("audio_verified")}
                                         </div>
                                     </div>
+                                            </>
+                                        );
+                                    })()}
                                 </div>
                             ))}
                         </div>
@@ -192,7 +246,12 @@ export default function HoneypotPage() {
                             ))}
                         </div>
                         <button
-                            onClick={() => performAction('CREATE_PERSONA')}
+                            onClick={() => void runSessionAction('CREATE_PERSONA', undefined, {
+                                name: `Adaptive Persona ${personas.length + 1}`,
+                                language: "hi-IN",
+                                speaker: "Adaptive Voice",
+                                pace: 0.95,
+                            })}
                             className="w-full py-3 mt-6 border-2 border-dashed border-silver/20 rounded-xl text-[10px] font-bold text-silver uppercase tracking-widest hover:border-saffron/40 hover:text-saffron transition-all">
                             {t("create_persona")}
                         </button>

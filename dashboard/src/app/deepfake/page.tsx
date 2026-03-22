@@ -15,6 +15,7 @@ import {
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import FeedModal from "@/components/FeedModal";
+import { toast } from "react-hot-toast";
 
 
 interface DeepfakeStats {
@@ -120,7 +121,7 @@ export default function DeepfakePage() {
                                 } else if (statusData.status === "FAILED") {
                                     clearInterval(pollInterval);
                                     setIsScanning(false);
-                                    alert("Analysis failed. Please try again.");
+                                    toast.error("Analysis failed. Please try again.");
                                 } else {
                                     // Increment progress slightly while waiting
                                     setProgress(prev => Math.min(prev + 2, 98));
@@ -130,6 +131,7 @@ export default function DeepfakePage() {
                             console.error("Polling Error:", err);
                             clearInterval(pollInterval);
                             setIsScanning(false);
+                            toast.error("Forensic analysis polling failed.");
                         }
                     }, 3000);
                 } else {
@@ -138,10 +140,12 @@ export default function DeepfakePage() {
                 }
             } else {
                 setIsScanning(false);
+                toast.error("Forensic service request failed.");
             }
         } catch (err) {
             console.error("Forensic API Error:", err);
             setIsScanning(false);
+            toast.error("Unable to reach the forensic engine.");
         }
     };
 
@@ -167,9 +171,12 @@ export default function DeepfakePage() {
                 document.body.appendChild(a);
                 a.click();
                 a.remove();
+                window.URL.revokeObjectURL(url);
+                toast.success("Forensic report downloaded.");
             }
         } catch (err) {
             console.error("Download Error:", err);
+            toast.error("Could not download the forensic report.");
         }
     };
 

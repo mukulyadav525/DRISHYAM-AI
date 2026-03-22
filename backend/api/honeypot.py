@@ -360,7 +360,8 @@ async def list_honeypot_sessions(db: Session = Depends(get_db)):
         except Exception:
             age_sec = 0
         result.append({
-            "id": s.session_id,
+            "id": s.id,
+            "session_id": s.session_id,
             "persona": s.persona,
             "caller_num": s.caller_num,
             "direction": s.direction,

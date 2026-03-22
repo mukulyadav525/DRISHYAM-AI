@@ -17,10 +17,12 @@ import { toast } from "react-hot-toast";
 
 interface UpiModuleProps {
   performAction: (action: string, detail?: string) => any;
+  downloadSimulatedFile: (category: string, fileType?: string, options?: { targetId?: string; context?: Record<string, unknown> }) => Promise<any>;
 }
 
 export default function UpiModule({
   performAction,
+  downloadSimulatedFile,
 }: UpiModuleProps) {
   const [activeUpiTab, setActiveUpiTab] = useState<'lookup' | 'qr' | 'message'>('lookup');
   const [upiId, setUpiId] = useState("");
@@ -193,7 +195,14 @@ export default function UpiModule({
                               Enforce NPCI Hard Block
                             </button>
                             <button 
-                              onClick={() => toast.success("NPCI Dispute Grievance Generated")}
+                              onClick={() => void downloadSimulatedFile("NPCI_GRIEVANCE", "pdf", {
+                                targetId: upiId || undefined,
+                                context: {
+                                  txn_id: lookupResult?.npci_block_ref || undefined,
+                                  bank_name: lookupResult?.bank_name,
+                                  scam_type: "UPI Fraud",
+                                },
+                              })}
                               className="bg-white border border-silver/20 text-charcoal px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-boxbg transition-all"
                             >
                               Generate Grievance
@@ -258,23 +267,26 @@ export default function UpiModule({
             <h4 className="font-bold text-sm mb-4 border-b border-white/10 pb-2 uppercase tracking-tighter">UPI Shield Stats</h4>
             <div className="space-y-4">
               <div className="flex justify-between items-end">
-                <div><p className="text-[9px] uppercase font-bold text-silver">VPA Checks (24h)</p><p className="text-2xl font-bold">{upiStats?.dashboard?.vpa_checks_24h || "1.2k"}</p></div>
-                <div className="text-right"><p className="text-[9px] uppercase font-bold text-indgreen">Flags</p><p className="text-lg font-bold">{upiStats?.dashboard?.flags || "14"}</p></div>
+                <div><p className="text-[9px] uppercase font-bold text-silver">VPA Checks (24h)</p><p className="text-2xl font-bold">{upiStats?.dashboard?.vpa_checks_24h || "0"}</p></div>
+                <div className="text-right"><p className="text-[9px] uppercase font-bold text-indgreen">Flags</p><p className="text-lg font-bold">{upiStats?.dashboard?.flags || "0"}</p></div>
               </div>
               <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <div className="bg-saffron h-full" style={{ width: `${upiStats?.dashboard?.vpa_risk_percent || 15}%` }} />
+                <div className="bg-saffron h-full" style={{ width: `${upiStats?.dashboard?.vpa_risk_percent || 0}%` }} />
               </div>
             </div>
           </div>
           <div className="bg-white p-6 rounded-3xl border border-silver/10 shadow-sm">
             <h4 className="font-bold text-indblue text-xs mb-4 uppercase tracking-widest">Threat Feed</h4>
             <div className="space-y-3">
-              {(upiStats?.threat_feed || [{ type: 'ID_COLLECT', risk: 'High', time: '2m ago' }, { type: 'QR_OVERLAY', risk: 'Medium', time: '15m ago' }]).slice(0, 3).map((threat: any, i: number) => (
+              {(upiStats?.threat_feed || []).slice(0, 3).map((threat: any, i: number) => (
                 <div key={i} className="flex items-center justify-between p-3 bg-boxbg rounded-xl border border-silver/5">
                   <div><p className="text-[9px] font-black text-indblue uppercase">{threat.type}</p><p className="text-[8px] text-silver font-bold uppercase">{threat.time}</p></div>
                   <span className={`text-[8px] px-2 py-0.5 rounded-full font-bold uppercase ${threat.risk === 'High' ? 'bg-red-100 text-redalert' : 'bg-orange-100 text-saffron'}`}>{threat.risk}</span>
                 </div>
               ))}
+              {!upiStats?.threat_feed?.length ? (
+                <p className="text-[10px] text-silver italic">No active UPI threats detected.</p>
+              ) : null}
             </div>
           </div>
         </div>
