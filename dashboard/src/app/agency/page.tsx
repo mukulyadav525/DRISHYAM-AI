@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     Building2,
     Shield,
@@ -71,24 +71,35 @@ export default function AgencyPage() {
     const [selectedCaseDetail, setSelectedCaseDetail] = useState<any>(null);
     const [selectedIntelDetail, setSelectedIntelDetail] = useState<any>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await fetch(`${API_BASE}/system/stats/agency`);
-                if (res.ok) {
-                    const json = await res.json();
-                    setData(json);
-                }
-            } catch (err) {
-                console.error("Agency fetch error:", err);
-            } finally {
-                setLoading(false);
+    const fetchData = useCallback(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/system/stats/agency`);
+            if (res.ok) {
+                const json = await res.json();
+                setData(json);
             }
-        };
-        fetchData();
-        const interval = setInterval(fetchData, 5000); // Live polling for monitoring
-        return () => clearInterval(interval);
+        } catch (err) {
+            console.error("Agency fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
+
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
+    useEffect(() => {
+        if (activeRole !== 'MONITOR') {
+            return;
+        }
+        const interval = setInterval(() => {
+            if (document.visibilityState === "visible") {
+                fetchData();
+            }
+        }, 30000);
+        return () => clearInterval(interval);
+    }, [activeRole, fetchData]);
 
     const handleFreezeVPA = async (vpa: string) => {
         const id = toast.loading(`Initiating freeze on ${vpa}...`);
@@ -333,7 +344,7 @@ export default function AgencyPage() {
                                             toast.success("IMEI Range Successfully Blocked. Signal confirmed across 3 LSA zones.", { id, duration: 4000 });
                                             setIsBlockingIMEI(false);
                                             // Refresh data to show updated blocked count
-                                            fetch(`${API_BASE}/system/stats/agency`).then(r => r.json()).then(d => setData(d)).catch(() => { });
+                                            fetchData();
                                         }, 2200);
                                     }}
                                     disabled={isBlockingIMEI}

@@ -22,6 +22,9 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RECORDINGS_PATH = os.path.join(BACKEND_DIR, RECORDINGS_DIR)
 os.makedirs(RECORDINGS_PATH, exist_ok=True)
 
+PERSONA_CACHE_TTL_SECONDS = 60
+_persona_cache: dict[str, object] = {"expires_at": None, "payload": None}
+
 # ------------------------------------------------------------------
 # REQUEST / RESPONSE MODELS
 # ------------------------------------------------------------------
@@ -172,12 +175,18 @@ async def speech_to_text(request: STTRequest):
 
 @router.get("/personas")
 async def list_personas(db: Session = Depends(get_db)):
+    cached_payload = _persona_cache.get("payload")
+    cached_expires_at = _persona_cache.get("expires_at")
+    now = datetime.datetime.utcnow()
+    if isinstance(cached_expires_at, datetime.datetime) and cached_payload and cached_expires_at > now:
+        return cached_payload
+
     start_time = datetime.datetime.now()
     personas = db.query(HoneypotPersona).all()
     duration = (datetime.datetime.now() - start_time).total_seconds()
     logger.info(f"[PERF] Personas DB query took {duration:.4f}s")
     if not personas:
-        return {
+        payload = {
             "personas": [
                 {"name": "Elderly Uncle", "language": "hi-IN", "speaker": "Male", "pace": 0.85},
                 {"name": "Rural Farmer", "language": "hi-IN", "speaker": "Male", "pace": 0.9},
@@ -186,4 +195,9 @@ async def list_personas(db: Session = Depends(get_db)):
                 {"name": "Busy Executive", "language": "en-IN", "speaker": "Female", "pace": 1.0},
             ]
         }
-    return {"personas": [{"name": p.name, "language": p.language, "speaker": p.speaker, "pace": p.pace} for p in personas]}
+    else:
+        payload = {"personas": [{"name": p.name, "language": p.language, "speaker": p.speaker, "pace": p.pace} for p in personas]}
+
+    _persona_cache["payload"] = payload
+    _persona_cache["expires_at"] = now + datetime.timedelta(seconds=PERSONA_CACHE_TTL_SECONDS)
+    return payload

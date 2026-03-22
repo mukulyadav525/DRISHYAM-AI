@@ -2,6 +2,7 @@ import datetime
 from collections import defaultdict
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from core.access_control import authorize_agency_access
@@ -752,6 +753,18 @@ async def get_agency_stats(
     _route_access(db, current_user, "agency")
     reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(20).all()
     sessions = db.query(HoneypotSession).order_by(HoneypotSession.created_at.desc()).limit(10).all()
+    session_ids = [session.id for session in sessions]
+    message_counts = {
+        session_id: count
+        for session_id, count in (
+            db.query(HoneypotMessage.session_id, func.count(HoneypotMessage.id))
+            .filter(HoneypotMessage.session_id.in_(session_ids))
+            .group_by(HoneypotMessage.session_id)
+            .all()
+            if session_ids
+            else []
+        )
+    }
     freeze_actions = db.query(SystemAction).filter(SystemAction.action_type == "FREEZE_VPA").count()
     block_imei_actions = db.query(SystemAction).filter(SystemAction.action_type == "BLOCK_IMEI").count()
 
@@ -783,7 +796,6 @@ async def get_agency_stats(
 
     simulations = []
     for session in sessions:
-        message_count = db.query(HoneypotMessage).filter(HoneypotMessage.session_id == session.id).count()
         simulations.append(
             {
                 "id": session.session_id,
@@ -791,7 +803,7 @@ async def get_agency_stats(
                 "status": session.status,
                 "persona": session.persona,
                 "time": _time_ago(session.created_at),
-                "messages_count": message_count,
+                "messages_count": message_counts.get(session.id, 0),
             }
         )
 
