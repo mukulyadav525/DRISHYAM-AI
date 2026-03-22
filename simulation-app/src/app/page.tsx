@@ -349,6 +349,7 @@ export default function SimulationPortal() {
           <div className="text-center mb-4 w-full relative shrink-0 px-2">
             <button
               onClick={() => setActiveFeature("home")}
+              data-testid="feature-back-button"
               className="sm:absolute sm:left-0 sm:top-1/2 sm:-translate-y-1/2 mb-2 sm:mb-0 text-[10px] font-black text-indblue uppercase tracking-widest flex items-center gap-1 hover:text-saffron transition-colors"
             >
               <X size={14} /> Back to Safety Center

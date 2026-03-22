@@ -444,6 +444,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
           <button
             onClick={() => openFeature("chat")}
             disabled={isNavigating}
+            data-testid="feature-chat"
             className="rounded-[1.5rem] border border-white/15 bg-white/10 px-4 py-4 text-left transition hover:bg-white/15"
           >
             <PhoneCall size={18} className="mb-3" />
@@ -453,6 +454,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
           <button
             onClick={() => openFeature("upi")}
             disabled={isNavigating}
+            data-testid="feature-upi"
             className="rounded-[1.5rem] border border-white/15 bg-white/10 px-4 py-4 text-left transition hover:bg-white/15"
           >
             <Zap size={18} className="mb-3" />
@@ -462,6 +464,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
           <button
             onClick={() => openFeature("bharat")}
             disabled={isNavigating}
+            data-testid="feature-bharat"
             className="rounded-[1.5rem] border border-white/15 bg-white/10 px-4 py-4 text-left transition hover:bg-white/15"
           >
             <Waves size={18} className="mb-3" />
@@ -471,6 +474,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
           <button
             onClick={() => openFeature("drills")}
             disabled={isNavigating}
+            data-testid="feature-drills"
             className="rounded-[1.5rem] border border-white/15 bg-white/10 px-4 py-4 text-left transition hover:bg-white/15"
           >
             <Sparkles size={18} className="mb-3" />
@@ -480,6 +484,7 @@ export default function CitizenHome({ customerId, setActiveFeature, endSession }
           <button
             onClick={() => openFeature("recovery")}
             disabled={isNavigating}
+            data-testid="feature-recovery"
             className="rounded-[1.5rem] border border-white/15 bg-white/10 px-4 py-4 text-left transition hover:bg-white/15"
           >
             <HeartHandshake size={18} className="mb-3" />

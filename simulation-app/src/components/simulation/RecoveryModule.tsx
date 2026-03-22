@@ -204,6 +204,7 @@ export default function RecoveryModule({ customerId }: RecoveryModuleProps) {
           <button
             onClick={() => void refreshCaseStatus()}
             disabled={!summary.latest_case_id || busyAction === "case_status"}
+            data-testid="recovery-refresh-button"
             className="inline-flex items-center gap-2 rounded-full bg-indblue px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white hover:bg-indblue/90 disabled:cursor-not-allowed disabled:bg-silver"
           >
             {busyAction === "case_status" ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
@@ -240,6 +241,7 @@ export default function RecoveryModule({ customerId }: RecoveryModuleProps) {
               <button
                 onClick={() => void card.action()}
                 disabled={busyAction === card.id}
+                data-testid={`recovery-action-${card.id}`}
                 className="mt-5 inline-flex items-center gap-2 rounded-full bg-saffron px-4 py-2 text-[11px] font-black uppercase tracking-[0.22em] text-white hover:bg-saffron/90 disabled:bg-silver"
               >
                 {busyAction === card.id ? <Loader2 size={14} className="animate-spin" /> : <ArrowRight size={14} />}

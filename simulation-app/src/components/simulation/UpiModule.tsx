@@ -202,6 +202,7 @@ export default function UpiModule({
           <button
             key={tab.id}
             onClick={() => setActiveUpiTab(tab.id as any)}
+            data-testid={`upi-tab-${tab.id}`}
             className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeUpiTab === tab.id ? 'bg-white shadow-sm text-indblue' : 'text-silver hover:text-charcoal'}`}
           >
             {tab.label}
@@ -221,8 +222,8 @@ export default function UpiModule({
               <div className="space-y-4 relative z-10">
                 <div className="p-1 bg-boxbg rounded-2xl border border-silver/10 flex items-center focus-within:border-saffron/50 transition-colors">
                   <div className="pl-4 text-silver"><Zap size={18} /></div>
-                  <input type="text" placeholder="Enter VPA (e.g., citizen@upi)" className="w-full bg-transparent p-4 text-sm font-bold text-indblue outline-none placeholder:text-silver/50" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
-                  <button onClick={handleLookup} disabled={isLookingUp} className="bg-indblue text-white px-6 py-3 rounded-xl m-1 text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all disabled:opacity-50">{isLookingUp ? "Verifying..." : "Check"}</button>
+                  <input type="text" placeholder="Enter VPA (e.g., citizen@upi)" data-testid="upi-lookup-input" className="w-full bg-transparent p-4 text-sm font-bold text-indblue outline-none placeholder:text-silver/50" value={upiId} onChange={(e) => setUpiId(e.target.value)} />
+                  <button onClick={handleLookup} disabled={isLookingUp} data-testid="upi-lookup-button" className="bg-indblue text-white px-6 py-3 rounded-xl m-1 text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all disabled:opacity-50">{isLookingUp ? "Verifying..." : "Check"}</button>
                 </div>
                 {lookupResult && (
                   <div className={`p-6 rounded-2xl border ${lookupResult.is_flagged ? 'bg-red-50 border-red-200' : 'bg-indgreen/5 border-indgreen/20'} animate-in fade-in slide-in-from-top-4 duration-500`}>
@@ -270,6 +271,7 @@ export default function UpiModule({
                                 }
                               }}
                               disabled={isProtecting}
+                              data-testid="upi-protect-button"
                               className="bg-indblue text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-charcoal transition-all disabled:opacity-50"
                             >
                               {isProtecting ? "Routing..." : "Notify Bank & Police"}
@@ -298,7 +300,7 @@ export default function UpiModule({
               <h3 className="text-xl font-bold text-indblue mb-2">QR Forensic Analysis</h3>
               <p className="text-silver text-sm max-w-sm mx-auto mb-8 italic">Analyzing destination overlay before payment initiation.</p>
               {!qrScanning && !forensicResult && (
-                <label className="cursor-pointer bg-indblue text-white px-8 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all inline-block shadow-lg">Upload QR Image<input type="file" className="hidden" accept="image/*" onChange={handleQRUpload} /></label>
+                <label className="cursor-pointer bg-indblue text-white px-8 py-4 rounded-2xl text-xs font-bold uppercase tracking-widest hover:bg-saffron transition-all inline-block shadow-lg">Upload QR Image<input type="file" data-testid="upi-qr-input" className="hidden" accept="image/*" onChange={handleQRUpload} /></label>
               )}
               {qrScanning && <div className="inline-flex items-center gap-3 text-indblue text-xs font-bold uppercase tracking-widest"><Loader2 className="animate-spin" size={16} /> Processing QR...</div>}
               {forensicResult && !qrScanning && (
@@ -327,8 +329,8 @@ export default function UpiModule({
           {activeUpiTab === 'message' && (
             <div className="bg-white p-8 rounded-3xl border border-silver/10 shadow-sm">
               <h3 className="text-xl font-bold text-indblue mb-6 flex items-center gap-2"><MessageSquare className="text-saffron" size={20} /> Pattern Scanner</h3>
-              <textarea className="w-full p-4 bg-boxbg border border-silver/10 rounded-2xl text-sm text-charcoal outline-none focus:border-saffron/40 resize-none min-h-[120px]" placeholder="Paste suspicious WhatsApp message..." value={messageText} onChange={(e) => setMessageText(e.target.value)} />
-              <button onClick={handleMessageScan} disabled={isMessageScanning || !messageText} className="mt-4 bg-indblue text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-charcoal transition-all disabled:opacity-50 flex items-center gap-2">{isMessageScanning && <Loader2 size={14} className="animate-spin" />}{isMessageScanning ? "Scanning..." : "Analyze Patterns"}</button>
+              <textarea data-testid="upi-message-input" className="w-full p-4 bg-boxbg border border-silver/10 rounded-2xl text-sm text-charcoal outline-none focus:border-saffron/40 resize-none min-h-[120px]" placeholder="Paste suspicious WhatsApp message..." value={messageText} onChange={(e) => setMessageText(e.target.value)} />
+              <button onClick={handleMessageScan} disabled={isMessageScanning || !messageText} data-testid="upi-message-scan-button" className="mt-4 bg-indblue text-white px-8 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-charcoal transition-all disabled:opacity-50 flex items-center gap-2">{isMessageScanning && <Loader2 size={14} className="animate-spin" />}{isMessageScanning ? "Scanning..." : "Analyze Patterns"}</button>
               {scanResult && (
                 <div className={`mt-6 p-6 rounded-2xl border ${scanResult.verdict === 'SAFE' ? 'bg-indgreen/5 border-indgreen/20' : 'bg-red-50 border-red-200'}`}>
                   <div className="flex items-center gap-4">

@@ -1363,16 +1363,16 @@ FEATURE GROUP 1: Test Strategy & Core Tests
 QA31-01 | Define complete QA strategy | Half Done
 QA31-02 | Write unit tests | Half Done
 QA31-03 | Write integration tests | Half Done
-QA31-04 | Write contract tests | Not Done
-QA31-05 | Write E2E tests | Not Done
+QA31-04 | Write contract tests | Complete
+QA31-05 | Write E2E tests | Complete
 
 FEATURE GROUP 2: Performance & Resilience Tests
 -------------------------------------------------
-QA31-06 | Write load tests | Not Done
-QA31-07 | Write soak tests | Not Done
-QA31-08 | Write chaos tests | Not Done
-QA31-09 | Write recovery tests | Not Done
-QA31-10 | Write failover tests | Not Done
+QA31-06 | Write load tests | Complete
+QA31-07 | Write soak tests | Complete
+QA31-08 | Write chaos tests | Complete
+QA31-09 | Write recovery tests | Complete
+QA31-10 | Write failover tests | Complete
 
 FEATURE GROUP 3: Accessibility & Compatibility Tests
 ------------------------------------------------------
@@ -1383,9 +1383,9 @@ QA31-14 | Write browser compatibility tests | Not Done
 
 FEATURE GROUP 4: Feature Phone & Telecom Tests
 ------------------------------------------------
-QA31-15 | Write feature phone path tests | Not Done
-QA31-16 | Write USSD tests | Not Done
-QA31-17 | Write IVR tests | Not Done
+QA31-15 | Write feature phone path tests | Complete
+QA31-16 | Write USSD tests | Complete
+QA31-17 | Write IVR tests | Complete
 QA31-18 | Write telecom sandbox tests | Complete
 QA31-19 | Write bank integration tests | Complete
 
@@ -1769,9 +1769,9 @@ TASK STATUS SUMMARY
 ================================================================================
 
 Total Tasks Identified : 1026
-Complete               : 359
+Complete               : 369
 Half Done              : 587
-Not Done               : 80
+Not Done               : 70
 
 Status Basis:
   - Based on the current repo and demo-safe implementation state

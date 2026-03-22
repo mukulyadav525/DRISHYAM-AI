@@ -1,0 +1,302 @@
+DRISHYAM AI - STARTUP FUNDING PITCH
+Version: Investor + government + strategic partner narrative
+
+ONE-LINE POSITIONING
+DRISHYAM AI is a citizen-first fraud interception, intelligence, and recovery platform for India that connects the moment of scam exposure to real operational response across bank, telecom, police, and government workflows.
+
+
+1. PROBLEM STATEMENT
+India's digital economy is scaling faster than its fraud response layer.
+
+As UPI, mobile access, and digital onboarding grow, cyber fraud is becoming:
+- faster
+- more personalized
+- more voice-led
+- more cross-channel
+- more damaging for first-time and low-literacy users
+
+Current response is fragmented:
+- citizens receive alerts but no unified response path
+- banks receive limited context after the fraud is underway
+- telecom systems detect abuse but do not own the victim journey
+- police often receive incomplete evidence
+- recovery is painful and uncoordinated
+- feature-phone and low-bandwidth users remain underserved
+
+This creates a large trust gap in Digital India.
+
+We believe the next category winner in cyber safety is not just a detector.
+It is an orchestration layer.
+
+
+2. USER - KISKE LIYE AUR KYU
+Our user base is multi-sided.
+
+A. Citizen side
+- smartphone users who face scam calls, fake UPI requests, phishing, impersonation, and social engineering
+- senior citizens and families who need simpler, trust-first safety experiences
+- users in smaller cities and low-bandwidth environments who cannot rely on heavy app workflows
+
+B. Institutional side
+- banks and payment partners that need earlier fraud intelligence and structured case data
+- telecom partners that need scam-linked signal intelligence and actionable reporting
+- police / cyber cells that need evidence-ready complaints, not fragmented narration
+- government programs that need scalable citizen protection tools and measurable outcomes
+
+Why they need us:
+- citizen wants protection and recovery
+- bank wants early risk signal and less fraud leakage
+- telecom wants scam network visibility
+- police wants better evidence and faster triage
+- government wants safer digital adoption at scale
+
+
+3. SOLUTION
+DRISHYAM AI combines five layers into one operational system:
+
+1. Interception layer
+- AI honeypot for suspicious calls and scam conversations
+
+2. Detection layer
+- UPI ID, QR, and scam-message risk checks
+
+3. Bharat access layer
+- low-bandwidth and feature-phone friendly reporting flows
+
+4. Response layer
+- structured routing to bank, telecom, police, and command dashboard
+
+5. Recovery and resilience layer
+- evidence packaging, next-step guidance, recovery support, and drills
+
+This is important because most alternatives solve only one of these layers.
+We solve the full citizen-to-agency loop.
+
+
+4. KEY FEATURES
+Core product modules:
+
+- AI Scam Handoff
+  Lets AI take over suspicious voice or chat interactions, keeping the citizen safe while collecting evidence.
+
+- Voice / Video Trace
+  Extracts scam entities such as caller numbers, VPAs, urgency patterns, institutions, and coercive tactics.
+
+- UPI Armor
+  Checks UPI IDs, QR codes, and scam messages and can route suspicious findings into structured action.
+
+- Bharat Layer
+  Supports 1930-style and USSD-like reporting journeys for low-bandwidth users.
+
+- Recovery Companion
+  Helps users with case follow-up, evidence bundle creation, and recovery workflow guidance.
+
+- Drill Center
+  Builds preventive behavior through guided scam resilience training.
+
+- Agency Dashboard
+  Gives police, bank, telecom, and administrators live case views, routing context, and auditability.
+
+- Audit and Action Trail
+  Every key action can be logged, reviewed, and linked to a case workflow.
+
+
+5. VISION
+Our vision is to become India's fraud response operating layer.
+
+The long-term goal is:
+- not just to detect scams
+- but to reduce successful fraud completion
+- reduce time to response
+- improve evidence quality
+- improve victim recovery pathways
+- increase trust in digital payments and digital public infrastructure
+
+In 5 years, DRISHYAM AI can become:
+- a B2G public safety stack
+- a B2B risk-routing platform
+- a citizen trust layer embedded into financial and telecom channels
+
+
+6. MARKET SPACE
+Market timing is strong.
+
+Reference points:
+- RBI Payment System Indicators, March 2025: UPI processed about 185.9 billion transactions worth roughly Rs 260.6 lakh crore in FY 2024-25.
+- RBI domestic payment fraud data for March 2025 recorded 1.84 lakh fraud cases worth Rs 291 crore.
+- TRAI 2024-25 yearbook: India had 1,156.99 million wireless subscribers and 939.51 million wireless data subscribers by March 2025.
+
+Implications:
+- India's digital payments market is massive.
+- Even a small reduction in fraud incidence or loss has material economic value.
+- The gap between total wireless users and data users leaves a large low-bandwidth safety segment open.
+
+Practical TAM framing:
+- citizen safety and anti-fraud tooling for banks, telecoms, fintechs, and public digital channels
+- fraud intelligence and workflow software for institutions
+- embedded trust and recovery services around high-risk consumer interactions
+
+This is a large and growing digital trust market, not a narrow cybersecurity niche.
+
+
+7. COMPETITOR
+We do not see one single direct competitor today. We see adjacent categories.
+
+1. Caller reputation apps
+- example: Truecaller
+- strong on spam identification
+- weak on full case orchestration, citizen recovery, evidence, and low-bandwidth routing
+
+2. Government reporting systems
+- example: 1930 / NCRP / I4C ecosystem
+- essential national rails
+- strong on complaint intake and escalation
+- not designed as a proactive AI interception and resilience layer
+
+3. Enterprise verification / fraud vendors
+- example categories: identity verification, device intelligence, threat intelligence, risk scoring
+- useful for institutions
+- usually not citizen-first, multi-stakeholder, or Bharat-access focused
+
+4. Consumer anti-scam tools
+- browser or device-side detectors
+- useful for alerts
+- limited on institutional workflow integration
+
+Our moat is orchestration:
+- citizen UX + institutional routing
+- real-time interception + post-event recovery
+- India-specific, multilingual, low-bandwidth-aware workflows
+- cross-stakeholder product design instead of single-point detection
+
+
+8. REQUIREMENTS AND PERMISSION
+To move from demo to pilot to production, we need structured approvals and partnerships.
+
+Technology and operations:
+- secure cloud deployment
+- auditable data retention
+- role-based access controls
+- incident escalation playbooks
+- consent and privacy controls
+
+Partnership and permissions:
+- pilot MoUs with police / cyber cell partners
+- partner access or sandbox integration with banks / payment institutions
+- telecom integration discussions for signal and routing workflows
+- clear legal and compliance process for evidence handling
+- DPDP-aligned consent handling and citizen notice
+
+For production-grade deployment, this is not only a software rollout.
+It is also an institutional integration program.
+
+
+9. FEEDBACK FROM USER - GOOGLE FORM + VIDEOS
+Do not present this section with placeholders. Replace with real proof before investor or minister meetings.
+
+What to include:
+- Google Form link
+- respondent count
+- user profile split: students, working professionals, senior citizens, merchants, police/bank operators
+- top satisfaction metrics
+- top objections
+- top requested features
+
+Suggested proof assets:
+- short citizen demo video
+- short agency dashboard video
+- short Bharat low-bandwidth flow video
+- short recovery flow video
+
+Suggested metric format:
+- X percent said AI handoff reduced panic
+- X percent found UPI Armor easy to use
+- X percent said Bharat flow was understandable
+- X percent said they would trust this as a public safety utility
+
+Suggested quote format:
+- citizen quote
+- field officer quote
+- bank / fintech operations quote
+
+If you share your Google Form responses later, this section can be converted into a sharper evidence-backed slide.
+
+
+10. BUSINESS MODEL
+Primary model:
+- B2G and public-sector pilot contracts
+- state-level digital safety and cyber response deployments
+
+Secondary model:
+- B2B SaaS for banks, fintechs, payment companies, insurers, and telecom operators
+
+Potential offerings:
+- platform license
+- seat-based operational dashboard pricing
+- fraud intelligence and escalation workflow subscription
+- API-based risk and routing layer
+- white-label citizen safety module
+- analytics and pilot outcome reporting
+
+Why this works commercially:
+- institutions already spend on fraud loss, support cost, and post-fraud operations
+- DRISHYAM AI aims to reduce fraud leakage, reduce triage time, and improve operational efficiency
+- value can be measured in prevented fraud, faster case action, and better citizen trust
+
+Suggested funding narrative:
+Use startup capital to prove one or two state or institutional pilots, then expand through reference-led partnerships.
+
+
+11. OTHERS
+WHY NOW
+Digital trust is becoming infrastructure. Fraud protection will increasingly sit next to payments, telecom, identity, and public digital services.
+
+GO-TO-MARKET
+Phase 1:
+- pilot with one geography
+- one police partner
+- one or two bank / fintech partners
+- one telecom collaboration path
+
+Phase 2:
+- multilingual expansion
+- embedded partner deployment
+- sector-specific packaging for BFSI and public programs
+
+Phase 3:
+- state-scale command deployments
+- broader integrations
+- citizen safety distribution via institutions
+
+SUGGESTED ASK
+You should tailor the exact number before the meeting.
+
+Suggested ask options:
+- pre-seed startup round to fund 12-18 months of pilots, compliance, and integrations
+- government-backed pilot support and introductions
+- strategic partnerships with banks, telecoms, and digital public platforms
+
+MOAT / DEFENSIBILITY
+- product breadth across interception, routing, recovery, and resilience
+- institutional workflow design
+- India-specific low-bandwidth experience
+- case-linked data graph and audit trail
+- partnership-led distribution potential
+
+RISKS
+- integration cycles with public institutions are slow
+- regulatory and legal expectations are high
+- external partner APIs are not always accessible early
+
+MITIGATION
+- start with sandbox and pilot integrations
+- prove outcome metrics in narrow geographies
+- use modular deployment instead of all-at-once rollout
+
+CLOSING LINE
+DRISHYAM AI is not trying to be just another scam alert product.
+It is building the operating layer that helps India move from fraud reporting to fraud response.
+
+FINAL TALKING POINT
+If India wants trusted digital growth, it must strengthen the citizen side of fraud defense.
+That is the gap we are building for.

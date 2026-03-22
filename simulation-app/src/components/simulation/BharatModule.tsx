@@ -374,7 +374,7 @@ export default function BharatModule({
                                     {reportingStep === 1 && (
                                         <div className="space-y-2">
                                             {['Financial Fraud', 'Impersonation', 'Identity Theft', 'Social Media'].map((cat, i) => (
-                                                <button key={cat} onClick={() => { setReportData({...reportData, category: cat}); setReportingStep(2); }} className="w-full px-5 py-3.5 bg-white border border-indblue/5 rounded-xl text-left shadow-sm hover:shadow-md hover:border-saffron/30 transition-all group flex justify-between items-center"><span className="text-[10px] font-black text-indblue/80 uppercase">{cat}</span><ChevronRight size={14} className="text-indblue/20 group-hover:text-saffron" /></button>
+                                                <button key={cat} onClick={() => { setReportData({...reportData, category: cat}); setReportingStep(2); }} data-testid={`bharat-category-${cat.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} className="w-full px-5 py-3.5 bg-white border border-indblue/5 rounded-xl text-left shadow-sm hover:shadow-md hover:border-saffron/30 transition-all group flex justify-between items-center"><span className="text-[10px] font-black text-indblue/80 uppercase">{cat}</span><ChevronRight size={14} className="text-indblue/20 group-hover:text-saffron" /></button>
                                             ))}
                                         </div>
                                     )}
@@ -410,7 +410,7 @@ export default function BharatModule({
                                                     <div className="space-y-1"><label className="text-[7px] font-black text-indblue/30 uppercase ml-1 flex items-center gap-1 font-mono"><HashIcon size={8} /> Handle / Link</label><input type="text" placeholder="@handle" value={reportData.handle_link} onChange={(e) => setReportData({...reportData, handle_link: e.target.value})} className="w-full p-3 bg-indblue/[0.02] border border-indblue/5 rounded-xl text-[10px] font-black text-indblue outline-none" /></div>
                                                 </div>
                                             )}
-                                            <button onClick={() => setReportingStep(3)} className="w-full py-3.5 bg-indblue text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-lg mt-2">Proceed to Context</button>
+                                            <button onClick={() => setReportingStep(3)} data-testid="bharat-proceed-context" className="w-full py-3.5 bg-indblue text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-lg mt-2">Proceed to Context</button>
                                         </div>
                                     )}
 
@@ -434,8 +434,8 @@ export default function BharatModule({
                                                 <div className="space-y-1"><label className="text-[7px] font-black text-indblue/30 uppercase ml-1 flex items-center gap-1 font-mono"><LinkIcon size={8} /> Scam Link / Post URL</label><input type="text" placeholder="https://..." value={reportData.scam_link} onChange={(e) => setReportData({...reportData, scam_link: e.target.value})} className="w-full p-3 bg-indblue/[0.02] border border-indblue/5 rounded-xl text-[10px] font-black text-indblue outline-none" /></div>
                                             )}
 
-                                            <div className="space-y-1.5"><label className="text-[7px] font-black text-indblue/30 uppercase ml-1 font-mono">Incident Narration</label><textarea rows={5} placeholder={`Detail the sequence...`} value={reportData.description} onChange={(e) => setReportData({...reportData, description: e.target.value})} className="w-full p-3 bg-indblue/[0.02] border border-indblue/5 rounded-xl text-[10px] font-bold text-charcoal outline-none resize-none shadow-inner leading-relaxed uppercase" /></div>
-                                            <button onClick={() => setReportingStep(4)} className="w-full py-3.5 bg-indblue text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-lg">Authenticate Details</button>
+                                            <div className="space-y-1.5"><label className="text-[7px] font-black text-indblue/30 uppercase ml-1 font-mono">Incident Narration</label><textarea rows={5} placeholder={`Detail the sequence...`} data-testid="bharat-description-input" value={reportData.description} onChange={(e) => setReportData({...reportData, description: e.target.value})} className="w-full p-3 bg-indblue/[0.02] border border-indblue/5 rounded-xl text-[10px] font-bold text-charcoal outline-none resize-none shadow-inner leading-relaxed uppercase" /></div>
+                                            <button onClick={() => setReportingStep(4)} data-testid="bharat-authenticate-details" className="w-full py-3.5 bg-indblue text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-lg">Authenticate Details</button>
                                         </div>
                                     )}
 
@@ -456,7 +456,7 @@ export default function BharatModule({
                                             </div>
 
                                             <div className="p-4 bg-saffron/5 border border-saffron/10 rounded-xl flex items-start gap-3"><AlertCircle size={14} className="text-saffron shrink-0" /><p className="text-[7px] font-bold text-saffron leading-tight uppercase">Identity Corroboration Required under Section 65B IE Act. Legal penalties apply.</p></div>
-                                            <button onClick={submitFinalReport} disabled={isSubmitting} className="w-full py-4 bg-indgreen text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-xl hover:brightness-110 active:scale-95 transition-all">{isSubmitting ? 'ENCRYPTING...' : 'SIGN & SUBMIT'}</button>
+                                            <button onClick={submitFinalReport} disabled={isSubmitting} data-testid="bharat-submit-report" className="w-full py-4 bg-indgreen text-white rounded-xl text-[8px] font-black uppercase tracking-[0.4em] shadow-xl hover:brightness-110 active:scale-95 transition-all">{isSubmitting ? 'ENCRYPTING...' : 'SIGN & SUBMIT'}</button>
                                         </div>
                                     )}
 
@@ -512,7 +512,7 @@ export default function BharatModule({
 
                 <div className="grid grid-cols-3 gap-3 w-full">
                     {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(key => (
-                        <button key={key} onClick={() => handleKeyPress(key)} className="relative h-15 bg-white rounded-2xl border border-indblue/5 shadow-[0_4px_10px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-indblue/10 active:scale-95 transition-all flex flex-col items-center justify-center group overflow-hidden">
+                        <button key={key} onClick={() => handleKeyPress(key)} data-testid={`bharat-key-${key === '*' ? 'star' : key === '#' ? 'hash' : key}`} className="relative h-15 bg-white rounded-2xl border border-indblue/5 shadow-[0_4px_10px_rgba(0,0,0,0.03)] hover:shadow-md hover:border-indblue/10 active:scale-95 transition-all flex flex-col items-center justify-center group overflow-hidden">
                             <span className="text-2xl font-black text-indblue/30 group-hover:text-indblue group-hover:scale-110 transition-all duration-300">{key}</span>
                         </button>
                     ))}

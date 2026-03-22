@@ -82,6 +82,9 @@ def _cors_allowlist() -> list[str]:
         "https://drishyam-ai-production.up.railway.app",
         "http://localhost:3000",
         "http://localhost:3001",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:3001",
+        "http://127.0.0.1:4101",
     ]
     deduped: list[str] = []
     for origin in [*configured, *defaults]:
@@ -158,7 +161,7 @@ if RateLimitExceeded is not None:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_allowlist(),
-    allow_origin_regex=r"^https://([a-zA-Z0-9-]+\.)*(vercel\.app|railway\.app|netlify\.app)$|^http://localhost:300[0-1]$",
+    allow_origin_regex=r"^https://([a-zA-Z0-9-]+\.)*(vercel\.app|railway\.app|netlify\.app)$|^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

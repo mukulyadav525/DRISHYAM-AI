@@ -6,9 +6,12 @@
         "build:simulation": "cd simulation-app && next build",
         "build": "npm run build:dashboard && npm run build:simulation",
         "verify:backend": "cd backend && ./venv/bin/python ../scripts/smoke_backend.py",
+        "verify:contracts": "cd backend && ./venv/bin/python ../scripts/contract_backend.py",
+        "verify:resilience": "cd backend && DRISHYAM_DATABASE_URL=sqlite:///./drishyam.db ./venv/bin/python ../scripts/resilience_backend.py",
+        "verify:e2e": "./scripts/run_playwright_e2e.sh",
         "verify:narrative": "cd backend && ./venv/bin/python ../scripts/verify_ramesh_scenario.py",
         "verify:mvp": "npm run verify:launch && npm run verify:narrative",
-        "verify:prd": "npm run build && npm run verify:backend && npm run verify:narrative",
+        "verify:prd": "npm run build && npm run verify:backend && npm run verify:contracts && npm run verify:resilience && npm run verify:e2e && npm run verify:narrative",
         "verify:launch": "npm run build && npm run verify:backend",
         "dev:backend": "cd backend && ./venv/bin/python3 -m uvicorn main:app --reload --port 8000",
         "dev:dashboard": "cd dashboard && npm run dev -- -p 3000",
@@ -16,6 +19,7 @@
         "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:dashboard\" \"npm run dev:simulation\""
     },
     "devDependencies": {
+        "@playwright/test": "^1.58.2",
         "concurrently": "^8.2.2"
     },
     "workspaces": [

@@ -204,6 +204,7 @@ export default function AuthScreen({
                 placeholder="Enter 10-digit Phone Number"
                 value={customerId}
                 onChange={(e) => setCustomerId(e.target.value)}
+                data-testid="citizen-phone-input"
                 className="w-full bg-boxbg border border-silver/20 rounded-2xl px-5 py-4 text-sm font-bold text-indblue focus:outline-none focus:border-indblue transition-all"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 text-silver">
@@ -236,6 +237,7 @@ export default function AuthScreen({
                       ...current,
                       [scope.id]: event.target.checked,
                     }))}
+                    data-testid={`consent-checkbox-${scope.id}`}
                     className="mt-1 h-4 w-4 rounded border-silver/30 text-indblue focus:ring-indblue"
                   />
                   <div className="flex-1">
@@ -255,6 +257,7 @@ export default function AuthScreen({
           <button
             onClick={handleRequestAccess}
             disabled={isSubmitting}
+            data-testid="request-access-button"
             className={`w-full py-5 rounded-2xl font-black text-sm transition-all shadow-xl flex items-center justify-center gap-3 active:scale-[0.98] ${
               isSubmitting ? "bg-silver text-white cursor-not-allowed" : "bg-indblue text-white hover:bg-indblue/90"
             }`}

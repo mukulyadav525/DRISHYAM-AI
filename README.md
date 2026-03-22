@@ -77,6 +77,29 @@ Run the full repo PRD control-plane bundle with:
 npm run verify:prd
 ```
 
+Run the backend API contract suite with:
+
+```bash
+npm run verify:contracts
+```
+
+Run the backend resilience suite for load, soak, chaos, recovery, and failover validation with:
+
+```bash
+npm run verify:resilience
+```
+
+This suite runs against an isolated local verification database so the drills are repeatable and do not mutate the live Supabase dataset during PRD validation.
+
+Run the browser E2E suite for the simulation portal with:
+
+```bash
+npm run verify:e2e
+```
+
+This launches the backend and simulation portal on isolated local ports and verifies the citizen access, UPI Armor, Bharat low-bandwidth, and recovery journeys end to end in Chrome.
+The resilience suite replays sustained authenticated traffic, triggers the chaos and DR drills, and verifies both admin and citizen recovery paths continue to work with persisted backend state.
+
 ### Runbook
 
 Launch and recovery instructions live in [docs/launch_readiness_runbook.md](/Users/mukul/Desktop/DRISHYAM-AI/docs/launch_readiness_runbook.md).
