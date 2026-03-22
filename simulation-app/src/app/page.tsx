@@ -27,6 +27,7 @@ interface Persona {
 
 type ActiveFeature = "home" | "chat" | "deepfake" | "upi" | "bharat" | "recovery" | "drills" | null;
 const API_CACHE_TTL_MS = 5000;
+const SESSION_BOOT_TIMEOUT_MS = 6000;
 const apiResponseCache = new Map<string, { expiresAt: number; response: Response }>();
 const apiInFlightRequests = new Map<string, Promise<Response>>();
 
@@ -47,6 +48,20 @@ function resolveRequestMethod(input: RequestInfo | URL, init?: RequestInit): str
 
 function buildApiCacheKey(requestUrl: string, method: string, headers: Headers) {
   return `${method}:${requestUrl}:${headers.get("Authorization") || ""}`;
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = SESSION_BOOT_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export default function SimulationPortal() {
@@ -170,7 +185,7 @@ export default function SimulationPortal() {
 
     const validateStoredSession = async () => {
       try {
-        const res = await fetch(`${API_BASE}/auth/session`);
+        const res = await fetchWithTimeout(`${API_BASE}/auth/session`);
         const data = await res.json().catch(() => ({}));
 
         if (!res.ok || data?.role !== "common") {
@@ -182,7 +197,7 @@ export default function SimulationPortal() {
           const resolvedCustomerId = data.username || existingAuth.username || "";
           setCustomerId(resolvedCustomerId);
 
-          const homeWarmup = await fetch(`${API_BASE}/citizen/app-home`).catch(() => null);
+          const homeWarmup = await fetchWithTimeout(`${API_BASE}/citizen/app-home`).catch(() => null);
           if (homeWarmup?.status === 401) {
             throw new Error("Could not validate credentials");
           }

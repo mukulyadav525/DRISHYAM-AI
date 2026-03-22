@@ -39,7 +39,8 @@ fi
 
 echo "Admin login: admin / password123"
 echo "Privileged MFA OTP: 19301930"
-echo "Backend will fall back to local SQLite if Supabase is unavailable."
-echo "Launching services on API :8000, dashboard :3000, simulation :3001"
+echo "Launching services on API 127.0.0.1:8000, dashboard :3000, simulation :3001"
+echo "Local dev backend uses SQLite for reliable localhost startup."
+echo "Use 'npm run dev:backend:cloud' if you want to point localhost at the live Supabase-backed backend."
 
 npm run dev:all

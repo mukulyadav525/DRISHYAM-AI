@@ -45,6 +45,7 @@ const PRIVILEGED_ROLES = new Set(["admin", "police", "bank", "government", "tele
 const API_CACHE_TTL_MS = 5000;
 const apiResponseCache = new Map<string, { expiresAt: number; response: Response }>();
 const apiInFlightRequests = new Map<string, Promise<Response>>();
+const AUTH_BOOT_TIMEOUT_MS = 6000;
 
 function defaultAccess(role: string): AccessManifest {
     return {
@@ -138,6 +139,20 @@ function isCacheableApiRequest(requestUrl: string, method: string, init?: Reques
 function buildApiCacheKey(requestUrl: string, method: string, headers: Headers): string {
     const auth = headers.get("Authorization") || "";
     return `${method}:${requestUrl}:${auth}`;
+}
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = AUTH_BOOT_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(input, {
+            ...init,
+            signal: controller.signal,
+        });
+    } finally {
+        window.clearTimeout(timeout);
+    }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -240,7 +255,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
                 setUser(parsed);
 
-                const res = await fetch(`${API_BASE}/auth/session`, {
+                const res = await fetchWithTimeout(`${API_BASE}/auth/session`, {
                     headers: {
                         Authorization: `Bearer ${parsed.token}`,
                     },

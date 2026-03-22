@@ -40,6 +40,21 @@ interface OverviewData {
 }
 
 import { useRouter } from "next/navigation";
+const OVERVIEW_FETCH_TIMEOUT_MS = 6000;
+
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, timeoutMs = OVERVIEW_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(input, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 const IndiaMap = dynamic(() => import("@/components/IndiaMap"), {
   ssr: false,
@@ -79,7 +94,7 @@ export default function OverviewPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch(`${API_BASE}/system/overview`);
+        const res = await fetchWithTimeout(`${API_BASE}/system/overview`);
         if (res.ok) {
           const overviewData = await res.json();
           setData(overviewData);
@@ -89,7 +104,7 @@ export default function OverviewPage() {
         }
       } catch (error: any) {
         console.error("Error fetching overview data:", error);
-        setFetchError("Grid Connection Blocked or Backend Offline");
+        setFetchError("Grid connection timed out or backend is offline.");
       } finally {
         setIsLoading(false);
       }

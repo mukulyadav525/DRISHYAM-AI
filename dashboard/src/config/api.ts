@@ -1,12 +1,13 @@
 // Updated production backend URL after rebranding
 const PRODUCTION_API_URL = "https://drishyam-ai-production.up.railway.app/api/v1";
+const LOCAL_API_URL = "http://127.0.0.1:8000/api/v1";
 
 let API_BASE_RAW = (process.env.NEXT_PUBLIC_API_BASE || PRODUCTION_API_URL).trim();
 
 if (typeof window !== 'undefined') {
     const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
     if (isLocalhost && !process.env.NEXT_PUBLIC_API_BASE) {
-        API_BASE_RAW = "http://localhost:8000/api/v1";
+        API_BASE_RAW = LOCAL_API_URL;
     }
 }
 

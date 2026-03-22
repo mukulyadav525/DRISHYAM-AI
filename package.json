@@ -13,9 +13,10 @@
         "verify:mvp": "npm run verify:launch && npm run verify:narrative",
         "verify:prd": "npm run build && npm run verify:backend && npm run verify:contracts && npm run verify:resilience && npm run verify:e2e && npm run verify:narrative",
         "verify:launch": "npm run build && npm run verify:backend",
-        "dev:backend": "cd backend && ./venv/bin/python3 -m uvicorn main:app --reload --port 8000",
-        "dev:dashboard": "cd dashboard && npm run dev -- -p 3000",
-        "dev:simulation": "cd simulation-app && npm run dev -- -p 3001",
+        "dev:backend": "cd backend && DRISHYAM_DATABASE_URL=sqlite:///./drishyam.db ./venv/bin/python3 -m uvicorn main:app --host 127.0.0.1 --port 8000",
+        "dev:backend:cloud": "cd backend && ./venv/bin/python3 -m uvicorn main:app --host 127.0.0.1 --port 8000",
+        "dev:dashboard": "cd dashboard && npm run dev -- --hostname 127.0.0.1 -p 3000",
+        "dev:simulation": "cd simulation-app && npm run dev -- --hostname 127.0.0.1 -p 3001",
         "dev:all": "npx concurrently \"npm run dev:backend\" \"npm run dev:dashboard\" \"npm run dev:simulation\""
     },
     "devDependencies": {
