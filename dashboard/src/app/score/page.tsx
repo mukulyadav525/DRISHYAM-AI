@@ -236,7 +236,13 @@ export default function ScorePage() {
                             )}
                         </div>
                         <button
-                            onClick={() => downloadSimulatedFile('CITIZEN_SCORE_AUDIT', 'pdf')}
+                            onClick={() => downloadSimulatedFile('CITIZEN_SCORE_AUDIT', 'pdf', {
+                                targetId: citizenId || undefined,
+                                context: {
+                                    citizen_id: citizenId || "CURRENT_USER",
+                                    computed_score: shownScore,
+                                },
+                            })}
                             className="w-full mt-6 py-3 bg-indblue/5 border border-indblue/10 rounded-xl text-[10px] font-bold text-indblue uppercase tracking-widest hover:bg-indblue hover:text-white transition-all flex items-center justify-center gap-2">
                             <Download size={14} />
                             Download Full Financial Audit

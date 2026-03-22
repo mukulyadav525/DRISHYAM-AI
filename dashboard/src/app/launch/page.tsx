@@ -717,7 +717,14 @@ export default function LaunchPage() {
                             ].map((name) => (
                                 <button
                                     key={name}
-                                    onClick={() => downloadSimulatedFile(name, "pdf")}
+                                    onClick={() => downloadSimulatedFile(name, "pdf", {
+                                        targetId: name,
+                                        context: {
+                                            document_name: name,
+                                            pilot_name: pilot?.name,
+                                            geography: pilot?.geography,
+                                        },
+                                    })}
                                     className="w-full flex items-center justify-between p-3 bg-boxbg hover:bg-indblue/5 rounded-xl border border-silver/5 transition-all group"
                                 >
                                     <span className="text-[10px] font-bold text-charcoal">{name}</span>

@@ -200,8 +200,16 @@ export default function FraudGraphPage() {
                     </button>
                     <button
                         onClick={async () => {
-                            await performAction("GENERATE_FIR_FROM_GRAPH", spotlight?.root_entity || graph?.root_entity);
-                            await downloadSimulatedFile(`GRAPH_FIR_${(spotlight?.root_entity || "entity").replace(/[^a-zA-Z0-9]/g, "_")}`, "pdf");
+                            const rootEntity = spotlight?.root_entity || graph?.root_entity || "entity";
+                            await performAction("GENERATE_FIR_FROM_GRAPH", rootEntity);
+                            await downloadSimulatedFile(`GRAPH_FIR_${rootEntity.replace(/[^a-zA-Z0-9]/g, "_")}`, "pdf", {
+                                targetId: rootEntity,
+                                context: {
+                                    root_entity: rootEntity,
+                                    node_count: displayNodes.length,
+                                    edge_count: displayEdges.length,
+                                },
+                            });
                         }}
                         className="px-4 py-2 bg-saffron text-white rounded-lg text-sm font-semibold hover:bg-deeporange flex items-center gap-2 transition-colors"
                     >
@@ -390,7 +398,14 @@ export default function FraudGraphPage() {
                             ))}
                         </div>
                         <button
-                            onClick={() => downloadSimulatedFile("FRAUD_GRAPH_EVIDENCE", "pdf")}
+                            onClick={() => downloadSimulatedFile("FRAUD_GRAPH_EVIDENCE", "pdf", {
+                                targetId: spotlight?.root_entity || graph?.root_entity || undefined,
+                                context: {
+                                    root_entity: spotlight?.root_entity || graph?.root_entity || null,
+                                    node_count: displayNodes.length,
+                                    edge_count: displayEdges.length,
+                                },
+                            })}
                             className="w-full bg-indblue text-white py-3 rounded-xl font-bold text-sm hover:bg-charcoal transition-all flex items-center justify-center gap-2 mt-4"
                         >
                             <Download size={16} /> {t("export_evidence")}

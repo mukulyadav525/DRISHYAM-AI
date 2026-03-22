@@ -6,7 +6,7 @@ import Image from "next/image";
 import { API_BASE } from "@/config/api";
 import { Toaster, toast } from "react-hot-toast";
 import { useActions } from "@/hooks/useActions";
-import { getStoredAuth } from "@/lib/auth";
+import { getAuthHeaders, getStoredAuth } from "@/lib/auth";
 import FeedModal from "@/components/FeedModal";
 
 // Modular Components
@@ -26,6 +26,28 @@ interface Persona {
 }
 
 type ActiveFeature = "home" | "chat" | "deepfake" | "upi" | "bharat" | "recovery" | "drills" | null;
+const API_CACHE_TTL_MS = 5000;
+const apiResponseCache = new Map<string, { expiresAt: number; response: Response }>();
+const apiInFlightRequests = new Map<string, Promise<Response>>();
+
+function clearApiCache() {
+  apiResponseCache.clear();
+  apiInFlightRequests.clear();
+}
+
+function resolveRequestMethod(input: RequestInfo | URL, init?: RequestInit): string {
+  if (init?.method) {
+    return init.method.toUpperCase();
+  }
+  if (input instanceof Request) {
+    return input.method.toUpperCase();
+  }
+  return "GET";
+}
+
+function buildApiCacheKey(requestUrl: string, method: string, headers: Headers) {
+  return `${method}:${requestUrl}:${headers.get("Authorization") || ""}`;
+}
 
 export default function SimulationPortal() {
   const [authStatus, setAuthStatus] = useState<"login" | "pending" | "approved">("login");
@@ -37,6 +59,72 @@ export default function SimulationPortal() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { performAction } = useActions();
+
+  useEffect(() => {
+    const originalFetch = window.fetch.bind(window);
+
+    window.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+      const requestUrl =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url;
+
+      if (!requestUrl.startsWith(API_BASE)) {
+        return originalFetch(input, init);
+      }
+
+      const method = resolveRequestMethod(input, init);
+      const headers = new Headers(getAuthHeaders(init?.headers || (input instanceof Request ? input.headers : undefined)));
+
+      if (method !== "GET") {
+        clearApiCache();
+        return originalFetch(input, { ...init, headers });
+      }
+
+      if (requestUrl.includes("/actions/download")) {
+        return originalFetch(input, { ...init, headers });
+      }
+
+      const cacheKey = buildApiCacheKey(requestUrl, method, headers);
+      const cached = apiResponseCache.get(cacheKey);
+      if (cached && cached.expiresAt > Date.now()) {
+        return cached.response.clone();
+      }
+
+      const inFlight = apiInFlightRequests.get(cacheKey);
+      if (inFlight) {
+        return (await inFlight).clone();
+      }
+
+      const requestPromise = originalFetch(input, { ...init, headers }).then((response) => {
+        const contentType = response.headers.get("content-type") || "";
+        if (response.ok && contentType.includes("application/json")) {
+          apiResponseCache.set(cacheKey, {
+            expiresAt: Date.now() + API_CACHE_TTL_MS,
+            response: response.clone(),
+          });
+        } else {
+          apiResponseCache.delete(cacheKey);
+        }
+        return response;
+      });
+
+      apiInFlightRequests.set(
+        cacheKey,
+        requestPromise.then((response) => response.clone()).finally(() => {
+          apiInFlightRequests.delete(cacheKey);
+        }),
+      );
+
+      return requestPromise;
+    }) as typeof window.fetch;
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
 
   useEffect(() => {
     const existingAuth = getStoredAuth();
@@ -123,6 +211,7 @@ export default function SimulationPortal() {
 
   const endSession = () => {
     localStorage.removeItem("drishyam_auth");
+    clearApiCache();
     setAuthStatus("login");
     setCustomerId("");
     setActiveFeature(null);

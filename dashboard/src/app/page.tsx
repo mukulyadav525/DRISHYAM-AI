@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import {
   ShieldCheck,
   Users,
@@ -11,12 +12,6 @@ import {
   Loader2
 } from "lucide-react";
 import StatCard from "@/components/StatCard";
-import IndiaMap from "@/components/IndiaMap";
-import FeedModal from "@/components/FeedModal";
-import CustomerSearchModal from "@/components/CustomerSearchModal";
-import StatDetailModal from "@/components/StatDetailModal";
-import LiveTicker from "@/components/LiveTicker";
-import ManagementOverlay from "@/components/ManagementOverlay";
 import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
@@ -45,6 +40,20 @@ interface OverviewData {
 }
 
 import { useRouter } from "next/navigation";
+
+const IndiaMap = dynamic(() => import("@/components/IndiaMap"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-full flex items-center justify-center">
+      <Loader2 className="animate-spin text-indblue" size={32} />
+    </div>
+  ),
+});
+const FeedModal = dynamic(() => import("@/components/FeedModal"));
+const CustomerSearchModal = dynamic(() => import("@/components/CustomerSearchModal"));
+const StatDetailModal = dynamic(() => import("@/components/StatDetailModal"));
+const LiveTicker = dynamic(() => import("@/components/LiveTicker"));
+const ManagementOverlay = dynamic(() => import("@/components/ManagementOverlay"));
 
 export default function OverviewPage() {
   const { t } = useLanguage();

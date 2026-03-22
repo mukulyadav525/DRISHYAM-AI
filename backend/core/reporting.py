@@ -13,6 +13,69 @@ class PDFReportGenerator:
     """
     Generates a professional forensic PDF report for media authenticity.
     """
+
+    @staticmethod
+    def _build_document(
+        title: str,
+        subtitle: str | None = None,
+        summary: Dict[str, Any] | None = None,
+        sections: list[dict] | None = None,
+        footer: str | None = None,
+    ) -> bytes:
+        buffer = io.BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=letter)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        elements.append(Paragraph(f"<b>{title}</b>", styles["Title"]))
+        elements.append(Spacer(1, 8))
+        if subtitle:
+            elements.append(Paragraph(subtitle, styles["Normal"]))
+            elements.append(Spacer(1, 8))
+
+        elements.append(Paragraph(f"<b>Generated:</b> {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC", styles["Normal"]))
+        elements.append(Spacer(1, 12))
+
+        if summary:
+            table_data = [["Field", "Value"]]
+            for key, value in summary.items():
+                table_data.append([str(key), str(value)])
+            table = Table(table_data, colWidths=[200, 260])
+            table.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#0b1739")),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (0, 0), (-1, -1), "LEFT"),
+                ("GRID", (0, 0), (-1, -1), 0.5, colors.grey),
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#f8fafc")),
+            ]))
+            elements.append(table)
+            elements.append(Spacer(1, 16))
+
+        for section in sections or []:
+            heading = section.get("heading")
+            if heading:
+                elements.append(Paragraph(f"<b>{heading}</b>", styles["Heading3"]))
+                elements.append(Spacer(1, 6))
+
+            body = section.get("body")
+            if body:
+                elements.append(Paragraph(str(body), styles["Normal"]))
+                elements.append(Spacer(1, 6))
+
+            for bullet in section.get("bullets", []):
+                elements.append(Paragraph(f"• {bullet}", styles["Normal"]))
+            if section.get("bullets"):
+                elements.append(Spacer(1, 8))
+
+        if footer:
+            elements.append(Spacer(1, 16))
+            elements.append(Paragraph(footer, styles["Normal"]))
+
+        doc.build(elements)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        return pdf_bytes
     
     @staticmethod
     def generate_trust_report(data: dict) -> bytes:
@@ -293,5 +356,60 @@ class PDFReportGenerator:
         pdf_bytes = buffer.getvalue()
         buffer.close()
         return pdf_bytes
+
+    def generate_structured_report(
+        self,
+        title: str,
+        subtitle: str | None = None,
+        summary: Dict[str, Any] | None = None,
+        sections: list[dict] | None = None,
+        footer: str | None = None,
+    ) -> bytes:
+        return self._build_document(title, subtitle=subtitle, summary=summary, sections=sections, footer=footer)
+
+    def generate_section_65b_certificate(self, data: Dict[str, Any]) -> bytes:
+        case_id = data.get("case_id", f"CERT-{uuid.uuid4().hex[:8].upper()}")
+        issued_to = data.get("issued_to", "Investigating Officer")
+        evidence_description = data.get("evidence_description", "Electronic evidence captured by DRISHYAM.")
+        source_system = data.get("source_system", "DRISHYAM AI BASIG")
+        evidence_hash = data.get("evidence_hash", f"SEC-{uuid.uuid4().hex[:10].upper()}")
+
+        return self._build_document(
+            "Section 65B Electronic Evidence Certificate",
+            subtitle="Indian Evidence Act compliance certificate for digitally generated records.",
+            summary={
+                "Certificate ID": case_id,
+                "Issued To": issued_to,
+                "Source System": source_system,
+                "Evidence Hash": evidence_hash,
+                "Issued On": datetime.utcnow().strftime("%Y-%m-%d"),
+            },
+            sections=[
+                {
+                    "heading": "Certification Statement",
+                    "body": (
+                        "This certificate confirms that the attached electronic record was produced by a "
+                        "computer system operating in the ordinary course of activity, and that the record "
+                        "has been preserved by DRISHYAM without unauthorized alteration."
+                    ),
+                },
+                {
+                    "heading": "Evidence Description",
+                    "body": evidence_description,
+                },
+                {
+                    "heading": "Operational Controls",
+                    "bullets": [
+                        "System time was synchronized during evidence capture.",
+                        "Evidence was generated from authenticated user activity or sensor intake.",
+                        "The record was preserved in DRISHYAM evidence storage with audit logging enabled.",
+                    ],
+                },
+            ],
+            footer=(
+                "Certified electronically by DRISHYAM AI. This certificate is intended to accompany "
+                "the related FIR, graph packet, or forensic export."
+            ),
+        )
 
 pdf_report_generator = PDFReportGenerator()

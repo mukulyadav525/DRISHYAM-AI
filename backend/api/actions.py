@@ -4,12 +4,22 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from core.database import get_db
 from core.auth import get_current_verified_user
-from models.database import AdminApproval, SystemAction, User
+from models.database import (
+    AdminApproval,
+    CrimeReport,
+    HoneypotEntity,
+    RecoveryCase,
+    ScamCluster,
+    SystemAction,
+    SystemAuditLog,
+    User,
+)
 import logging
 import traceback
-import base64
-import os
-from scripts.gen_pro_pdf import generate_report
+import io
+import json
+import re
+import zipfile
 from core.reporting import pdf_report_generator
 from core.graph import fraud_graph
 from core.audit import log_audit
@@ -32,6 +42,409 @@ class ActionRequest(BaseModel):
     action_type: str
     target_id: Optional[str] = None
     metadata: Optional[Dict[str, Any]] = None
+
+
+def _normalize_export_category(value: str) -> str:
+    normalized = re.sub(r"[^A-Z0-9]+", "_", (value or "REPORT").upper()).strip("_")
+    return normalized or "REPORT"
+
+
+def _resolve_file_type(filename: str | None, file_type: str | None = None) -> str:
+    if file_type:
+        return file_type.lower()
+    if filename and "." in filename:
+        return filename.rsplit(".", 1)[-1].lower()
+    return "pdf"
+
+
+def _build_export_filename(category: str, file_type: str, target_id: str | None = None) -> str:
+    label = _normalize_export_category(target_id or category)
+    extension = "pdf" if file_type.lower() not in {"pdf", "txt", "zip"} else file_type.lower()
+    return f"DRISHYAM_{label}.{extension}"
+
+
+def _parse_export_context(raw_context: str | None) -> dict[str, Any]:
+    if not raw_context:
+        return {}
+    try:
+        payload = json.loads(raw_context)
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _report_lookup_payload(report: CrimeReport | None, fallback_id: str | None = None) -> dict[str, Any]:
+    metadata = report.metadata_json or {} if report else {}
+    case_id = report.report_id if report else (fallback_id or f"CASE-{uuid.uuid4().hex[:6].upper()}")
+    created_at = report.created_at.strftime("%Y-%m-%d %H:%M:%S UTC") if report and report.created_at else datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+    entities = metadata.get("entities") if isinstance(metadata.get("entities"), list) else []
+    if not entities:
+        entities = [
+            {"type": "Case", "value": case_id, "relevance": "Case reference"},
+            {"type": "Platform", "value": report.platform if report else metadata.get("platform", "Unknown"), "relevance": "Reported platform"},
+            {"type": "Type", "value": report.scam_type if report else metadata.get("scam_type", "Digital Fraud"), "relevance": "Fraud pattern"},
+            {"type": "Priority", "value": report.priority if report else metadata.get("priority", "HIGH"), "relevance": "Escalation severity"},
+        ]
+
+    return {
+        "case_id": case_id,
+        "entities": entities[:8],
+        "scam_type": report.scam_type if report else metadata.get("scam_type", "Digital Fraud"),
+        "amount": report.amount if report else metadata.get("amount", "Unknown"),
+        "platform": report.platform if report else metadata.get("platform", "Unknown"),
+        "priority": report.priority if report else metadata.get("priority", "HIGH"),
+        "status": report.status if report else metadata.get("status", "PENDING"),
+        "bank_name": metadata.get("bank_name", "Citizen Bank"),
+        "txn_id": metadata.get("txn_id", case_id),
+        "txn_date": metadata.get("txn_date", created_at),
+        "holder": metadata.get("holder", "Unknown"),
+        "reporter_num": report.reporter_num if report else metadata.get("reporter_num"),
+        "created_at": created_at,
+    }
+
+
+def _find_report_by_id(db: Session, report_id: str | None) -> CrimeReport | None:
+    if not report_id:
+        return None
+    return db.query(CrimeReport).filter(CrimeReport.report_id == report_id).first()
+
+
+def _build_graph_payload(db: Session, root_entity: str | None, context: dict[str, Any]) -> dict[str, Any]:
+    entity_value = (root_entity or context.get("root_entity") or context.get("entity") or "").strip()
+    entity_record = None
+    if entity_value:
+        entity_record = db.query(HoneypotEntity).filter(HoneypotEntity.entity_value == entity_value).first()
+
+    related_reports: list[CrimeReport] = []
+    if entity_value:
+        for report in db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(25).all():
+            metadata = report.metadata_json or {}
+            if entity_value in {report.report_id, report.reporter_num, metadata.get("vpa"), metadata.get("entity")}:
+                related_reports.append(report)
+            elif isinstance(metadata.get("entities"), list) and entity_value in metadata.get("entities", []):
+                related_reports.append(report)
+
+    entities: list[dict[str, str]] = []
+    if entity_value:
+        inferred_type = "UPI VPA" if "@" in entity_value else "Phone" if entity_value.startswith("+") or entity_value.isdigit() else "Entity"
+        entities.append({"type": inferred_type, "value": entity_value, "relevance": "Graph root"})
+    if entity_record:
+        entities.append({
+            "type": "Risk Record",
+            "value": f"Risk {round((entity_record.risk_score or 0) * 100)}%",
+            "relevance": "Honeypot evidence",
+        })
+
+    for report in related_reports[:5]:
+        entities.append({"type": "Case", "value": report.report_id, "relevance": report.scam_type or "Linked incident"})
+        metadata = report.metadata_json or {}
+        if metadata.get("vpa"):
+            entities.append({"type": "UPI VPA", "value": metadata["vpa"], "relevance": "Reported beneficiary"})
+
+    deduped = []
+    seen = set()
+    for entity in entities:
+        key = (entity["type"], entity["value"])
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(entity)
+
+    while len(deduped) < 4:
+        deduped.append({
+            "type": "Intel Marker",
+            "value": f"GRAPH-{len(deduped) + 1}",
+            "relevance": "Additional correlation node",
+        })
+
+    return {
+        "case_id": context.get("case_id") or f"GRAPH-{uuid.uuid4().hex[:6].upper()}",
+        "entities": deduped[:8],
+        "root_entity": entity_value or "Unknown",
+        "linked_reports": [report.report_id for report in related_reports[:5]],
+        "risk_score": round((entity_record.risk_score or 0) * 100) if entity_record else None,
+        "node_count": context.get("node_count"),
+        "edge_count": context.get("edge_count"),
+    }
+
+
+def _build_overview_summary(db: Session) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    reports = db.query(CrimeReport).order_by(CrimeReport.created_at.desc()).limit(100).all()
+    clusters = db.query(ScamCluster).order_by(ScamCluster.created_at.desc()).limit(10).all()
+    resolved_reports = [report for report in reports if report.status in {"RESOLVED", "FROZEN", "RECOVERED"}]
+    protected_citizens = db.query(RecoveryCase.user_id).distinct().count()
+    estimated_savings = sum(float((report.amount or "0").replace(",", "")) for report in resolved_reports if str(report.amount or "0").replace(",", "").replace(".", "", 1).isdigit())
+    active_threats = len([cluster for cluster in clusters if cluster.status == "active"])
+
+    summary = {
+        "Resolved Scams": len(resolved_reports),
+        "Protected Citizens": protected_citizens,
+        "Estimated Savings (INR)": f"{estimated_savings:,.0f}",
+        "Active Threat Clusters": active_threats,
+    }
+    sections = [
+        {
+            "heading": "Latest Incident Snapshot",
+            "bullets": [
+                f"{report.report_id}: {report.scam_type} on {report.platform} ({report.priority})"
+                for report in reports[:5]
+            ] or ["No recent incidents were found in the database."],
+        },
+        {
+            "heading": "Hotspot Coverage",
+            "bullets": [
+                f"{cluster.location or cluster.cluster_id}: {cluster.risk_level} risk with {cluster.honeypot_hits or 0} honeypot hits"
+                for cluster in clusters[:5]
+            ] or ["No active hotspot clusters found."],
+        },
+    ]
+    return summary, sections
+
+
+def _system_logs_text(db: Session, current_user: User) -> bytes:
+    rows = (
+        db.query(SystemAuditLog)
+        .filter((SystemAuditLog.user_id == current_user.id) | (SystemAuditLog.user_id.is_(None)))
+        .order_by(SystemAuditLog.timestamp.desc())
+        .limit(100)
+        .all()
+    )
+    lines = [
+        "DRISHYAM SYSTEM AUDIT LOG EXPORT",
+        f"Generated: {datetime.datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC",
+        "",
+    ]
+    for row in rows:
+        lines.append(
+            f"{row.timestamp.isoformat() if row.timestamp else 'UNKNOWN'} | {row.action} | {row.resource or 'N/A'} | "
+            f"user={row.user_id or 'system'} | meta={json.dumps(row.metadata_json or {}, ensure_ascii=True)}"
+        )
+    return "\n".join(lines).encode("utf-8")
+
+
+def _recovery_export_context(db: Session, current_user: User, context: dict[str, Any]) -> dict[str, Any]:
+    incident_id = context.get("incident_id")
+    case = None
+    if incident_id:
+        case = db.query(RecoveryCase).filter(RecoveryCase.incident_id == incident_id).first()
+    return {
+        "case_id": incident_id or (case.incident_id if case else f"INC-{uuid.uuid4().hex[:6].upper()}"),
+        "txn_id": context.get("txn_id") or incident_id or f"TXN-{uuid.uuid4().hex[:6].upper()}",
+        "txn_date": context.get("txn_date") or datetime.datetime.utcnow().strftime("%Y-%m-%d"),
+        "bank_name": context.get("bank_name") or "Citizen Bank",
+        "scam_type": context.get("scam_type") or "Digital Fraud",
+        "incident_id": incident_id or (case.incident_id if case else None),
+    }
+
+
+def _playbook_sections(category: str) -> list[dict[str, Any]]:
+    playbooks = {
+        "OPERATION_MANUAL": [
+            "Verify access role, live alerts, and open approvals before beginning the shift.",
+            "Confirm that telecom, bank, and law-enforcement queues are green.",
+            "Escalate critical cases within five minutes and record every action in the audit trail.",
+        ],
+        "ESCALATION_PROTOCOL": [
+            "Critical scam clusters route first to command, then to the owning agency queue.",
+            "Financial recovery cases require bank dispute initiation plus RBI escalation within the golden hour.",
+            "If citizen harm risk is elevated, trigger support and trust-circle workflows in parallel.",
+        ],
+        "AGENCY_INTEGRATION_GUIDE": [
+            "Confirm partner credentials, region scope, and approval policies before enabling production actions.",
+            "Validate NPCI, bank, telecom, and law-enforcement routing against the current partner matrix.",
+            "Run smoke verification after any integration change and capture the output in governance notes.",
+        ],
+    }
+    bullets = playbooks.get(category, ["Follow the linked DRISHYAM operating procedure for this artifact."])
+    return [{"heading": "Operational Guidance", "bullets": bullets}]
+
+
+def _build_export_artifact(
+    db: Session,
+    current_user: User,
+    category: str,
+    file_type: str,
+    target_id: str | None,
+    context: dict[str, Any],
+) -> tuple[bytes, str, str]:
+    normalized = _normalize_export_category(category)
+    resolved_file_type = file_type.lower()
+
+    if normalized == "SYSTEM_LOGS" or resolved_file_type == "txt":
+        filename = _build_export_filename(category, "txt", target_id)
+        return _system_logs_text(db, current_user), "text/plain; charset=utf-8", filename
+
+    if normalized.startswith("CERTIFIED_FIR_65B"):
+        report_id = context.get("report_id") or target_id or normalized.removeprefix("CERTIFIED_FIR_65B_")
+        report = _find_report_by_id(db, report_id)
+        payload = _report_lookup_payload(report, fallback_id=report_id)
+        pdf_bytes = pdf_report_generator.generate_fir_packet(payload)
+        filename = _build_export_filename(f"CERTIFIED_FIR_65B_{payload['case_id']}", "pdf")
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized.startswith("BANK_DISPUTE") or normalized == "BANK_FREEZE_REQ":
+        report_id = context.get("report_id") or target_id or normalized.removeprefix("BANK_DISPUTE_")
+        report = _find_report_by_id(db, report_id)
+        payload = {**_report_lookup_payload(report, fallback_id=report_id), **context}
+        pdf_bytes = pdf_report_generator.generate_dispute_letter(payload)
+        filename = _build_export_filename(f"BANK_DISPUTE_{payload['case_id']}", "pdf")
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized in {"RBI_APPEAL", "NPCI_GRIEVANCE", "RESTITUTION_BUNDLE"}:
+        payload = _recovery_export_context(db, current_user, context)
+        if normalized == "RBI_APPEAL":
+            pdf_bytes = pdf_report_generator.generate_ombudsman_complaint(payload)
+            filename = _build_export_filename("RBI_APPEAL", "pdf", payload["case_id"])
+            return pdf_bytes, "application/pdf", filename
+        if normalized == "NPCI_GRIEVANCE":
+            pdf_bytes = pdf_report_generator.generate_npci_grievance(payload)
+            filename = _build_export_filename("NPCI_GRIEVANCE", "pdf", payload["case_id"])
+            return pdf_bytes, "application/pdf", filename
+
+        if resolved_file_type == "zip":
+            bundle_buffer = io.BytesIO()
+            with zipfile.ZipFile(bundle_buffer, "w", compression=zipfile.ZIP_DEFLATED) as bundle:
+                bundle.writestr("bank_dispute_letter.pdf", pdf_report_generator.generate_dispute_letter(payload))
+                bundle.writestr("rbi_appeal.pdf", pdf_report_generator.generate_ombudsman_complaint(payload))
+                bundle.writestr("npci_grievance.pdf", pdf_report_generator.generate_npci_grievance(payload))
+                bundle.writestr(
+                    "bundle_summary.txt",
+                    "\n".join([
+                        "DRISHYAM RECOVERY BUNDLE",
+                        f"Incident: {payload['case_id']}",
+                        f"Transaction: {payload['txn_id']}",
+                        f"Bank: {payload['bank_name']}",
+                        f"Scam Type: {payload['scam_type']}",
+                    ]).encode("utf-8"),
+                )
+            filename = _build_export_filename("RESTITUTION_BUNDLE", "zip", payload["case_id"])
+            return bundle_buffer.getvalue(), "application/zip", filename
+
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            "Restitution Bundle Summary",
+            subtitle="Recovery bundle manifest generated by DRISHYAM.",
+            summary={
+                "Incident": payload["case_id"],
+                "Transaction": payload["txn_id"],
+                "Bank": payload["bank_name"],
+                "Scam Type": payload["scam_type"],
+            },
+            sections=[{
+                "heading": "Included Documents",
+                "bullets": [
+                    "Bank dispute and freeze request",
+                    "RBI Ombudsman appeal draft",
+                    "NPCI grievance request",
+                ],
+            }],
+        )
+        filename = _build_export_filename("RESTITUTION_BUNDLE", "pdf", payload["case_id"])
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized in {"SECTION_65B_CERTIFICATE", "SECTION_65B_GENERATOR"}:
+        payload = {
+            "case_id": context.get("case_id") or target_id or f"CERT-{uuid.uuid4().hex[:6].upper()}",
+            "issued_to": context.get("issued_to") or current_user.full_name or current_user.username,
+            "evidence_description": context.get("evidence_description") or "Certified export from DRISHYAM evidence workflows.",
+            "source_system": "DRISHYAM AI BASIG",
+        }
+        pdf_bytes = pdf_report_generator.generate_section_65b_certificate(payload)
+        filename = _build_export_filename("SECTION_65B_CERTIFICATE", "pdf", payload["case_id"])
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized.startswith("GRAPH_FIR") or normalized == "FRAUD_GRAPH_EVIDENCE":
+        graph_payload = _build_graph_payload(db, target_id or context.get("root_entity"), context)
+        if normalized.startswith("GRAPH_FIR"):
+            pdf_bytes = pdf_report_generator.generate_fir_packet({
+                "case_id": graph_payload["case_id"],
+                "entities": graph_payload["entities"],
+            })
+            filename = _build_export_filename("GRAPH_FIR", "pdf", graph_payload["root_entity"])
+            return pdf_bytes, "application/pdf", filename
+
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            "Fraud Graph Evidence Pack",
+            subtitle="Correlated entity graph evidence extracted from live DRISHYAM records.",
+            summary={
+                "Root Entity": graph_payload["root_entity"],
+                "Linked Reports": len(graph_payload["linked_reports"]),
+                "Risk Score": graph_payload["risk_score"] or "Unknown",
+                "Nodes": graph_payload.get("node_count") or "N/A",
+                "Edges": graph_payload.get("edge_count") or "N/A",
+            },
+            sections=[
+                {
+                    "heading": "Connected Entities",
+                    "bullets": [f"{entity['type']}: {entity['value']} ({entity['relevance']})" for entity in graph_payload["entities"]],
+                },
+                {
+                    "heading": "Linked Cases",
+                    "bullets": graph_payload["linked_reports"] or ["No linked cases found in the current dataset."],
+                },
+            ],
+        )
+        filename = _build_export_filename("FRAUD_GRAPH_EVIDENCE", "pdf", graph_payload["root_entity"])
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized in {"OVERVIEW", "FORENSIC_AUDIT", "IMPACT_REPORT"}:
+        summary, sections = _build_overview_summary(db)
+        title_map = {
+            "OVERVIEW": "DRISHYAM Operational Overview",
+            "FORENSIC_AUDIT": "Forensic Audit Summary",
+            "IMPACT_REPORT": "Financial Impact Report",
+        }
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            title_map[normalized],
+            subtitle="Live export generated from the current Supabase-backed dataset.",
+            summary=summary,
+            sections=sections,
+            footer="This report was generated directly from current operational records.",
+        )
+        filename = _build_export_filename(normalized, "pdf")
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized == "CITIZEN_SCORE_AUDIT":
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            "Citizen Score Audit",
+            subtitle="Local risk and preparedness audit exported from DRISHYAM.",
+            summary={
+                "Citizen Identifier": context.get("citizen_id") or target_id or current_user.username,
+                "Computed Score": context.get("computed_score", "Not supplied"),
+                "Generated By": current_user.username,
+            },
+            sections=[{
+                "heading": "Review Notes",
+                "bullets": [
+                    "Verify inoculation drill completion history.",
+                    "Review flagged entities and linked complaint history.",
+                    "Confirm whether additional citizen support workflows are required.",
+                ],
+            }],
+        )
+        filename = _build_export_filename("CITIZEN_SCORE_AUDIT", "pdf", target_id)
+        return pdf_bytes, "application/pdf", filename
+
+    if normalized in {"OPERATION_MANUAL", "ESCALATION_PROTOCOL", "AGENCY_INTEGRATION_GUIDE"}:
+        pdf_bytes = pdf_report_generator.generate_structured_report(
+            normalized.replace("_", " ").title(),
+            subtitle="Operational playbook exported from the DRISHYAM control plane.",
+            summary={"Document": normalized.replace("_", " ").title(), "Requested By": current_user.username},
+            sections=_playbook_sections(normalized),
+        )
+        filename = _build_export_filename(normalized, "pdf")
+        return pdf_bytes, "application/pdf", filename
+
+    pdf_bytes = pdf_report_generator.generate_structured_report(
+        normalized.replace("_", " ").title(),
+        subtitle="General DRISHYAM export generated from the current operational context.",
+        summary={"Category": normalized, "Requested By": current_user.username},
+        sections=[{
+            "heading": "Export Notes",
+            "body": "This export was generated for the selected workflow. If a more specific template is needed, bind the button to a dedicated category and context payload.",
+        }],
+    )
+    filename = _build_export_filename(normalized, "pdf", target_id)
+    return pdf_bytes, "application/pdf", filename
 
 @router.post("/perform")
 async def perform_action(
@@ -203,7 +616,9 @@ async def perform_action(
                 "bundle_id": inc_id,
                 "status": "READY",
                 "generated_at": datetime.datetime.utcnow().isoformat(),
-                "download_url": f"/api/v1/actions/download-file?filename=RECOVERY_BUNDLE.pdf&category=RESTITUTION_BUNDLE"
+                "download_category": "RESTITUTION_BUNDLE",
+                "download_file_type": "zip",
+                "incident_id": inc_id,
             }
             user_msg = f"Legal Restitution Bundle Generated (ID: {inc_id}). Tracking activated."
         elif action_type == "CONNECT_TICKER":
@@ -273,105 +688,96 @@ async def perform_action(
 
 @router.get("/download-file")
 async def get_download_file(
-    filename: str,
+    export_id: int | None = None,
+    filename: str | None = None,
     category: str = "report",
     current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
-    """
-    Returns a dynamic professional PDF report using real database stats or victim data.
-    """
-    from fastapi.responses import FileResponse
-    import os
-    
-    # Ensure static folder exists
-    static_dir = os.path.join(os.getcwd(), "static")
-    os.makedirs(static_dir, exist_ok=True)
-    
-    # Handle Recovery Bundle Documents
-    recovery_categories = ["RBI_APPEAL", "BANK_FREEZE_REQ", "NPCI_GRIEVANCE", "RESTITUTION_BUNDLE"]
-    if category in recovery_categories:
-        # Get latest metadata for this user's recovery bundle
-        latest_bundle = db.query(SystemAction).filter(
-            SystemAction.user_id == current_user.id,
-            SystemAction.action_type == "GENERATE_RECOVERY_BUNDLE"
-        ).order_by(SystemAction.created_at.desc()).first()
-        
-        metadata = latest_bundle.metadata_json if latest_bundle else {}
-        
-        pdf_bytes = b""
-        if category == "RBI_APPEAL":
-            pdf_bytes = pdf_report_generator.generate_ombudsman_complaint(metadata)
-        elif category == "BANK_FREEZE_REQ":
-            pdf_bytes = pdf_report_generator.generate_dispute_letter(metadata)
-        elif category == "NPCI_GRIEVANCE":
-            pdf_bytes = pdf_report_generator.generate_npci_grievance(metadata)
-        elif category == "RESTITUTION_BUNDLE":
-            # Just return the bank freeze as proxy for bundle for now
-            pdf_bytes = pdf_report_generator.generate_dispute_letter(metadata)
-            filename = "RESTITUTION_BUNDLE.pdf" # Simpler for now than ZIP
-            
-        log_audit(db, current_user.id, "DOC_GENERATION", filename, metadata={"category": category})
-            
-        return Response(content=pdf_bytes, media_type="application/pdf", headers={
-            "Content-Disposition": f"attachment; filename={filename}"
-        })
+    export_action = None
+    if export_id is not None:
+        export_action = (
+            db.query(SystemAction)
+            .filter(
+                SystemAction.id == export_id,
+                SystemAction.user_id == current_user.id,
+                SystemAction.action_type == "EXPORT",
+            )
+            .first()
+        )
+        if not export_action:
+            raise HTTPException(status_code=404, detail="Export request not found")
 
-    # Path for the dynamic file
-    dynamic_file = os.path.join(static_dir, f"dynamic_{filename}")
-    
-    try:
-        # Generate the report on the fly
-        generate_report(dynamic_file)
-    except Exception as e:
-        logger.error(f"Failed to generate dynamic report: {e}")
-        # Fallback to template if generation fails
-        template_file = os.path.join(static_dir, "drishyam_template.pdf")
-        if os.path.exists(template_file):
-            dynamic_file = template_file
-        else:
-            # Emergency fallback
-            with open(dynamic_file, "w") as f:
-                f.write("%PDF-1.4\n% DRISHYAM Emergency Fallback\n1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj\n2 0 obj << /Type /Pages /Count 0 >> endobj\n%%EOF")
+    export_meta = export_action.metadata_json or {} if export_action else {}
+    resolved_category = export_meta.get("category") or category
+    resolved_file_type = _resolve_file_type(filename, export_meta.get("file_type"))
+    resolved_target = export_meta.get("target_id")
+    resolved_context = export_meta.get("context") if isinstance(export_meta.get("context"), dict) else {}
 
-    return FileResponse(
-        path=dynamic_file,
-        media_type="application/pdf",
-        filename=filename
+    content, media_type, resolved_filename = _build_export_artifact(
+        db,
+        current_user,
+        category=resolved_category,
+        file_type=resolved_file_type,
+        target_id=resolved_target,
+        context=resolved_context,
+    )
+
+    log_audit(
+        db,
+        current_user.id,
+        "DOC_GENERATION",
+        resolved_filename,
+        metadata={
+            "category": resolved_category,
+            "file_type": resolved_file_type,
+            "export_id": export_id,
+        },
+    )
+
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={
+            "Content-Disposition": f"attachment; filename=\"{resolved_filename}\"",
+        },
     )
 
 @router.get("/download-sim")
 async def download_simulation(
     file_type: str = "pdf",
     category: str = "report",
+    target_id: str | None = None,
+    context: str | None = None,
     current_user: User = Depends(get_current_verified_user),
     db: Session = Depends(get_db)
 ):
     """
-    Simulates a file download by returning a functional download URL.
+    Creates an export job and returns a secure download URL for the generated artifact.
     """
     try:
         logger.info(f"User {current_user.username} downloading {category} as {file_type}")
-        
-        # Simply log the export action
+        context_payload = _parse_export_context(context)
         new_action = SystemAction(
             user_id=current_user.id,
             action_type="EXPORT",
-            target_id=f"{category}.{file_type}",
-            metadata_json={"category": category, "file_type": file_type}
+            target_id=target_id or f"{category}.{file_type}",
+            metadata_json={
+                "category": category,
+                "file_type": file_type,
+                "target_id": target_id,
+                "context": context_payload,
+            },
         )
         db.add(new_action)
         db.commit()
-        
-        filename = f"DRISHYAM_{category.upper().replace('.', '_')}_{current_user.username}.pdf"
-        
-        # Construct a real URL pointing to our new endpoint
-        # In a real app, this would be a signed URL to an S3 bucket or similar
+
+        filename = _build_export_filename(category, file_type, target_id)
         return {
             "status": "success",
-            "download_url": f"/api/v1/actions/download-file?filename={filename}&category={category}", 
+            "download_url": f"/api/v1/actions/download-file?export_id={new_action.id}",
             "filename": filename,
-            "message": "Production Hardened: Secure PDF report generated locally. [Note: Full PDF streaming active in cloud nodes]"
+            "message": "Export prepared successfully."
         }
     except Exception as e:
         db.rollback()

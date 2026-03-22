@@ -186,12 +186,31 @@ export default function AgencyPage() {
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <button
-                                                onClick={() => downloadSimulatedFile(`CERTIFIED_FIR_65B_${c.id}`, 'pdf')}
+                                                onClick={() => downloadSimulatedFile(`CERTIFIED_FIR_65B_${c.id}`, 'pdf', {
+                                                    targetId: c.id,
+                                                    context: {
+                                                        report_id: c.id,
+                                                        scam_type: c.type,
+                                                        amount: c.amount,
+                                                        platform: c.platform,
+                                                        priority: c.priority,
+                                                        status: c.status,
+                                                    },
+                                                })}
                                                 className="px-4 py-2 bg-indblue text-white text-[10px] font-black rounded-xl hover:bg-indblue/90 transition-all flex items-center gap-2">
                                                 <Download size={14} /> EXPORT CERTIFIED FIR (65B)
                                             </button>
                                             <button
-                                                onClick={() => downloadSimulatedFile(`BANK_DISPUTE_${c.id}`, 'pdf')}
+                                                onClick={() => downloadSimulatedFile(`BANK_DISPUTE_${c.id}`, 'pdf', {
+                                                    targetId: c.id,
+                                                    context: {
+                                                        report_id: c.id,
+                                                        scam_type: c.type,
+                                                        amount: c.amount,
+                                                        platform: c.platform,
+                                                        priority: c.priority,
+                                                    },
+                                                })}
                                                 className="px-4 py-2 bg-white border border-saffron/30 text-saffron text-[10px] font-black rounded-xl hover:bg-saffron/5 transition-all">
                                                 GENERATE DISPUTE LETTER
                                             </button>
@@ -391,7 +410,12 @@ export default function AgencyPage() {
                                         if (tool.url !== '#') window.open(tool.url, '_blank');
                                         else {
                                             toast.success("Section 65B AI Generator Initialized");
-                                            downloadSimulatedFile('Section_65B_Certificate', 'pdf');
+                                            downloadSimulatedFile('Section_65B_Certificate', 'pdf', {
+                                                context: {
+                                                    issued_to: "Agency Operator",
+                                                    evidence_description: "Section 65B certificate requested from the agency support matrix.",
+                                                },
+                                            });
                                         }
                                     }}
                                     className="w-full p-4 bg-boxbg hover:bg-indblue/5 rounded-2xl border border-silver/5 flex items-center justify-between transition-all group"

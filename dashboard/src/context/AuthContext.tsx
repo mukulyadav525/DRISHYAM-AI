@@ -42,6 +42,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const STORAGE_KEY = "drishyam_auth";
 const PRIVILEGED_ROLES = new Set(["admin", "police", "bank", "government", "telecom", "court"]);
+const API_CACHE_TTL_MS = 5000;
+const apiResponseCache = new Map<string, { expiresAt: number; response: Response }>();
+const apiInFlightRequests = new Map<string, Promise<Response>>();
 
 function defaultAccess(role: string): AccessManifest {
     return {
@@ -104,6 +107,39 @@ function buildAuthHeaders(init?: HeadersInit): Headers {
     return headers;
 }
 
+function clearApiCache() {
+    apiResponseCache.clear();
+    apiInFlightRequests.clear();
+}
+
+function resolveRequestMethod(input: RequestInfo | URL, init?: RequestInit): string {
+    if (init?.method) {
+        return init.method.toUpperCase();
+    }
+    if (input instanceof Request) {
+        return input.method.toUpperCase();
+    }
+    return "GET";
+}
+
+function isCacheableApiRequest(requestUrl: string, method: string, init?: RequestInit): boolean {
+    if (method !== "GET") {
+        return false;
+    }
+    if (init?.cache === "no-store") {
+        return false;
+    }
+    if (requestUrl.includes("/actions/download")) {
+        return false;
+    }
+    return true;
+}
+
+function buildApiCacheKey(requestUrl: string, method: string, headers: Headers): string {
+    const auth = headers.get("Authorization") || "";
+    return `${method}:${requestUrl}:${auth}`;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [user, setUser] = useState<AuthUser | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -113,6 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (authUser) {
             localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser));
         } else {
+            clearApiCache();
             localStorage.removeItem(STORAGE_KEY);
         }
     }, []);
@@ -133,7 +170,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             const headers = buildAuthHeaders(init?.headers || (input instanceof Request ? input.headers : undefined));
-            return originalFetch(input, { ...init, headers });
+            const method = resolveRequestMethod(input, init);
+
+            if (method !== "GET") {
+                clearApiCache();
+                return originalFetch(input, { ...init, headers });
+            }
+
+            if (!isCacheableApiRequest(requestUrl, method, init)) {
+                return originalFetch(input, { ...init, headers });
+            }
+
+            const cacheKey = buildApiCacheKey(requestUrl, method, headers);
+            const now = Date.now();
+            const cached = apiResponseCache.get(cacheKey);
+            if (cached && cached.expiresAt > now) {
+                return cached.response.clone();
+            }
+
+            const inFlight = apiInFlightRequests.get(cacheKey);
+            if (inFlight) {
+                return (await inFlight).clone();
+            }
+
+            const requestPromise = originalFetch(input, { ...init, headers }).then((response) => {
+                const contentType = response.headers.get("content-type") || "";
+                if (response.ok && contentType.includes("application/json")) {
+                    apiResponseCache.set(cacheKey, {
+                        expiresAt: Date.now() + API_CACHE_TTL_MS,
+                        response: response.clone(),
+                    });
+                } else {
+                    apiResponseCache.delete(cacheKey);
+                }
+                return response;
+            });
+
+            apiInFlightRequests.set(
+                cacheKey,
+                requestPromise.then((response) => response.clone()).finally(() => {
+                    apiInFlightRequests.delete(cacheKey);
+                }),
+            );
+
+            return requestPromise;
         }) as typeof window.fetch;
 
         return () => {

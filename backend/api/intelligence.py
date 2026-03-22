@@ -37,12 +37,15 @@ async def voice_cluster(body: dict, db: Session = Depends(get_db)):
 
 @router.post("/fir/generate")
 async def generate_fir(body: dict, db: Session = Depends(get_db)):
+    fir_packet_id = f"FIR-{uuid.uuid4().hex[:8].upper()}"
     return {
-        "fir_packet_id": f"FIR-{uuid.uuid4().hex[:8].upper()}",
+        "fir_packet_id": fir_packet_id,
         "evidence_act_65b_compliant": True,
         "entities_included": ["Phone", "UPI", "Voice"],
         "graph_cluster_snapshot": {"nodes": 12, "edges": 15},
-        "download_url": "/api/v1/forensic/download/fir_packet.pdf"
+        "download_category": f"CERTIFIED_FIR_65B_{fir_packet_id}",
+        "download_file_type": "pdf",
+        "download_target_id": fir_packet_id,
     }
 
 @router.post("/graph/cross-border-map")

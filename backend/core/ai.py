@@ -13,15 +13,18 @@ SARVAM_CHAT_URL = "https://api.sarvam.ai/v1/chat/completions"
 class SarvamHoneypot:
     def __init__(self):
         self.api_key = settings.SARVAM_API_KEY
-        self.client = httpx.AsyncClient(timeout=30.0)
         if not self.api_key:
             logger.warning("SARVAM_API_KEY is missing. AI features will be disabled.")
         else:
             logger.info("AI ENGINE: Sarvam-M initialized.")
 
     async def close(self):
-        """Close the persistent HTTP client."""
-        await self.client.aclose()
+        """Backward-compatible no-op; short-lived clients are used per request."""
+        return None
+
+    async def _post_json(self, url: str, *, headers: dict | None = None, json_body: dict | None = None) -> httpx.Response:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            return await client.post(url, headers=headers, json=json_body)
 
     def get_master_prompt(self, persona: str) -> str:
         base = (
@@ -73,13 +76,13 @@ class SarvamHoneypot:
         )
         
         try:
-            response = await self.client.post(
+            response = await self._post_json(
                 SARVAM_CHAT_URL,
                 headers={
                     "api-subscription-key": self.api_key,
                     "Content-Type": "application/json"
                 },
-                json={
+                json_body={
                     "model": "sarvam-m",
                     "messages": [
                         {"role": "system", "content": analysis_prompt},
@@ -132,13 +135,13 @@ class SarvamHoneypot:
         logger.info(f"AI: Sending request to Sarvam-M with {len(messages)} messages")
         
         try:
-            response = await self.client.post(
+            response = await self._post_json(
                 SARVAM_CHAT_URL,
                 headers={
                     "api-subscription-key": self.api_key,
                     "Content-Type": "application/json"
                 },
-                json={
+                json_body={
                     "model": "sarvam-m",
                     "messages": messages,
                     "temperature": 0.8,
@@ -180,27 +183,34 @@ class SarvamHoneypot:
         
         logger.info("AI: Using Gemini Fallback...")
         try:
-            # Flatten messages for Gemini
             flattened_prompt = ""
             for m in messages:
                 flattened_prompt += f"{m['role'].upper()}: {m['content']}\n"
             flattened_prompt += "ASSISTANT: "
 
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
-            
-            response = await self.client.post(
-                url,
-                json={
-                    "contents": [{"parts": [{"text": flattened_prompt}]}],
-                    "generationConfig": {"temperature": 0.7, "maxOutputTokens": 300}
-                }
-            )
-            
-            if response.status_code == 200:
-                data = response.json()
-                text = data['candidates'][0]['content']['parts'][0]['text']
-                return text.strip()
-            
+            for model_name in ["gemini-1.5-flash", "gemini-2.0-flash"]:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={settings.GEMINI_API_KEY}"
+                response = await self._post_json(
+                    url,
+                    json_body={
+                        "contents": [{"parts": [{"text": flattened_prompt}]}],
+                        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 300}
+                    },
+                )
+
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates") or []
+                    parts = ((candidates[0] or {}).get("content") or {}).get("parts") or []
+                    text = (parts[0] or {}).get("text")
+                    if text:
+                        return text.strip()
+                elif response.status_code == 404:
+                    logger.warning(f"Gemini fallback model unavailable: {model_name}")
+                    continue
+                else:
+                    logger.warning(f"Gemini fallback request failed for {model_name}: {response.status_code}")
+
             return ""
         except Exception as e:
             logger.error(f"Gemini fallback failed: {e}")
@@ -317,13 +327,13 @@ class SarvamHoneypot:
             return self.analyze_scam_locally(history)
 
         try:
-            response = await self.client.post(
+            response = await self._post_json(
                 SARVAM_CHAT_URL,
                 headers={
                     "api-subscription-key": self.api_key,
                     "Content-Type": "application/json"
                 },
-                json={
+                json_body={
                     "model": "sarvam-m",
                     "messages": messages,
                     "temperature": 0.1,

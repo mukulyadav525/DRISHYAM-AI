@@ -6,6 +6,11 @@ export interface ActionMetadata {
     [key: string]: any;
 }
 
+export interface DownloadOptions {
+    targetId?: string;
+    context?: ActionMetadata;
+}
+
 function resolveDownloadFilename(contentDisposition: string | null, fallback: string) {
     if (!contentDisposition) {
         return fallback;
@@ -62,7 +67,7 @@ export const useActions = () => {
         }
     };
 
-    const downloadSimulatedFile = async (category: string, fileType: string = 'pdf') => {
+    const downloadSimulatedFile = async (category: string, fileType: string = 'pdf', options?: DownloadOptions) => {
         setIsLoading(true);
         try {
             const authStr = localStorage.getItem('drishyam_auth');
@@ -71,7 +76,18 @@ export const useActions = () => {
                 throw new Error("Session expired or invalid. Please login again.");
             }
 
-            const res = await fetch(`${API_BASE}/actions/download-sim?file_type=${fileType}&category=${category}`, {
+            const params = new URLSearchParams({
+                file_type: fileType,
+                category,
+            });
+            if (options?.targetId) {
+                params.set("target_id", options.targetId);
+            }
+            if (options?.context) {
+                params.set("context", JSON.stringify(options.context));
+            }
+
+            const res = await fetch(`${API_BASE}/actions/download-sim?${params.toString()}`, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }

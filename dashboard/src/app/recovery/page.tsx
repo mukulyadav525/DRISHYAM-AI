@@ -130,7 +130,18 @@ export default function RecoveryPage() {
         },
       }));
 
-      await downloadSimulatedFile(fileKey, "pdf");
+      await downloadSimulatedFile(fileKey, "pdf", {
+        targetId: activeIncidentId || txnId || undefined,
+        context: {
+          incident_id: activeIncidentId,
+          txn_id: txnId,
+          txn_date: txnDate,
+          bank_name: bankName,
+          scam_type: scamType,
+          generated_document: docKey,
+          reference_id: id,
+        },
+      });
       toast.success(`${docKey} prepared (${id}).`);
     } catch (error) {
       console.error(`${docKey} generation failed:`, error);
@@ -329,7 +340,16 @@ export default function RecoveryPage() {
                   </p>
                 </div>
                 <button
-                  onClick={() => downloadSimulatedFile("RESTITUTION_BUNDLE", "zip")}
+                  onClick={() => downloadSimulatedFile("RESTITUTION_BUNDLE", "zip", {
+                    targetId: activeIncidentId || txnId || undefined,
+                    context: {
+                      incident_id: activeIncidentId,
+                      txn_id: txnId,
+                      txn_date: txnDate,
+                      bank_name: bankName,
+                      scam_type: scamType,
+                    },
+                  })}
                   className="ml-auto bg-white text-indgreen px-6 py-3 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-boxbg transition-all"
                 >
                   Download All (.zip)
