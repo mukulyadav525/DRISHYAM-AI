@@ -9,6 +9,7 @@ from typing import Optional, List, Dict
 from sqlalchemy.orm import Session
 
 from core.deepgram_engine import deepgram_engine
+from core.voice_engine import voice_engine as sarvam_engine
 from core.ai import honeypot_ai
 from core.database import get_db
 from models.database import HoneypotPersona, HoneypotSession, HoneypotMessage
@@ -33,9 +34,11 @@ class VoiceChatRequest(BaseModel):
     """Request body for a voice chat turn."""
     audio_base64: str
     persona: str = "Elderly Uncle"
-    language: str = "hi"
+    language: str = "hi-IN"
+    scammer_transcript: Optional[str] = None
     history: List[Dict[str, str]] = Field(default_factory=list)
     session_id: Optional[str] = None
+    engine: str = "deepgram"  # "deepgram" or "sarvam"
 
 class VoiceChatResponse(BaseModel):
     """Response body containing AI's voice reply."""
@@ -52,21 +55,22 @@ class TTSRequest(BaseModel):
     """Request body for text-to-speech."""
     text: str
     persona: str = "Elderly Uncle"
+    engine: str = "deepgram"
 
 class STTRequest(BaseModel):
     """Request body for speech-to-text."""
     audio_base64: str
-    language: str = "hi"
+    language: str = "hi-IN"
+    engine: str = "deepgram"
 
 # ------------------------------------------------------------------
 # HELPERS
 # ------------------------------------------------------------------
 
-def save_audio(audio_bytes: bytes, session_id: str, role: str) -> str:
+def save_audio(audio_bytes: bytes, session_id: str, role: str, audio_format: str = "webm") -> str:
     """Save audio bytes to disk and return the public URL path."""
-    filename = f"{session_id}_{role}_{uuid.uuid4().hex[:6]}.webm"
-    if role == "ai":
-        filename = filename.replace(".webm", ".mp3") # Deepgram Aura is MP3
+    extension = (audio_format or "webm").lower().lstrip(".")
+    filename = f"{session_id}_{role}_{uuid.uuid4().hex[:6]}.{extension}"
     
     filepath = os.path.join(RECORDINGS_PATH, filename)
     try:
@@ -85,22 +89,66 @@ def save_audio(audio_bytes: bytes, session_id: str, role: str) -> str:
 @router.post("/chat", response_model=VoiceChatResponse)
 async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_db)):
     """
-    Deepgram Voice Turn: STT -> AI -> TTS + Recording
+    Voice Turn: STT -> AI -> TTS + Recording
+    Supports engine='deepgram' (default) or engine='sarvam' (Indian languages).
     """
     if not request.audio_base64:
         raise HTTPException(status_code=400, detail="No audio provided")
 
+    engine = sarvam_engine if request.engine == "sarvam" else deepgram_engine
+    print(
+        f"[VOICE_CHAT] engine={request.engine} persona={request.persona} "
+        f"language={request.language} session_id={request.session_id}"
+    )
+    print(
+        f"[VOICE_CHAT] audio_base64_prefix="
+        f"{request.audio_base64[:40] if request.audio_base64 else 'NONE'}"
+    )
+    print(
+        f"[VOICE_CHAT] transcript_override_present="
+        f"{bool((request.scammer_transcript or '').strip())}"
+    )
+
     try:
         audio_str = request.audio_base64.split(",")[-1]
         audio_bytes = base64.b64decode(audio_str)
+        print(f"[VOICE_CHAT] decoded_audio_bytes={len(audio_bytes)}")
 
         # 1. Run Pipeline
-        result = await deepgram_engine.voice_chat_turn(
-            scammer_audio=audio_bytes,
-            persona=request.persona,
-            ai_generate_fn=honeypot_ai.generate_response,
-            history=request.history,
-        )
+        transcript_override = (request.scammer_transcript or "").strip()
+        if transcript_override:
+            print(f"[VOICE_CHAT] using browser transcript override={transcript_override[:120]}")
+            ai_response_text = await honeypot_ai.generate_response(
+                request.persona,
+                request.history,
+                transcript_override,
+            )
+            print(f"[VOICE_CHAT] ai_response_text={ai_response_text[:200]}")
+            tts_result = await engine.synthesize_speech(ai_response_text, request.persona)
+            print(f"[VOICE_CHAT] tts_result_keys={list(tts_result.keys())}")
+            print(f"[VOICE_CHAT] tts_audio_length={len(tts_result.get('audio_base64', ''))}")
+            print(f"[VOICE_CHAT] tts_format={tts_result.get('format')}")
+            result = {
+                "scammer_transcript": transcript_override,
+                "ai_response_text": ai_response_text,
+                "ai_audio_base64": tts_result.get("audio_base64", ""),
+                "audio_format": tts_result.get("format", "mp3"),
+                "language": request.language,
+                "persona": request.persona,
+            }
+        else:
+            result = await engine.voice_chat_turn(
+                scammer_audio=audio_bytes,
+                persona=request.persona,
+                language=request.language,
+                ai_generate_fn=honeypot_ai.generate_response,
+                history=request.history,
+            )
+            print(f"[VOICE_CHAT] engine_result_keys={list(result.keys())}")
+            print(f"[VOICE_CHAT] scammer_transcript={result.get('scammer_transcript', '')[:200]}")
+            print(f"[VOICE_CHAT] ai_response_text={result.get('ai_response_text', '')[:200]}")
+            print(f"[VOICE_CHAT] ai_audio_length={len(result.get('ai_audio_base64', ''))}")
+            print(f"[VOICE_CHAT] audio_format={result.get('audio_format')}")
 
         scammer_audio_url = None
         ai_audio_url = None
@@ -110,7 +158,7 @@ async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_d
             db_session = db.query(HoneypotSession).filter(HoneypotSession.session_id == request.session_id).first()
             if db_session:
                 # Save Scammer Audio
-                scammer_audio_url = save_audio(audio_bytes, request.session_id, "scammer")
+                scammer_audio_url = save_audio(audio_bytes, request.session_id, "scammer", "webm")
                 
                 if result["scammer_transcript"]:
                     scammer_msg = HoneypotMessage(
@@ -124,7 +172,7 @@ async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_d
                 # Save AI Audio
                 if result["ai_audio_base64"]:
                     ai_bytes = base64.b64decode(result["ai_audio_base64"])
-                    ai_audio_url = save_audio(ai_bytes, request.session_id, "ai")
+                    ai_audio_url = save_audio(ai_bytes, request.session_id, "ai", result.get("audio_format", "mp3"))
 
                 ai_msg = HoneypotMessage(
                     session_id=db_session.id,
@@ -149,27 +197,30 @@ async def voice_chat_turn(request: VoiceChatRequest, db: Session = Depends(get_d
     except Exception as e:
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Deepgram pipeline failed: {str(e)}")
+        print(f"[VOICE_CHAT][ERROR] engine={request.engine} error={repr(e)}")
+        raise HTTPException(status_code=500, detail=f"Voice pipeline failed ({request.engine}): {str(e)}")
 
 @router.post("/tts")
 async def text_to_speech(request: TTSRequest):
-    """Convert text to speech using Deepgram Aura."""
+    """Convert text to speech. Supports engine='deepgram' (default) or 'sarvam'."""
     if not request.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty")
+    engine = sarvam_engine if request.engine == "sarvam" else deepgram_engine
     try:
-        return await deepgram_engine.synthesize_speech(text=request.text)
+        return await engine.synthesize_speech(text=request.text)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
 
 @router.post("/stt")
 async def speech_to_text(request: STTRequest):
-    """Convert speech to text using Deepgram Nova-2."""
+    """Convert speech to text. Supports engine='deepgram' (default) or 'sarvam'."""
     if not request.audio_base64:
         raise HTTPException(status_code=400, detail="No audio provided")
+    engine = sarvam_engine if request.engine == "sarvam" else deepgram_engine
     try:
         audio_str = request.audio_base64.split(",")[-1]
         audio_bytes = base64.b64decode(audio_str)
-        return await deepgram_engine.transcribe_audio(audio_bytes=audio_bytes, language=request.language)
+        return await engine.transcribe_audio(audio_bytes=audio_bytes, language=request.language)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"STT error: {str(e)}")
 

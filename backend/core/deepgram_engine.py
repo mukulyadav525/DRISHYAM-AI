@@ -117,7 +117,8 @@ class DeepgramEngine:
         scammer_audio: bytes, 
         persona: str, 
         ai_generate_fn, 
-        history: List[Dict[str, str]]
+        history: List[Dict[str, str]],
+        language: str = "en-IN",
     ) -> Dict[str, Any]:
         """
         Unified loop for Simulation App voice turn:
@@ -135,7 +136,7 @@ class DeepgramEngine:
 
         try:
             # 1. STT: Transcribe scammer audio
-            stt_res = await self.transcribe_audio(scammer_audio)
+            stt_res = await self.transcribe_audio(scammer_audio, language=language)
             transcript = stt_res.get("transcript", "")
             
             # 2. AI: Generate response via Sarvam

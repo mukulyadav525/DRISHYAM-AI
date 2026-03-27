@@ -23,7 +23,28 @@ interface ChatMessage {
   role: "scammer" | "ai";
   text: string;
   audioBase64?: string;
+  audioFormat?: string;
   timestamp: string;
+}
+
+interface BrowserSpeechRecognitionEvent {
+  results: ArrayLike<ArrayLike<{ transcript: string }>>;
+}
+
+interface BrowserSpeechRecognition {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  onresult: ((event: BrowserSpeechRecognitionEvent) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+}
+
+interface BrowserSpeechRecognitionConstructor {
+  new (): BrowserSpeechRecognition;
 }
 
 interface SessionSummary {
@@ -78,6 +99,15 @@ function getStoredToken() {
   }
 }
 
+function getSpeechRecognitionConstructor(): BrowserSpeechRecognitionConstructor | null {
+  if (typeof window === "undefined") return null;
+  const win = window as Window & {
+    SpeechRecognition?: BrowserSpeechRecognitionConstructor;
+    webkitSpeechRecognition?: BrowserSpeechRecognitionConstructor;
+  };
+  return win.SpeechRecognition || win.webkitSpeechRecognition || null;
+}
+
 export default function ChatModule({
   customerId,
   selectedPersona,
@@ -88,6 +118,7 @@ export default function ChatModule({
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isVoiceMode, setIsVoiceMode] = useState(false);
+  const [voiceEngine, setVoiceEngine] = useState<"deepgram" | "sarvam">("deepgram");
   const [autoPlayVoice, setAutoPlayVoice] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [analysis, setAnalysis] = useState<any>(null);
@@ -106,7 +137,11 @@ export default function ChatModule({
   const [isTestCallLoading, setIsTestCallLoading] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const speechRecognitionRef = useRef<BrowserSpeechRecognition | null>(null);
+  const speechTranscriptRef = useRef("");
+  const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const audioMimeTypeRef = useRef("audio/webm");
   const transcriptEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -125,7 +160,7 @@ export default function ChatModule({
     return () => window.clearInterval(interval);
   }, [sessionId, callState]);
 
-  const playAudio = (base64Audio: string) => {
+  const playAudio = async (base64Audio: string, audioFormat = "mp3", userInitiated = false) => {
     if (!base64Audio) return;
     try {
       const byteChars = atob(base64Audio);
@@ -133,14 +168,57 @@ export default function ChatModule({
       for (let i = 0; i < byteChars.length; i += 1) {
         byteArray[i] = byteChars.charCodeAt(i);
       }
-      const blob = new Blob([byteArray], { type: "audio/mpeg" });
+      const mimeType = audioFormat === "wav" ? "audio/wav" : "audio/mpeg";
+      const blob = new Blob([byteArray], { type: mimeType });
       const url = URL.createObjectURL(blob);
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        if (audioPlayerRef.current.src.startsWith("blob:")) {
+          URL.revokeObjectURL(audioPlayerRef.current.src);
+        }
+      }
       const audio = new Audio(url);
-      void audio.play();
+      audio.preload = "auto";
+      audio.playsInline = true;
+      audioPlayerRef.current = audio;
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        if (audioPlayerRef.current === audio) {
+          audioPlayerRef.current = null;
+        }
+      };
+      try {
+        await audio.play();
+      } catch (error) {
+        console.error("Audio playback blocked:", error);
+        URL.revokeObjectURL(url);
+        if (audioPlayerRef.current === audio) {
+          audioPlayerRef.current = null;
+        }
+        if (!userInitiated) {
+          toast("Safari blocked auto-play. Tap REPLAY to hear the response.");
+        } else {
+          toast.error("Playback was blocked by Safari. Check site media permissions and try again.");
+        }
+      }
     } catch (error) {
       console.error("Audio playback failed:", error);
+      if (userInitiated) {
+        toast.error("Audio playback failed.");
+      }
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.pause();
+        if (audioPlayerRef.current.src.startsWith("blob:")) {
+          URL.revokeObjectURL(audioPlayerRef.current.src);
+        }
+      }
+    };
+  }, []);
 
   const refreshSummary = async (sid: string) => {
     try {
@@ -367,9 +445,41 @@ export default function ChatModule({
     if (callState !== "active") return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const preferredMimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      const supportedMimeType = preferredMimeTypes.find((mimeType) => MediaRecorder.isTypeSupported(mimeType));
+      const mediaRecorder = supportedMimeType
+        ? new MediaRecorder(stream, { mimeType: supportedMimeType })
+        : new MediaRecorder(stream);
       mediaRecorderRef.current = mediaRecorder;
       audioChunksRef.current = [];
+      audioMimeTypeRef.current = mediaRecorder.mimeType || supportedMimeType || "audio/webm";
+      speechTranscriptRef.current = "";
+
+      const SpeechRecognitionCtor = getSpeechRecognitionConstructor();
+      if (SpeechRecognitionCtor) {
+        const recognition = new SpeechRecognitionCtor();
+        recognition.lang = selectedPersona?.lang || "hi-IN";
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.onresult = (event) => {
+          let nextTranscript = "";
+          for (let i = 0; i < event.results.length; i += 1) {
+            const result = event.results[i];
+            if (result?.[0]?.transcript) {
+              nextTranscript += `${result[0].transcript} `;
+            }
+          }
+          speechTranscriptRef.current = nextTranscript.trim();
+        };
+        recognition.onerror = () => {
+          speechRecognitionRef.current = null;
+        };
+        recognition.onend = () => {
+          speechRecognitionRef.current = null;
+        };
+        recognition.start();
+        speechRecognitionRef.current = recognition;
+      }
 
       mediaRecorder.ondataavailable = (event) => {
         if (event.data.size > 0) {
@@ -378,11 +488,12 @@ export default function ChatModule({
       };
 
       mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        speechRecognitionRef.current?.stop();
+        const audioBlob = new Blob(audioChunksRef.current, { type: audioMimeTypeRef.current });
         const reader = new FileReader();
         reader.readAsDataURL(audioBlob);
         reader.onloadend = async () => {
-          await processVoiceAudio(reader.result as string);
+          await processVoiceAudio(reader.result as string, speechTranscriptRef.current);
         };
         stream.getTracks().forEach((track) => track.stop());
       };
@@ -397,12 +508,13 @@ export default function ChatModule({
 
   const stopRecording = () => {
     if (mediaRecorderRef.current && isRecording) {
+      speechRecognitionRef.current?.stop();
       mediaRecorderRef.current.stop();
       setIsRecording(false);
     }
   };
 
-  const processVoiceAudio = async (base64Audio: string) => {
+  const processVoiceAudio = async (base64Audio: string, transcriptOverride = "") => {
     if (!sessionId) return;
     setIsLoading(true);
     try {
@@ -412,7 +524,10 @@ export default function ChatModule({
         body: JSON.stringify({
           audio_base64: base64Audio,
           persona: selectedPersona?.id || "Elderly Uncle",
+          language: selectedPersona?.lang || "hi-IN",
+          scammer_transcript: transcriptOverride,
           session_id: sessionId,
+          engine: voiceEngine,
           history: messages.map((message) => ({
             role: message.role === "scammer" ? "user" : "assistant",
             content: message.text,
@@ -439,13 +554,14 @@ export default function ChatModule({
         role: "ai",
         text: data.ai_response_text,
         audioBase64: data.ai_audio_base64,
+        audioFormat: data.audio_format,
         timestamp: new Date().toISOString(),
       });
 
       setMessages((prev) => [...prev, ...nextMessages]);
 
       if (data.ai_audio_base64 && autoPlayVoice && !isTakeBackActive) {
-        playAudio(data.ai_audio_base64);
+        void playAudio(data.ai_audio_base64, data.audio_format);
       }
 
       await refreshSummary(sessionId);
@@ -953,6 +1069,24 @@ export default function ChatModule({
                   </div>
                 </div>
 
+                {isVoiceMode && (
+                  <div className="flex items-center justify-center gap-2 mb-2">
+                    <span className="text-[8px] font-black uppercase tracking-widest text-silver">Engine</span>
+                    <button
+                      onClick={() => setVoiceEngine("deepgram")}
+                      className={`px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all ${voiceEngine === "deepgram" ? "bg-indblue text-white border-indblue" : "bg-white text-silver border-silver/20 hover:border-indblue/30"}`}
+                    >
+                      Deepgram
+                    </button>
+                    <button
+                      onClick={() => setVoiceEngine("sarvam")}
+                      className={`px-2.5 py-1.5 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all ${voiceEngine === "sarvam" ? "bg-saffron text-white border-saffron" : "bg-white text-silver border-silver/20 hover:border-saffron/30"}`}
+                    >
+                      Sarvam 🇮🇳
+                    </button>
+                  </div>
+                )}
+
                 {isVoiceMode ? (
                   <div className="flex flex-col items-center gap-4 py-6">
                     <button
@@ -1023,7 +1157,9 @@ export default function ChatModule({
                       <p className="font-semibold">{message.text}</p>
                       {"audioBase64" in message && message.audioBase64 ? (
                         <button
-                          onClick={() => playAudio(message.audioBase64!)}
+                          onClick={() => {
+                            void playAudio(message.audioBase64!, message.audioFormat, true);
+                          }}
                           className="mt-3 py-1.5 px-2.5 bg-white rounded-full flex items-center gap-1.5 text-[8px] text-indblue hover:bg-indblue hover:text-white font-black tracking-widest transition-all"
                         >
                           <Volume2 size={10} />

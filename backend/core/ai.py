@@ -26,6 +26,34 @@ class SarvamHoneypot:
         async with httpx.AsyncClient(timeout=30.0) as client:
             return await client.post(url, headers=headers, json=json_body)
 
+    def _sanitize_spoken_response(self, text: str) -> str:
+        cleaned = (text or "").strip()
+        if not cleaned:
+            return ""
+
+        # Remove common stage directions and theatrical markers.
+        cleaned = re.sub(r"<think>.*?(?:</think>|$)", "", cleaned, flags=re.DOTALL | re.IGNORECASE)
+        cleaned = re.sub(r"\[[^\]]*(?:cough|sigh|pause|breath|wheez|laugh|chuckle|gasp)[^\]]*\]", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\*[^\*]*(?:cough|sigh|pause|breath|wheez|laugh|chuckle|gasp)[^\*]*\*", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"\([^\)]*(?:cough|sigh|pause|breath|wheez|laugh|chuckle|gasp)[^\)]*\)", "", cleaned, flags=re.IGNORECASE)
+
+        # Remove standalone narrative fragments if they leak into plain text.
+        cleaned = re.sub(
+            r"\b(?:coughs?|sighs?|wheez(?:e|es|ing)?|laughs?|chuckles?|gasps?|breathes?|breathing|long pause|pause)\b",
+            "",
+            cleaned,
+            flags=re.IGNORECASE,
+        )
+
+        # Normalize punctuation/spacing after removals.
+        cleaned = re.sub(r"\s{2,}", " ", cleaned)
+        cleaned = re.sub(r"\s+([,.;!?])", r"\1", cleaned)
+        cleaned = re.sub(r"([,.;!?]){2,}", r"\1", cleaned)
+        cleaned = re.sub(r"\.{4,}", "...", cleaned)
+        cleaned = re.sub(r"(?:\s*\.\.\.\s*){2,}", "... ", cleaned)
+        cleaned = cleaned.strip(" ,.;:-")
+        return cleaned.strip()
+
     def get_master_prompt(self, persona: str) -> str:
         base = (
             "You are the DRISHYAM Master AI, an advanced scam-interception honeypot. "
@@ -35,6 +63,8 @@ class SarvamHoneypot:
             "**TACTICAL OBJECTIVE**: Perform 'Reverse Extraction'. Try to get the scammer to tell you THEIR VPA, Bank Account, or Office Address. "
             "Act like you are ready to pay but having 'technical trouble' or 'network issues'. "
             "Waste their time, frustrate their scripts, and extract as much information as possible about their operation. "
+            "Write only plain spoken dialogue. Do not include stage directions, acting notes, sound effects, or expressions like "
+            "'*coughs*', '[sigh]', '(pause)', '[breathing]', or similar narrative markers. "
         )
         
         personas = {
@@ -160,6 +190,7 @@ class SarvamHoneypot:
             # ─── STRIP THINKING BLOCKS (Exhaustive) ───
             # Removes both closed <think>...</think> and unclosed <think>... blocks
             ai_text = re.sub(r'<think>.*?(?:</think>|$)', '', ai_text, flags=re.DOTALL).strip()
+            ai_text = self._sanitize_spoken_response(ai_text)
             
             # If after stripping thinking the response is empty, provide a fallback
             if not ai_text:
@@ -204,7 +235,8 @@ class SarvamHoneypot:
                     parts = ((candidates[0] or {}).get("content") or {}).get("parts") or []
                     text = (parts[0] or {}).get("text")
                     if text:
-                        return text.strip()
+                        sanitized = self._sanitize_spoken_response(text)
+                        return sanitized.strip()
                 elif response.status_code == 404:
                     logger.warning(f"Gemini fallback model unavailable: {model_name}")
                     continue
