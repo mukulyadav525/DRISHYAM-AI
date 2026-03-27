@@ -37,8 +37,8 @@ export default function LoginPage() {
             if (!authUser.mfaRequired || authUser.mfaVerified) {
                 router.replace("/");
             }
-        } catch (err: any) {
-            setError(err.message || "Authentication failed");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "Authentication failed");
         } finally {
             setIsSubmitting(false);
         }
@@ -52,8 +52,8 @@ export default function LoginPage() {
         try {
             await verifyMfa(otp);
             router.replace("/");
-        } catch (err: any) {
-            setError(err.message || "MFA verification failed");
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : "MFA verification failed");
         } finally {
             setIsSubmitting(false);
         }

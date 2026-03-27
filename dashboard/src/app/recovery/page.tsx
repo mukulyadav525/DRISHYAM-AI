@@ -34,6 +34,15 @@ interface GeneratedDocument {
   status: string;
 }
 
+interface RecoveryCaseSummary {
+  id: string;
+  amount: string;
+  type: string;
+  platform: string;
+  status: string;
+  priority: string;
+}
+
 export default function RecoveryPage() {
   const { performAction, downloadSimulatedFile } = useActions();
   const [step, setStep] = useState(1);
@@ -43,7 +52,7 @@ export default function RecoveryPage() {
   const [bankName, setBankName] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [activeCases, setActiveCases] = useState<any[]>([]);
+  const [activeCases, setActiveCases] = useState<RecoveryCaseSummary[]>([]);
   const [activeIncidentId, setActiveIncidentId] = useState<string | null>(null);
   const [caseStatus, setCaseStatus] = useState<CaseStatus | null>(null);
   const [generatedDocs, setGeneratedDocs] = useState<Record<string, GeneratedDocument>>({});

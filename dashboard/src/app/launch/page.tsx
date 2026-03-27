@@ -89,6 +89,18 @@ interface OutcomeReport {
     published_at?: string | null;
 }
 
+const initialPilotForm = {
+    name: "",
+    geography: "",
+    telecom_partner: "",
+    bank_partners: "",
+    agencies: "",
+    languages: "",
+    scam_categories: "",
+};
+
+type PilotFormField = keyof typeof initialPilotForm;
+
 const ROADMAP = [
     { id: 1, title: "Wave 1: Northern Hubs", states: ["Delhi", "NCR", "Haryana"], status: "OPERATIONAL", color: "bg-indgreen" },
     { id: 2, title: "Wave 2: Financial Corridors", states: ["Mumbai", "Bengaluru", "Hyderabad"], status: "ACTIVE", color: "bg-indblue" },
@@ -117,15 +129,7 @@ export default function LaunchPage() {
     const [readiness, setReadiness] = useState<PilotReadiness | null>(null);
     const [feedback, setFeedback] = useState<FeedbackEntry[]>([]);
     const [outcome, setOutcome] = useState<OutcomeReport | null>(null);
-    const [pilotForm, setPilotForm] = useState({
-        name: "",
-        geography: "",
-        telecom_partner: "",
-        bank_partners: "",
-        agencies: "",
-        languages: "",
-        scam_categories: "",
-    });
+    const [pilotForm, setPilotForm] = useState(initialPilotForm);
     const [communicationsMessage, setCommunicationsMessage] = useState(
         "DRISHYAM pilot launch advisory: the protected anti-scam grid is now active for selected agencies and citizens."
     );
@@ -454,11 +458,11 @@ export default function LaunchPage() {
                                 { key: "agencies", label: "Agencies" },
                                 { key: "languages", label: "Languages" },
                                 { key: "scam_categories", label: "Scam Categories" },
-                            ].map((field) => (
+                            ].map((field: { key: PilotFormField; label: string }) => (
                                 <div key={field.key} className={field.key === "scam_categories" ? "md:col-span-2" : ""}>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-silver">{field.label}</label>
                                     <input
-                                        value={(pilotForm as any)[field.key]}
+                                        value={pilotForm[field.key]}
                                         onChange={(event) =>
                                             setPilotForm((current) => ({
                                                 ...current,

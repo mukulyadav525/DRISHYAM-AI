@@ -62,6 +62,32 @@ interface VPAHistory {
     }[];
 }
 
+interface QRForensicResult {
+    success?: boolean;
+    error?: string;
+    is_safe?: boolean;
+    payload?: string;
+    vpa?: string;
+    risk_factors?: string[];
+    checks?: {
+        payload?: boolean;
+        tls?: boolean;
+        merchant?: boolean;
+    };
+}
+
+interface MessageScanVpa {
+    vpa: string;
+    status: string;
+}
+
+interface MessageScanResult {
+    verdict: "SAFE" | "RISK";
+    confidence?: number;
+    pattern_detected?: string;
+    extracted_vpas?: MessageScanVpa[];
+}
+
 export default function UPIPage() {
     const { performAction } = useActions();
     const [upiId, setUpiId] = useState("");
@@ -71,12 +97,12 @@ export default function UPIPage() {
     const [data, setData] = useState<UPIStats | null>(null);
 
     const [qrScanning, setQrScanning] = useState(false);
-    const [forensicResult, setForensicResult] = useState<any>(null);
+    const [forensicResult, setForensicResult] = useState<QRForensicResult | null>(null);
 
     // Message Scanner State
     const [messageText, setMessageText] = useState("");
     const [isScanning, setIsScanning] = useState(false);
-    const [scanResult, setScanResult] = useState<any>(null);
+    const [scanResult, setScanResult] = useState<MessageScanResult | null>(null);
     const [vpaHistory, setVpaHistory] = useState<VPAHistory | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -122,7 +148,7 @@ export default function UPIPage() {
                 body: JSON.stringify({ message: messageText })
             });
             if (res.ok) {
-                const data = await res.json();
+                const data = (await res.json()) as MessageScanResult;
                 setScanResult(data);
             } else {
                 console.error("Failed to scan message");
@@ -151,7 +177,7 @@ export default function UPIPage() {
             });
 
             if (res.ok) {
-                const data = await res.json();
+                const data = (await res.json()) as QRForensicResult;
                 setForensicResult(data);
                 if (data.is_safe === false) performAction('SCAN_QR', 'MALICIOUS_QR_FOUND');
                 else performAction('SCAN_QR', 'SAFE_QR_SCANNED');
@@ -186,7 +212,7 @@ export default function UPIPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight">UPI Shield & WhatsApp Interceptor</h2>
-                    <p className="text-silver mt-1 italic font-medium">Protecting the digital payment layer from "Collect-Request" traps.</p>
+                    <p className="text-silver mt-1 italic font-medium">Protecting the digital payment layer from &quot;Collect-Request&quot; traps.</p>
                 </div>
                 <div className="flex bg-boxbg p-1 rounded-xl border border-silver/10 self-start">
                     <button
@@ -326,7 +352,7 @@ export default function UPIPage() {
                             </div>
                             <h3 className="text-xl font-bold text-indblue mb-2">QR Forensic Analysis</h3>
                             <p className="text-silver text-sm max-w-sm mx-auto mb-8 italic">
-                                Scanned QR codes are analyzed for "Destination Overlay" and "Malicious Redirection" before any payment occurs.
+                                Scanned QR codes are analyzed for &quot;Destination Overlay&quot; and &quot;Malicious Redirection&quot; before any payment occurs.
                             </p>
 
                             {!qrScanning && !forensicResult && (
@@ -481,7 +507,7 @@ export default function UPIPage() {
                                             <div className="pt-4 border-t border-silver/10 mt-4">
                                                 <p className="text-[10px] font-bold text-silver uppercase mb-3">Extracted UPI Handles (VPAs)</p>
                                                 <div className="space-y-2">
-                                                    {scanResult.extracted_vpas.map((vpa: any, i: number) => (
+                                                    {scanResult.extracted_vpas.map((vpa: MessageScanVpa, i: number) => (
                                                         <div key={i} className={`flex justify-between items-center p-2 rounded bg-white border ${vpa.status === 'SAFE' ? 'border-indgreen/20' : 'border-red-200'} text-xs font-mono`}>
                                                             <span className={vpa.status === 'SAFE' ? 'text-indblue' : 'text-redalert'}>{vpa.vpa}</span>
                                                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full uppercase ${vpa.status === 'SAFE' ? 'bg-indgreen/10 text-indgreen' : 'bg-redalert text-white'}`}>

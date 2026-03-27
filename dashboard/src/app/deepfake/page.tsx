@@ -15,6 +15,7 @@ import {
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import FeedModal from "@/components/FeedModal";
+import type { FeedModalData } from "@/components/FeedModal";
 import { toast } from "react-hot-toast";
 
 
@@ -39,8 +40,19 @@ interface ForensicResult {
         visual_artifacts?: string;
         blink_frequency?: string;
         temporal_consistency?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
+}
+
+interface ForensicJobResponse {
+    id?: number;
+    status?: "PENDING" | "COMPLETED" | "FAILED";
+}
+
+interface DeepfakeIncident {
+    type: string;
+    risk: string;
+    status: string;
 }
 
 
@@ -51,7 +63,7 @@ export default function DeepfakePage() {
     const [verdict, setVerdict] = useState<null | 'REAL' | 'SUSPICIOUS' | 'FAKE' | 'VERIFIED' | 'DEEPFAKE'>(null);
     const [data, setData] = useState<DeepfakeStats | null>(null);
     const [aiResult, setAiResult] = useState<ForensicResult | null>(null);
-    const [selectedIncident, setSelectedIncident] = useState<any>(null);
+    const [selectedIncident, setSelectedIncident] = useState<FeedModalData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -99,7 +111,7 @@ export default function DeepfakePage() {
             }
 
             if (res.ok) {
-                const result = await res.json();
+                const result = (await res.json()) as ForensicResult & ForensicJobResponse;
                 
                 if (result.status === "PENDING" && result.id) {
                     // Poll for completion
@@ -112,7 +124,7 @@ export default function DeepfakePage() {
                             });
                             
                             if (statusRes.ok) {
-                                const statusData = await statusRes.json();
+                                const statusData = (await statusRes.json()) as ForensicResult & ForensicJobResponse;
                                 if (statusData.status === "COMPLETED") {
                                     clearInterval(pollInterval);
                                     setAiResult(statusData);
@@ -432,7 +444,7 @@ export default function DeepfakePage() {
                             Recent Incidents
                         </h4>
                         <div className="space-y-4">
-                            {data?.incidents && Array.isArray(data.incidents) ? data.incidents.map((inc: any, i: number) => {
+                            {data?.incidents && Array.isArray(data.incidents) ? data.incidents.map((inc: DeepfakeIncident, i: number) => {
                                 const Icon = inc.status === "Deepfake" ? ShieldAlert : FileWarning;
                                 return (
                                     <div

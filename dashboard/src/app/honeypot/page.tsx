@@ -239,7 +239,7 @@ export default function HoneypotPage() {
                                         <div className={`w-2 h-2 rounded-full bg-indgreen animate-pulse`} />
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="text-[10px] text-silver font-medium italic">"{p.speaker} voice profile"</p>
+                                        <p className="text-[10px] text-silver font-medium italic">&quot;{p.speaker} voice profile&quot;</p>
                                         <p className="text-[10px] font-bold text-charcoal uppercase tracking-widest">{p.language}</p>
                                     </div>
                                 </div>

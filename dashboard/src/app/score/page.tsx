@@ -97,7 +97,7 @@ export default function ScorePage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-saffron decoration-4 underline-offset-8">DRISHYAM Score Engine</h2>
-                    <p className="text-silver mt-4 italic font-medium">Real-time "Cyber Hygiene" metric for the 1.4B Indian Citizenry.</p>
+                    <p className="text-silver mt-4 italic font-medium">Real-time &quot;Cyber Hygiene&quot; metric for the 1.4B Indian Citizenry.</p>
                 </div>
                 <div className="flex gap-2">
                     <button
@@ -239,7 +239,7 @@ export default function ScorePage() {
                                 <span className="text-white/60">/api/v1/citizen/trust-score?uid=AADHAAR_HASH</span>
                             </div>
                             <div className="text-white/40 border-t border-white/5 pt-4">
-                                <p className="mb-2">// Sample Response</p>
+                                <p className="mb-2">{"// Sample Response"}</p>
                                 <pre className="text-indgreen">
                                     {`{
   "score": "...",

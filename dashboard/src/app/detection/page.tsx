@@ -15,6 +15,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import FeedModal from "@/components/FeedModal";
+import type { FeedModalData } from "@/components/FeedModal";
 import { useRouter } from "next/navigation";
 
 
@@ -49,7 +50,7 @@ export default function DetectionGrid() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
     const [filterRisk, setFilterRisk] = useState<'ALL' | 'SCAM'>('ALL');
-    const [selectedCall, setSelectedCall] = useState<any>(null);
+    const [selectedCall, setSelectedCall] = useState<FeedModalData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [page, setPage] = useState(1);
     const pageSize = 5;

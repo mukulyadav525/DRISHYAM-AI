@@ -1,12 +1,21 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShieldAlert, MapPin, Activity, FileSearch } from "lucide-react";
+import { X, ShieldAlert, Activity, FileSearch } from "lucide-react";
+
+export interface FeedModalData {
+    victim_id?: string;
+    location?: string;
+    scam_type?: string;
+    risk_score?: number;
+    evidence?: string[];
+    status?: string;
+}
 
 interface FeedModalProps {
     isOpen: boolean;
     onClose: () => void;
-    data: any;
+    data: FeedModalData | null;
 }
 
 export default function FeedModal({ isOpen, onClose, data }: FeedModalProps) {

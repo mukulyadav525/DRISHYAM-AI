@@ -295,7 +295,7 @@ export default function ProfilingPage() {
                         </div>
 
                         <div className="p-4 bg-black/20 rounded-2xl border border-white/5 font-mono text-[10px] space-y-1">
-                            <p className="text-indgreen">// Behavioral Attribution</p>
+                            <p className="text-indgreen">{"// Behavioral Attribution"}</p>
                             <p className="opacity-60 text-white leading-loose">
                                 {careerProfile
                                     ? `${careerProfile.hierarchy_level} profile with ${careerProfile.total_attempts_estimated} estimated attempts.`

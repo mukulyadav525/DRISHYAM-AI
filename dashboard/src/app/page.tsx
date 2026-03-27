@@ -16,6 +16,8 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import { Settings } from "lucide-react";
+import type { FeedModalData } from "@/components/FeedModal";
+import type { CustomerSearchData } from "@/components/CustomerSearchModal";
 
 
 interface OverviewData {
@@ -79,11 +81,10 @@ export default function OverviewPage() {
   const [showMap, setShowMap] = useState(false);
   const [tickerItems, setTickerItems] = useState<string[]>([]);
   const [showTicker, setShowTicker] = useState(false);
-  const [selectedFeed, setSelectedFeed] = useState<any>(null);
+  const [selectedFeed, setSelectedFeed] = useState<FeedModalData | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchData, setSearchData] = useState<any>(null);
+  const [searchData, setSearchData] = useState<CustomerSearchData | null>(null);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
 
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
@@ -102,7 +103,7 @@ export default function OverviewPage() {
         } else {
           throw new Error(`API returned ${res.status}`);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Error fetching overview data:", error);
         setFetchError("Grid connection timed out or backend is offline.");
       } finally {

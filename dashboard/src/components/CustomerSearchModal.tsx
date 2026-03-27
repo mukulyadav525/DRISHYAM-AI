@@ -3,10 +3,22 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, User, ShieldCheck, ShieldAlert, History, Activity } from "lucide-react";
 
+export interface CustomerSearchData {
+    uid?: string | number;
+    name?: string;
+    status?: string;
+    score?: number;
+    details?: {
+        threats_blocked?: number;
+        total_calls?: number;
+        last_active?: string | null;
+    };
+}
+
 interface CustomerSearchModalProps {
     isOpen: boolean;
     onClose: () => void;
-    data: any;
+    data: CustomerSearchData | null;
     onDownload?: () => void;
 }
 

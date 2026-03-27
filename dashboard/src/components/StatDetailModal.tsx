@@ -3,11 +3,26 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ShieldCheck, Users, IndianRupee, AlertTriangle, ArrowRight, BarChart3, Globe, Download, Zap } from "lucide-react";
 
+interface StatMetric {
+    label: string;
+    value: string | number;
+    trend?: string;
+}
+
+interface StatDetailData {
+    stat_details?: {
+        scams?: { metrics?: StatMetric[] };
+        citizens?: { metrics?: StatMetric[] };
+        savings?: { metrics?: StatMetric[] };
+        threats?: { metrics?: StatMetric[] };
+    };
+}
+
 interface StatDetailModalProps {
     isOpen: boolean;
     onClose: () => void;
     type: "scams" | "citizens" | "savings" | "threats" | null;
-    data: any;
+    data: StatDetailData | null;
     onActionClick?: (action: string) => void;
     onDownload?: (type: "scams" | "citizens" | "savings" | "threats") => void;
 }
@@ -99,7 +114,7 @@ export default function StatDetailModal({ isOpen, onClose, type, data, onActionC
                         {/* Content */}
                         <div className="p-5 sm:p-8 space-y-6 sm:space-y-8">
                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                                {current.metrics.map((m: any, i: number) => (
+                                {current.metrics.map((m, i: number) => (
                                     <div key={i} className="p-4 bg-boxbg rounded-2xl border border-silver/10 hover:border-silver/20 transition-all">
                                         <p className="text-[10px] font-bold text-silver uppercase tracking-widest mb-1">{m.label}</p>
                                         <div className="flex items-baseline justify-between">

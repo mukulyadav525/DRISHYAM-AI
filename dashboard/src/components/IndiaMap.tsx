@@ -127,8 +127,8 @@ export default function IndiaMap({ hotspots = [] }: IndiaMapProps) {
                 }
             });
 
-        } catch (err: any) {
-            setMapError(err.message);
+        } catch (err: unknown) {
+            setMapError(err instanceof Error ? err.message : "Failed to initialize map");
             setIsGeoLoading(false);
         }
 

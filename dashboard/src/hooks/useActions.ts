@@ -4,12 +4,19 @@ import { API_BASE } from '@/config/api';
 import { useAuth } from '@/context/AuthContext';
 
 export interface ActionMetadata {
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface DownloadOptions {
     targetId?: string;
     context?: ActionMetadata;
+}
+
+export interface ActionResponse {
+    status?: string;
+    message?: string;
+    detail?: Record<string, unknown>;
+    [key: string]: unknown;
 }
 
 function resolveDownloadFilename(contentDisposition: string | null, fallback: string) {
@@ -34,7 +41,7 @@ export const useActions = () => {
     const { user } = useAuth();
     const [isLoading, setIsLoading] = useState(false);
 
-    const performAction = async (actionType: string, targetId?: string, metadata?: ActionMetadata) => {
+    const performAction = async (actionType: string, targetId?: string, metadata?: ActionMetadata): Promise<ActionResponse | null> => {
         const token = user?.token;
         if (!token) {
             toast.error("Session expired or invalid. Please login again.");
@@ -60,12 +67,13 @@ export const useActions = () => {
                 throw new Error(errData.detail || 'Action failed');
             }
 
-            const data = await res.json();
+            const data = (await res.json()) as ActionResponse;
             toast.success(data.message || `${actionType} successful`);
             return data;
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : `Failed to perform ${actionType}`;
             console.error(`Action ${actionType} failed:`, error);
-            toast.error(error.message || `Failed to perform ${actionType}`);
+            toast.error(message);
             return null;
         } finally {
             setIsLoading(false);
@@ -133,9 +141,10 @@ export const useActions = () => {
             toast.success(`Downloaded ${filename}`, { id: 'dl-toast' });
 
             return data;
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Failed to generate report";
             console.error('Download failed:', error);
-            toast.error(error.message || 'Failed to generate report');
+            toast.error(message);
             return null;
         } finally {
             setIsLoading(false);

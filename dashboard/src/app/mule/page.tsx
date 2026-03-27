@@ -16,6 +16,7 @@ import {
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
+import type { FeedModalData } from "@/components/FeedModal";
 import FeedModal from "@/components/FeedModal";
 
 
@@ -42,7 +43,7 @@ export default function MulePage() {
     const [isScanning, setIsScanning] = useState(false);
     const [data, setData] = useState<MuleStats | null>(null);
     const [scanProgress, setScanProgress] = useState(0);
-    const [selectedIntel, setSelectedIntel] = useState<any>(null);
+    const [selectedIntel, setSelectedIntel] = useState<FeedModalData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const fetchStats = async () => {
@@ -78,7 +79,7 @@ export default function MulePage() {
                 // Fetch fresh stats to see the new ad
                 await fetchStats();
             }
-        } catch (e) {
+        } catch {
             toast.error("Interception Pipeline Failed");
         } finally {
             setIsScanning(false);
@@ -241,7 +242,7 @@ export default function MulePage() {
                         </div>
                         <h4 className="font-bold mb-2">Targeted Campaigns</h4>
                         <p className="text-xs text-silver leading-relaxed mb-6">
-                            Current surge detected in "Tier-2 College" recruitment drives. Multiple fake HR profiles active on job platforms.
+                            Current surge detected in &quot;Tier-2 College&quot; recruitment drives. Multiple fake HR profiles active on job platforms.
                         </p>
                         <button
                             onClick={async () => {

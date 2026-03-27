@@ -47,6 +47,10 @@ const apiResponseCache = new Map<string, { expiresAt: number; response: Response
 const apiInFlightRequests = new Map<string, Promise<Response>>();
 const AUTH_BOOT_TIMEOUT_MS = 6000;
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+    return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
 function defaultAccess(role: string): AccessManifest {
     return {
         role,
@@ -58,31 +62,32 @@ function defaultAccess(role: string): AccessManifest {
     };
 }
 
-function normalizeAccess(raw: any, role: string): AccessManifest {
-    const manifest = raw && typeof raw === "object" ? raw : {};
+function normalizeAccess(raw: unknown, role: string): AccessManifest {
+    const manifest = asRecord(raw) || {};
     return {
-        role: manifest.role || role,
-        role_label: manifest.role_label || defaultAccess(role).role_label,
-        allowed_pages: Array.isArray(manifest.allowed_pages) ? manifest.allowed_pages : [],
-        allowed_resources: Array.isArray(manifest.allowed_resources) ? manifest.allowed_resources : [],
-        pages: Array.isArray(manifest.pages) ? manifest.pages : [],
-        generated_at: manifest.generated_at || null,
+        role: typeof manifest.role === "string" ? manifest.role : role,
+        role_label: typeof manifest.role_label === "string" ? manifest.role_label : defaultAccess(role).role_label,
+        allowed_pages: Array.isArray(manifest.allowed_pages) ? manifest.allowed_pages.filter((item): item is string => typeof item === "string") : [],
+        allowed_resources: Array.isArray(manifest.allowed_resources) ? manifest.allowed_resources.filter((item): item is string => typeof item === "string") : [],
+        pages: Array.isArray(manifest.pages) ? manifest.pages.filter((item): item is AccessPageDecision => typeof item === "object" && item !== null) : [],
+        generated_at: typeof manifest.generated_at === "string" ? manifest.generated_at : null,
     };
 }
 
-function normalizeStoredUser(parsed: any): AuthUser {
-    const role = parsed?.role || "common";
-    const mfaRequired = parsed?.mfaRequired ?? PRIVILEGED_ROLES.has(role);
-    const mfaVerified = parsed?.mfaVerified ?? !mfaRequired;
+function normalizeStoredUser(parsed: unknown): AuthUser {
+    const record = asRecord(parsed) || {};
+    const role = typeof record.role === "string" ? record.role : "common";
+    const mfaRequired = typeof record.mfaRequired === "boolean" ? record.mfaRequired : PRIVILEGED_ROLES.has(role);
+    const mfaVerified = typeof record.mfaVerified === "boolean" ? record.mfaVerified : !mfaRequired;
 
     return {
-        username: parsed?.username || "",
+        username: typeof record.username === "string" ? record.username : "",
         role,
-        full_name: parsed?.full_name ?? null,
-        token: parsed?.token || "",
+        full_name: typeof record.full_name === "string" ? record.full_name : null,
+        token: typeof record.token === "string" ? record.token : "",
         mfaRequired,
         mfaVerified,
-        access: normalizeAccess(parsed?.access, role),
+        access: normalizeAccess(record.access, role),
     };
 }
 

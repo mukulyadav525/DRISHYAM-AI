@@ -46,8 +46,9 @@ export default function ManagementOverlay({ isOpen, onClose }: { isOpen: boolean
         console.error("Dashboard list error:", res.status, errText);
         toast.error(`HQ Error: ${res.status}`);
       }
-    } catch (e: any) {
-      toast.error(`Connection Failed: ${e.message}`);
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      toast.error(`Connection Failed: ${message}`);
     } finally {
       setIsLoading(false);
     }

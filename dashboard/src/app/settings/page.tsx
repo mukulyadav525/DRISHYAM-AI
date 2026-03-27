@@ -136,12 +136,12 @@ export default function SettingsPage() {
                 setProfile(profileData);
                 setAuditLogs(logsData);
                 setConsentSummary(consentData);
-            } catch (fetchError: any) {
-                if (fetchError.name === "AbortError") {
+            } catch (fetchError: unknown) {
+                if (fetchError instanceof Error && fetchError.name === "AbortError") {
                     return;
                 }
                 console.error(fetchError);
-                setError(fetchError.message || "Unable to load security console");
+                setError(fetchError instanceof Error ? fetchError.message : "Unable to load security console");
             } finally {
                 setIsLoading(false);
             }

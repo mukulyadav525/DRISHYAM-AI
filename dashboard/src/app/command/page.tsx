@@ -23,11 +23,45 @@ import {
 } from "lucide-react";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
-import { toast } from "react-hot-toast";
+
+interface StatePerformance {
+    state: string;
+    cases: number;
+    resolved: string;
+    trend: "up" | "down";
+}
+
+interface ForecastItem {
+    day: string;
+    trend: string;
+    color?: string;
+}
+
+interface AlertItem {
+    id: string;
+    severity: string;
+    time: string;
+    msg: string;
+}
+
+interface CommandData {
+    rupees_saved?: number;
+    active_clusters?: number;
+    freeze_requests?: number;
+    cyber_hygiene?: string;
+    state_performance?: StatePerformance[];
+    forecast?: ForecastItem[];
+    alerts?: AlertItem[];
+    system_health?: {
+        detection_nodes?: string;
+        vpa_interceptor?: string;
+        voice_ai_core?: string;
+    };
+}
 
 export default function CommandPage() {
     const { performAction, downloadSimulatedFile } = useActions();
-    const [data, setData] = useState<any>(null);
+    const [data, setData] = useState<CommandData | null>(null);
     const [loading, setLoading] = useState(true);
     const [showElevatedOnly, setShowElevatedOnly] = useState(false);
 
@@ -45,7 +79,7 @@ export default function CommandPage() {
         fetchStats();
     }, []);
 
-    const statePerformance = (data?.state_performance || []).filter((item: any) => !showElevatedOnly || item.trend === 'up');
+    const statePerformance = (data?.state_performance || []).filter((item) => !showElevatedOnly || item.trend === 'up');
 
     const alerts = data?.alerts || [];
 
@@ -55,7 +89,7 @@ export default function CommandPage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-2xl sm:text-3xl font-bold text-indblue tracking-tight underline decoration-indblue decoration-4 underline-offset-8">National Command Intelligence Dashboard</h2>
-                    <p className="text-silver mt-4 italic font-medium">Strategic "War Room" for National Anti-Fraud Response (Module 6).</p>
+                    <p className="text-silver mt-4 italic font-medium">Strategic &quot;War Room&quot; for National Anti-Fraud Response (Module 6).</p>
                 </div>
                 <div className="flex gap-2">
                     <div className="bg-white p-3 rounded-2xl border border-silver/10 shadow-sm flex items-center gap-3">
@@ -130,7 +164,7 @@ export default function CommandPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-silver/5">
-                                    {(Array.isArray(statePerformance) ? statePerformance : []).map((s: any, i: number) => (
+                                    {(Array.isArray(statePerformance) ? statePerformance : []).map((s, i: number) => (
                                         <tr key={i} className="group hover:bg-boxbg/50 transition-colors">
                                             <td className="py-4 font-bold text-indblue text-sm">{s.state || 'N/A'}</td>
                                             <td className="py-4 text-xs font-bold text-charcoal">{(s.cases || 0).toLocaleString()}</td>
@@ -168,7 +202,7 @@ export default function CommandPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {(data?.forecast || []).map((d: any, i: number) => (
+                            {(data?.forecast || []).map((d, i: number) => (
                                 <div key={i} className="p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <p className="text-[10px] uppercase font-bold text-white/40 mb-2">{d.day}</p>
                                     <p className={`text-sm font-bold ${d.color || 'text-white'}`}>{d.trend}</p>
@@ -186,7 +220,7 @@ export default function CommandPage() {
                             <h4 className="font-bold text-sm uppercase">Active Intelligence Alerts</h4>
                         </div>
                         <div className="space-y-4">
-                            {(Array.isArray(alerts) ? alerts : []).map((a: any) => (
+                            {(Array.isArray(alerts) ? alerts : []).map((a) => (
                                 <div key={a.id} className="p-3 bg-redalert/5 border border-redalert/10 rounded-xl">
                                     <div className="flex justify-between items-start mb-1">
                                         <span className={`text-[8px] font-black px-2 py-0.5 rounded ${a.severity === 'CRITICAL' ? 'bg-redalert text-white' : 'bg-saffron text-white'}`}>
@@ -211,7 +245,7 @@ export default function CommandPage() {
                                 { label: 'Detection Nodes', status: data?.system_health?.detection_nodes || 'Unknown', color: data?.system_health?.detection_nodes === 'Operational' ? 'text-indgreen' : 'text-silver' },
                                 { label: 'VPA Interceptor', status: data?.system_health?.vpa_interceptor || 'Unknown', color: data?.system_health?.vpa_interceptor === 'Operational' ? 'text-indgreen' : 'text-silver' },
                                 { label: 'Voice AI Core', status: data?.system_health?.voice_ai_core || 'Unknown', color: data?.system_health?.voice_ai_core === 'Operational' ? 'text-indgreen' : 'text-silver' }
-                            ].map((s: any, i: number) => (
+                            ].map((s: { label: string; status: string; color: string }, i: number) => (
                                 <div key={i} className="flex justify-between items-center text-[10px]">
                                     <span className="text-silver font-bold uppercase">{s.label}</span>
                                     <span className={`font-mono font-bold ${s.color}`}>{s.status}</span>

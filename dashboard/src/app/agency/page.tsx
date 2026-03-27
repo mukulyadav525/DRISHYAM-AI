@@ -27,6 +27,7 @@ import {
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import { toast } from "react-hot-toast";
+import type { FeedModalData } from "@/components/FeedModal";
 
 interface PoliceCase {
     id: string;
@@ -68,8 +69,8 @@ export default function AgencyPage() {
     const [data, setData] = useState<AgencyData | null>(null);
     const [loading, setLoading] = useState(true);
     const [frozenVPAs, setFrozenVPAs] = useState<Set<string>>(new Set());
-    const [selectedCaseDetail, setSelectedCaseDetail] = useState<any>(null);
-    const [selectedIntelDetail, setSelectedIntelDetail] = useState<any>(null);
+    const [selectedCaseDetail, setSelectedCaseDetail] = useState<FeedModalData | null>(null);
+    const [selectedIntelDetail, setSelectedIntelDetail] = useState<FeedModalData | null>(null);
 
     const fetchData = useCallback(async () => {
         try {

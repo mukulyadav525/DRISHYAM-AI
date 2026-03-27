@@ -17,6 +17,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useActions } from "@/hooks/useActions";
 import { API_BASE } from "@/config/api";
 import FeedModal from "@/components/FeedModal";
+import type { FeedModalData } from "@/components/FeedModal";
 
 interface Scenario {
     id: string;
@@ -67,7 +68,7 @@ export default function AlertsPage() {
     const [scenarios, setScenarios] = useState<Scenario[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDispatching, setIsDispatching] = useState(false);
-    const [selectedAlert, setSelectedAlert] = useState<any>(null);
+    const [selectedAlert, setSelectedAlert] = useState<FeedModalData | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [targetRegion, setTargetRegion] = useState("national");
     const [selectedScenarioId, setSelectedScenarioId] = useState("");
