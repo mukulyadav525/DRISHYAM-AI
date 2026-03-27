@@ -25,7 +25,7 @@ export default function DeepfakeModule({
 }: DeepfakeModuleProps) {
   const [isDeepfakeScanning, setIsDeepfakeScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [deepfakeVerdict, setDeepfakeVerdict] = useState<null | 'VERIFIED' | 'DEEPFAKE'>(null);
+  const [deepfakeVerdict, setDeepfakeVerdict] = useState<null | 'REAL' | 'SUSPICIOUS' | 'FAKE'>(null);
   const [deepfakeStats, setDeepfakeStats] = useState<any>(null);
   const [deepfakeAiResult, setDeepfakeAiResult] = useState<any>(null);
   const [mediaType, setMediaType] = useState<'image' | 'video'>('video');
@@ -184,12 +184,12 @@ export default function DeepfakeModule({
             </div>
           ) : deepfakeVerdict ? (
             <div className="z-10 text-center space-y-4 w-full px-4 transform animate-in fade-in zoom-in duration-500">
-              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-xl ${deepfakeVerdict === 'VERIFIED' ? 'bg-indgreen/10 text-indgreen' : 'bg-redalert/10 text-redalert'}`}>
-                {deepfakeVerdict === 'VERIFIED' ? <ShieldCheck size={40} /> : <ShieldAlert size={40} />}
+              <div className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-xl ${deepfakeVerdict === 'REAL' ? 'bg-indgreen/10 text-indgreen' : deepfakeVerdict === 'SUSPICIOUS' ? 'bg-gold/10 text-gold' : 'bg-redalert/10 text-redalert'}`}>
+                {deepfakeVerdict === 'REAL' ? <ShieldCheck size={40} /> : <ShieldAlert size={40} />}
               </div>
               <div>
-                <h3 className={`text-2xl font-black tracking-tight ${deepfakeVerdict === 'VERIFIED' ? 'text-indgreen' : 'text-redalert'}`}>
-                  {deepfakeVerdict === 'VERIFIED' ? 'Verified Authentic' : 'Deepfake Detected'}
+                <h3 className={`text-2xl font-black tracking-tight ${deepfakeVerdict === 'REAL' ? 'text-indgreen' : deepfakeVerdict === 'SUSPICIOUS' ? 'text-gold' : 'text-redalert'}`}>
+                  {deepfakeVerdict === 'REAL' ? 'Verified Authentic' : deepfakeVerdict === 'SUSPICIOUS' ? 'Suspicious Media' : 'Deepfake Detected'}
                 </h3>
                 <p className="text-[10px] text-silver mt-1 uppercase font-extrabold tracking-widest">
                   Forensic analysis complete.
@@ -203,7 +203,7 @@ export default function DeepfakeModule({
                  </div>
                  <div className="w-full h-1 bg-boxbg rounded-full overflow-hidden">
                     <div 
-                      className={`h-full transition-all duration-1000 ${deepfakeVerdict === 'VERIFIED' ? 'bg-indgreen' : 'bg-redalert'}`} 
+                      className={`h-full transition-all duration-1000 ${deepfakeVerdict === 'REAL' ? 'bg-indgreen' : deepfakeVerdict === 'SUSPICIOUS' ? 'bg-gold' : 'bg-redalert'}`} 
                       style={{ width: `${(deepfakeAiResult?.confidence * 100 || 0)}%` }}
                     />
                  </div>
@@ -267,4 +267,3 @@ export default function DeepfakeModule({
     </div>
   );
 }
-

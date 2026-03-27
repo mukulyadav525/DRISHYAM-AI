@@ -5,6 +5,13 @@ from core.config import settings
 from core.auth import get_current_verified_user
 from core.database import get_db
 from core.vision import vision_engine
+from core.deepfake_defense import (
+    coerce_external_status,
+    fetch_job_status,
+    normalize_result_payload,
+    submit_media_for_analysis,
+)
+from core.supabase_storage import upload_forensic_asset
 from sqlalchemy.orm import Session
 from models.database import User, SystemAction
 from typing import List, Optional, Dict, Any
@@ -23,42 +30,65 @@ async def analyze_deepfake(
 ):
     """
     Perform deepfake forensic analysis using the DRISHYAM-ULTIMATE-V3 engine.
-    For live scans, we use a sample forensic buffer.
+    For live scans, use the caller-provided media URL when available and fall back
+    to the demo buffer only when the UI triggers a sample scan without media.
     """
     try:
-        # Use a sample file for the "Live Scan" if no URL provided
-        sample_path = "static/recordings/H-7F57DA_scammer_07337d.webm"
-        if not os.path.exists(sample_path):
-            # Create a dummy file if sample not found
-            os.makedirs("static/recordings", exist_ok=True)
-            with open(sample_path, "wb") as f:
-                f.write(b"dummy_forensic_data")
-
-        async with httpx.AsyncClient(timeout=30.0) as client:
+        if req.media_url:
+            async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
+                media_response = await client.get(req.media_url)
+            if media_response.status_code != 200:
+                raise Exception(f"Failed to fetch media URL: {media_response.status_code}")
+            content = media_response.content
+            filename = req.media_url.rstrip("/").split("/")[-1] or f"live_scan.{req.media_type}"
+            mime_type = media_response.headers.get("content-type") or (
+                "image/jpeg" if req.media_type == "image" else "video/mp4"
+            )
+        else:
+            sample_path = "static/recordings/H-7F57DA_scammer_07337d.webm"
+            if not os.path.exists(sample_path):
+                os.makedirs("static/recordings", exist_ok=True)
+                with open(sample_path, "wb") as f:
+                    f.write(b"dummy_forensic_data")
             with open(sample_path, "rb") as f:
-                files = {"file": (os.path.basename(sample_path), f, "video/webm")}
-                headers = {"X-API-KEY": settings.DEEPFAKE_API_KEY}
-                response = await client.post(
-                    f"{settings.DEEPFAKE_API_URL}/analyze",
-                    headers=headers,
-                    files=files
-                )
+                content = f.read()
+            filename = os.path.basename(sample_path)
+            mime_type = "video/webm"
 
-        if response.status_code != 200:
-            raise Exception(f"Deepfake API error: {response.status_code} - {response.text}")
-
-        data = response.json()
+        data = await submit_media_for_analysis(
+            content=content,
+            filename=filename,
+            mime_type=mime_type,
+            timeout_seconds=30.0,
+        )
         job_id = data.get("job_id")
+        if not job_id:
+            raise Exception(f"Deepfake API did not return a job_id: {data}")
+
+        storage_metadata = None
+        try:
+            storage_metadata = await upload_forensic_asset(
+                content=content,
+                filename=filename,
+                mime_type=mime_type,
+                user_id=current_user.id,
+                folder="live_scans",
+            )
+        except Exception as storage_error:
+            print(f"Forensic storage upload warning: {storage_error}")
         
         # Register this job in our DB so status polling works
         from models.database import FileUpload
         new_upload = FileUpload(
             user_id=current_user.id,
-            filename=f"Live_Scan_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.webm",
-            file_path=sample_path,
-            mime_type="video/webm",
+            filename=filename or f"Live_Scan_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.webm",
+            file_path=req.media_url or "external://live_scan",
+            mime_type=mime_type,
             status="PENDING",
-            metadata_json={"external_job_id": job_id}
+            metadata_json={
+                "external_job_id": job_id,
+                **({"storage": storage_metadata} if storage_metadata else {}),
+            }
         )
         db.add(new_upload)
         db.commit()
@@ -119,6 +149,18 @@ async def upload_and_analyze_deepfake(
         content = await file.read()
         with open(file_path, "wb") as f:
             f.write(content)
+
+        storage_metadata = None
+        try:
+            storage_metadata = await upload_forensic_asset(
+                content=content,
+                filename=file.filename,
+                mime_type=file.content_type or "application/octet-stream",
+                user_id=current_user.id,
+                folder="uploads",
+            )
+        except Exception as storage_error:
+            print(f"Forensic storage upload warning: {storage_error}")
             
         # 2. Register Upload in DB
         new_upload = FileUpload(
@@ -126,7 +168,8 @@ async def upload_and_analyze_deepfake(
             filename=file.filename,
             file_path=file_path,
             mime_type=file.content_type,
-            status="PENDING"
+            status="PENDING",
+            metadata_json={"storage": storage_metadata} if storage_metadata else None,
         )
         db.add(new_upload)
         db.commit()
@@ -235,41 +278,35 @@ async def get_scan_status(
     external_job_id = upload.metadata_json.get("external_job_id") if upload.metadata_json else None
     if upload.status in ["PENDING", "PROCESSING"] and external_job_id:
         try:
-            async with httpx.AsyncClient(timeout=10.0) as client:
-                headers = {"X-API-KEY": settings.DEEPFAKE_API_KEY}
-                response = await client.get(
-                    f"{settings.DEEPFAKE_API_URL}/status/{external_job_id}",
-                    headers=headers
-                )
-                if response.status_code == 200:
-                    data = response.json()
-                    status = data.get("status")
-                    if status == "done":
-                        result = data.get("result", {})
-                        metrics = data.get("metrics", {})
-                        
-                        # Update local record
-                        upload.status = "COMPLETED"
-                        upload.verdict = result.get("verdict", "VERIFIED")
-                        upload.confidence_score = result.get("confidence", 0.99)
-                        upload.risk_level = "HIGH" if upload.verdict == "DEEPFAKE" else "LOW"
-                        
-                        # Save detailed metrics
-                        if not upload.metadata_json:
-                            upload.metadata_json = {}
-                        upload.metadata_json.update({
-                            "ai": {
-                                "verdict": upload.verdict,
-                                "confidence": upload.confidence_score,
-                                "analysis_details": result.get("analysis_details", {}),
-                                "metrics": metrics
-                            }
-                        })
-                        db.commit()
-                        db.refresh(upload)
-                    elif status == "failed":
-                        upload.status = "FAILED"
-                        db.commit()
+            data = await fetch_job_status(external_job_id, timeout_seconds=10.0)
+            status = coerce_external_status(data.get("status"))
+            if status == "COMPLETED":
+                normalized = normalize_result_payload(data)
+
+                upload.status = "COMPLETED"
+                upload.verdict = normalized["verdict"]
+                upload.confidence_score = normalized["confidence"]
+                upload.risk_level = normalized["risk_level"]
+
+                if not upload.metadata_json:
+                    upload.metadata_json = {}
+                upload.metadata_json.update({
+                    "ai": {
+                        "verdict": upload.verdict,
+                        "confidence": upload.confidence_score,
+                        "analysis_details": normalized["analysis_details"],
+                        "metrics": normalized["metrics"]
+                    },
+                    "forensic": {
+                        **(upload.metadata_json.get("forensic", {}) if upload.metadata_json else {}),
+                        "anomalies": normalized["anomalies"],
+                    }
+                })
+                db.commit()
+                db.refresh(upload)
+            elif status == "FAILED":
+                upload.status = "FAILED"
+                db.commit()
         except Exception as e:
             print(f"Error polling external job {external_job_id}: {e}")
 

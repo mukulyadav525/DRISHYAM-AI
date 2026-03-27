@@ -41,6 +41,12 @@ class Settings(BaseSettings):
     # Deepfake Forensic API (Railway)
     DEEPFAKE_API_URL: str = Field("https://deepfake-production-39b6.up.railway.app", env="DEEPFAKE_API_URL")
     DEEPFAKE_API_KEY: str = Field("drishyam_admin_2026", env="DEEPFAKE_API_KEY")
+
+    # Supabase Storage
+    SUPABASE_URL: Optional[str] = Field(None, env="SUPABASE_URL")
+    SUPABASE_ANON_KEY: Optional[str] = Field(None, env="SUPABASE_ANON_KEY")
+    SUPABASE_SERVICE_ROLE_KEY: Optional[str] = Field(None, env="SUPABASE_SERVICE_ROLE_KEY")
+    FORENSIC_STORAGE_BUCKET: str = Field("forensics_ml", env="FORENSIC_STORAGE_BUCKET")
     
     @property
     def SQLALCHEMY_DATABASE_URI(self) -> str:
