@@ -238,7 +238,7 @@ Revenue comes from institutions that benefit from a scam-free India.
 
 **ThassaAI** — Threat Analysis & Security Surveillance Application - AI
 **Institution:** IIIT-Delhi
-**Track:** Cyber Security | Smart India Hackathon 2025
+**Track:** Cyber Security | India Innovates 2026
 **Team Size:** 50 developers
 
 ---
