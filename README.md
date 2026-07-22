@@ -1,7 +1,7 @@
 # DRISHYAM AI 🛡️🇮🇳
 ### India's Real-Time Fraud Interception, Intelligence & Recovery Platform
 
-> **Built by ThassaAI (Threat Analysis & Security Surveillance Application - AI)**
+> **Built by AIR 6 (Threat Analysis & Security Surveillance Application - AI)**
 > IIIT-Delhi | Cyber Security Track | Smart India Hackathon 2025
 
 ---
