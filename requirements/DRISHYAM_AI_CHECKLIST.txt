@@ -1,6 +1,5 @@
 ================================================================================
 DRISHYAM 1930 — COMPLETE OPERATIONAL CHECKLIST
-Bharat Anti-Scam Intelligence Grid (BASIG)
 Version: 3.0 | Use this before EVERY demo, pilot, or production deploy
 For My India
 ================================================================================
