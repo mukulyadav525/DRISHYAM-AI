@@ -2,7 +2,7 @@
 
 **AI-powered scam call classifier, built as a standalone module for DRISHYAM AI.**
 
-## Setup
+##
 
 ### 1. Create virtual environment & install dependencies
 ```bash
