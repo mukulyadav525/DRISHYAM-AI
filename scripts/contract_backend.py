@@ -7,7 +7,7 @@ ROOT_DIR = Path(__file__).resolve().parent.parent
 BACKEND_DIR = ROOT_DIR / "backend"
 sys.path.insert(0, str(BACKEND_DIR))
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient  # : E402
 from main import app  # noqa: E402
 from smoke_backend import prepare_runtime  # noqa: E402
 
